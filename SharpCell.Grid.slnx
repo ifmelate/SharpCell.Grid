@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SharpCell.Grid/SharpCell.Grid.csproj" />
+    <Project Path="src/SharpCell.Grid.Avalonia/SharpCell.Grid.Avalonia.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/SharpCell.Grid.Sample/SharpCell.Grid.Sample.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SharpCell.Grid.Tests/SharpCell.Grid.Tests.csproj" />
+  </Folder>
+</Solution>

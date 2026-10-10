@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    A window with a SpreadsheetView showing the first sheet of an .xlsx file given on the command
+    line, or of budget.xlsx without one. Run it with dotnet run, project samples/SharpCell.Grid.Sample.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="SharpCell.Xlsx" />
+    <ProjectReference Include="../../src/SharpCell.Grid.Avalonia/SharpCell.Grid.Avalonia.csproj" />
+    <None Include="budget.xlsx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

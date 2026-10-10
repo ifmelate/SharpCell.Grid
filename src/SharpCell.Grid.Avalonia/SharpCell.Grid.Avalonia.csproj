@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SharpCell.Grid.Avalonia</RootNamespace>
+    <Description>Excel-like spreadsheet control for Avalonia UI that shows SharpCell workbooks. Brings SharpCell.Grid with it.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <ProjectReference Include="../SharpCell.Grid/SharpCell.Grid.csproj" />
+    <InternalsVisibleTo Include="SharpCell.Grid.Tests" />
+  </ItemGroup>
+</Project>
