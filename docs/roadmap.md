@@ -32,7 +32,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Step | What | Needs from SharpCell |
 |---|---|---|
 | Done | Typing into a cell, F2 and double-click, Enter, Tab, Escape, arrows, Ctrl+Enter, Alt+Enter; `IsReadOnly` | — |
-| Done | Input read as Excel reads it: numbers, percentages, currency, dates and times in the workbook's culture, `=` for formulas, `'` for text, the number format a General cell takes | `Cell.Input` (0.7.0) |
+| Done | Input read as Excel reads it: numbers, percentages, currency, dates and times in the workbook's culture, `=` for formulas, `'` for text, the number format a General cell takes | `Cell.Input` (0.8.0) |
 | Done | Recalculation after each edit, with the cells it changed (`Edited`) | `RecalculationResult.ChangedCells` (0.5.0) |
 | Done | Undo and redo, Delete, paste of text copied from Excel | — |
 | Done | The formula bar as a control of its own, with the name box | — |
