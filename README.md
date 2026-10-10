@@ -1,5 +1,6 @@
 # SharpCell.Grid
 
+[![NuGet](https://img.shields.io/nuget/v/SharpCell.Grid.Avalonia.svg)](https://www.nuget.org/packages/SharpCell.Grid.Avalonia)
 [![ci](https://github.com/ifmelate/SharpCell.Grid/actions/workflows/ci.yml/badge.svg)](https://github.com/ifmelate/SharpCell.Grid/actions/workflows/ci.yml)
 
 A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the
@@ -9,13 +10,20 @@ style (font, fill, borders, alignment, wrapping), the file's column widths and r
 merged cells, frozen panes, text running on over empty neighbours, and an active cell moved with
 the mouse and keyboard. Only the visible cells are read, so a sheet of a million rows scrolls like an empty one.
 
-Status: early 0.x, not on NuGet yet; it needs SharpCell 0.6.0, which is not released either.
-Viewing only, no editing; see the [roadmap](docs/roadmap.md).
+Status: 0.x, viewing only: no selection of ranges or editing yet; see the [roadmap](docs/roadmap.md).
+The API may change between minor versions until 1.0.
 
 | Package | What it does |
 |---|---|
 | `SharpCell.Grid` | Geometry, hit testing, scrolling and painting, with no UI framework. |
 | `SharpCell.Grid.Avalonia` | `SpreadsheetView`, the control for [Avalonia UI](https://avaloniaui.net). |
+
+## Install
+
+```bash
+dotnet add package SharpCell.Grid.Avalonia   # the control; brings SharpCell.Grid and SharpCell
+dotnet add package SharpCell.Xlsx            # to read .xlsx files
+```
 
 ## Usage
 

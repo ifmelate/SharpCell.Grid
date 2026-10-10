@@ -4,7 +4,7 @@ Where SharpCell.Grid is going, in the order the work is planned. Each step ships
 pass and what it shows is checked against Microsoft Excel. Dates are not promised; the project
 has one maintainer.
 
-## Now: 0.1 — a faithful viewer
+## Released: 0.1 — a faithful viewer
 
 A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 
@@ -16,11 +16,15 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Merged cells, painted and navigated as one cell | `Worksheet.MergedAreas` (0.6.0) |
 | Done | Text running on over empty neighbours, by its alignment, also from cells out of view | — |
 | Done | Frozen panes and the sheet's gridline setting | `Worksheet.FrozenRows`, `FrozenColumns`, `ShowGridlines` (0.6.0) |
-| 6 | Range selection with Shift and the mouse; copy as tab-separated text and HTML that Excel pastes | — |
-| 7 | WPF control over the same painter | — |
-| Release | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf` | SharpCell 0.6.0 released |
+| Released | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia` | SharpCell 0.6.0 |
 
-## Next: 0.2 — editing
+## Now: 0.2 — selection and WPF
+
+- Range selection with Shift and the mouse, whole rows and columns from their headers.
+- Copy as tab-separated text and HTML that Excel pastes, values as shown.
+- A WPF control over the same painter: `SharpCell.Grid.Wpf`.
+
+## Next: 0.3 — editing
 
 - Typing into a cell and the formula bar as a separate control; F2, Escape, Enter, Tab.
 - Input read as Excel reads it: numbers, percentages, dates and times in the workbook's culture,
@@ -28,7 +32,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 - Recalculation after each edit, repainting only what changed (SharpCell's changed cells).
 - Undo and redo, Delete, paste of values from Excel.
 
-## Later: 0.3 — working like Excel
+## Later: 0.4 — working like Excel
 
 - Resizing columns and rows with the mouse, double-click to fit.
 - Inserting and deleting rows and columns, with formulas following (needs reference shifting in SharpCell).
@@ -40,7 +44,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 
 - **Oracle for geometry and display:** desktop Excel exports `Range.Text`, `Left`, `Top`,
   `Width` and `Height` and `Range.Interior.Color` for test workbooks through SharpCell's
-  `tools/excel-oracle`; the grid's numbers are compared with them. Checked this way before 0.1:
+  `tools/excel-oracle`; the grid's numbers are compared with them. To be checked this way:
   the General shortening in narrow columns, theme colours with tints, indent steps and how
   centred text runs on when one side is blocked.
 - **Snapshots** of rendered frames for every visible feature.
