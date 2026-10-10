@@ -11,10 +11,10 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Step | What | Needs from SharpCell |
 |---|---|---|
 | Done | Headers, gridlines, `Cell.Text`, General alignment, active cell, mouse, arrows, Enter/Tab, wheel, numbers fitted to their column, row headers widened for long numbers | `Cell.Text` (0.5.0) |
-| 1 | Cell styles: fonts (name, size, bold, italic, underline, strikethrough, colour), solid fills, borders, horizontal and vertical alignment, wrapped text, indent | Styles read from .xlsx: `Cell.Style`, theme and indexed colours resolved |
-| 2 | Sheet geometry from the file: column widths, row heights, hidden columns and rows | `Worksheet` column widths, row heights, hidden columns |
-| 3 | Merged cells | `Worksheet` merged areas |
-| 4 | Text overflowing into empty neighbours, as Excel does for left- and right-aligned text | — |
+| Done | Cell styles: fonts (name, size, bold, italic, underline, strikethrough, colour), solid fills, borders, horizontal and vertical alignment, wrapped text, indent | `Cell.Style`, theme and indexed colours resolved (0.6.0) |
+| Done | Sheet geometry from the file: column widths, row heights, hidden columns and rows | `Worksheet` column widths, row heights, hidden columns (0.6.0) |
+| Done | Merged cells, painted and navigated as one cell | `Worksheet.MergedAreas` (0.6.0) |
+| Done | Text running on over empty neighbours, by its alignment, also from cells out of view | — |
 | 5 | Frozen panes and the sheet's gridline setting | `Worksheet` frozen panes, gridlines shown |
 | 6 | Range selection with Shift and the mouse; copy as tab-separated text and HTML that Excel pastes | — |
 | 7 | WPF control over the same painter | — |
@@ -39,9 +39,10 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 ## Quality, all along
 
 - **Oracle for geometry and display:** desktop Excel exports `Range.Text`, `Left`, `Top`,
-  `Width` and `Height` for test workbooks through SharpCell's `tools/excel-oracle`; the grid's
-  numbers are compared with them. The General shortening in narrow columns is checked this way
-  before 0.1.
+  `Width` and `Height` and `Range.Interior.Color` for test workbooks through SharpCell's
+  `tools/excel-oracle`; the grid's numbers are compared with them. Checked this way before 0.1:
+  the General shortening in narrow columns, theme colours with tints, indent steps and how
+  centred text runs on when one side is blocked.
 - **Snapshots** of rendered frames for every visible feature.
 - **Benchmarks:** scrolling a million-row sheet, painting a full screen of styled cells.
 - **NativeAOT and trimming** proved by a published smoke test, as in SharpCell.

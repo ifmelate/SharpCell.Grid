@@ -4,12 +4,13 @@
 
 A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the
 [SharpCell](https://github.com/ifmelate/SharpCell) formula engine. It shows a worksheet the way
-Excel does: column and row headers, gridlines, each cell's value in its number format, Excel's
-default alignment, and an active cell moved with the mouse and keyboard. Only the visible cells
-are read, so a sheet of a million rows scrolls like an empty one.
+Excel does: column and row headers, gridlines, each cell's value in its number format and its
+style (font, fill, borders, alignment, wrapping), the file's column widths and row heights,
+merged cells, text running on over empty neighbours, and an active cell moved with the mouse and
+keyboard. Only the visible cells are read, so a sheet of a million rows scrolls like an empty one.
 
-Status: early 0.x, not on NuGet yet. Viewing only: no editing, cell styles (fonts, fills,
-borders), merged cells or column widths from files yet; see the [roadmap](docs/roadmap.md).
+Status: early 0.x, not on NuGet yet; it needs SharpCell 0.6.0, which is not released either.
+Viewing only, no editing; see the [roadmap](docs/roadmap.md).
 
 | Package | What it does |
 |---|---|
