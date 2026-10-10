@@ -2,24 +2,26 @@
 
 > A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the SharpCell formula engine: it shows a worksheet the way Excel does, with number formats, cell styles, column widths, row heights, merged cells, frozen panes and text running on over empty cells. Only the visible cells are read, so any sheet size scrolls smoothly.
 
-Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework), `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control) and `SharpCell.Grid.Wpf` (`SpreadsheetView` for WPF, Windows only). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected and copied as in Excel (`Selection`, `CopyAsync()`, `GridSelection`, `GridClipboard`); no editing yet.
+Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework), `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control) and `SharpCell.Grid.Wpf` (`SpreadsheetView` for WPF, Windows only). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected, copied and edited as in Excel (`Selection`, `CopyAsync()`, `BeginEdit()`, `Editor`, `Edited`, `IsReadOnly`, `FormulaBar`; without a UI framework `GridSelection`, `GridClipboard`, `GridEditor`); what is typed is read by SharpCell's `Cell.Input`.
 
 ## Docs
 
 - [Overview](https://ifmelate.github.io/SharpCell.Grid/index.md): What SharpCell.Grid is, its packages, a picture and a first example.
-- [Getting started](https://ifmelate.github.io/SharpCell.Grid/getting-started.md): Install, show an .xlsx file in an Avalonia or WPF window, refresh after changes, selection, copying and scrolling.
-- [What the grid shows](https://ifmelate.github.io/SharpCell.Grid/guides/showing-workbooks.md): Values and number formats, cell styles, sizes, merged cells, running text, frozen panes, gridlines, mouse and keyboard, copying to Excel, and where it differs from Excel.
+- [Getting started](https://ifmelate.github.io/SharpCell.Grid/getting-started.md): Install, show an .xlsx file in an Avalonia or WPF window, refresh after changes, editing, selection, copying and scrolling.
+- [What the grid shows](https://ifmelate.github.io/SharpCell.Grid/guides/showing-workbooks.md): Values and number formats, cell styles, sizes, merged cells, running text, frozen panes, gridlines, mouse and keyboard, editing, copying to Excel, and where it differs from Excel.
 - [Painting in other UI frameworks](https://ifmelate.github.io/SharpCell.Grid/guides/painting.md): GridPainter and IGridCanvas: geometry, hit testing, scrolling and painting for a host other than Avalonia.
-- [Roadmap](https://ifmelate.github.io/SharpCell.Grid/roadmap.md): What is done and what comes next: a faithful viewer, editing, working like Excel.
+- [Roadmap](https://ifmelate.github.io/SharpCell.Grid/roadmap.md): What is done and what comes next: a faithful viewer, selection and WPF, editing, working like Excel.
 - [For AI coding agents](https://ifmelate.github.io/SharpCell.Grid/agents.md): llms.txt, llms-full.txt and rules to paste into an agent's instructions.
 
 ## API reference
 
 - [CellArea](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.CellArea.md): A rectangle of cells, from its top-left to its bottom-right cell; rows and columns from 1.
 - [CellPosition](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.CellPosition.md): A cell of the sheet by 1-based row and column, such as the active cell.
-- [GridClipboard](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridClipboard.md): What copying cells puts on the clipboard, in the forms Excel reads when it pastes: text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells.
+- [GridClipboard](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridClipboard.md): What copying cells puts on the clipboard, in the forms Excel reads when it pastes, and the cells of text pasted from it.
 - [GridColor](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridColor.md): An opaque or translucent sRGB colour.
 - [GridDash](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridDash.md): The dash pattern of a line, after Excel's border styles.
+- [GridEdit](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridEdit.md): A change made through a GridEditor.
+- [GridEditor](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridEditor.md): Changes a workbook's cells as people change them in Excel: typing into cells, Delete, pasting text copied from Excel.
 - [GridFont](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridFont.md): A font to draw text with; the size is in pixels, not points.
 - [GridHit](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridHit.md): What is under a point of the grid.
 - [GridNavigation](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridNavigation.md): How the active cell moves on a sheet, as in Excel: a merged area counts as one cell.
@@ -33,7 +35,9 @@ Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework)
 - [GridViewport](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.GridViewport.md): What part of the sheet a grid shows: the scroll offset into the sheet and the size of the whole grid on screen, headers included.
 - [IGridCanvas](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.IGridCanvas.md): What GridPainter paints on.
 - [SheetLayout](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.SheetLayout.md): Where the cells of a sheet are, in device-independent pixels from the top-left corner of cell A1: column widths, row heights, their offsets, the cell under a point and the cells inside a viewport.
+- [FormulaBar](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Avalonia.FormulaBar.md): Excel's formula bar for a SpreadsheetView: the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit.
 - [SpreadsheetView](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Avalonia.SpreadsheetView.md): Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines.
+- [FormulaBar](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Wpf.FormulaBar.md): Excel's formula bar for a SpreadsheetView: the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit.
 - [SpreadsheetView](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Wpf.SpreadsheetView.md): Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines.
 
 ## Optional

@@ -32,9 +32,16 @@ internal sealed class SampleApp : Application
                 Title = $"{Path.GetFileName(path)} - SharpCell.Grid",
                 Width = 960,
                 Height = 600,
-                Content = new SpreadsheetView { Worksheet = workbook.Sheets[0] },
+                Content = WithFormulaBar(new SpreadsheetView { Worksheet = workbook.Sheets[0] }),
             };
         }
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static DockPanel WithFormulaBar(SpreadsheetView view)
+    {
+        var bar = new FormulaBar { View = view, Margin = new Thickness(6) };
+        DockPanel.SetDock(bar, Dock.Top);
+        return new DockPanel { Children = { bar, view } };
     }
 }

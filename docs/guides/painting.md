@@ -38,6 +38,9 @@ string copied = GridClipboard.Text(sheet, selection.Area);
 - `GridSelection` is Excel's selection: what a click selects (`At`), and each step of the mouse
   and keyboard (`ExtendTo`, `Extend`, `Move`, `MoveWithin`, `EntireColumns`, `EntireRows`). A host
   maps its input events to these calls; `SpreadsheetView` shows how.
+- `GridEditor` changes cells as Excel does when people edit them, typing (`Enter`, through
+  SharpCell's `Cell.Input`), Delete (`Clear`) and pasting text (`Paste`), each change one step to
+  `Undo` and `Redo`, the workbook recalculated after it.
 - `GridClipboard` gives the selected cells as text and as HTML, the forms Excel pastes, and
   `WindowsHtml` wraps the HTML in the clipboard format Windows applications read.
 - `IGridCanvas` is what a host implements over its drawing API: fill and stroke rectangles, draw

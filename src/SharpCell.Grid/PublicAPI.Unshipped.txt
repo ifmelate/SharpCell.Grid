@@ -1,1 +1,33 @@
 #nullable enable
+override SharpCell.Grid.GridEdit.Equals(object? obj) -> bool
+override SharpCell.Grid.GridEdit.GetHashCode() -> int
+override SharpCell.Grid.GridEdit.ToString() -> string!
+SharpCell.Grid.GridEdit
+SharpCell.Grid.GridEdit.<Clone>$() -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEdit.Area.get -> SharpCell.Grid.CellArea
+SharpCell.Grid.GridEdit.Area.init -> void
+SharpCell.Grid.GridEdit.Deconstruct(out SharpCell.Worksheet! Sheet, out SharpCell.Grid.CellArea Area, out SharpCell.RecalculationResult! Recalculation) -> void
+SharpCell.Grid.GridEdit.Equals(SharpCell.Grid.GridEdit? other) -> bool
+SharpCell.Grid.GridEdit.GridEdit(SharpCell.Worksheet! Sheet, SharpCell.Grid.CellArea Area, SharpCell.RecalculationResult! Recalculation) -> void
+SharpCell.Grid.GridEdit.Recalculation.get -> SharpCell.RecalculationResult!
+SharpCell.Grid.GridEdit.Recalculation.init -> void
+SharpCell.Grid.GridEdit.Sheet.get -> SharpCell.Worksheet!
+SharpCell.Grid.GridEdit.Sheet.init -> void
+SharpCell.Grid.GridEditor
+SharpCell.Grid.GridEditor.CanRedo.get -> bool
+SharpCell.Grid.GridEditor.CanUndo.get -> bool
+SharpCell.Grid.GridEditor.Clear(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.ClearHistory() -> void
+SharpCell.Grid.GridEditor.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
+SharpCell.Grid.GridEditor.Enter(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, string! input) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.GridEditor(SharpCell.Workbook! workbook) -> void
+SharpCell.Grid.GridEditor.Paste(SharpCell.Worksheet! sheet, SharpCell.Grid.CellPosition at, string! text) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.Redo() -> SharpCell.Grid.GridEdit?
+SharpCell.Grid.GridEditor.Undo() -> SharpCell.Grid.GridEdit?
+SharpCell.Grid.GridEditor.Workbook.get -> SharpCell.Workbook!
+SharpCell.Grid.GridSelection.ExtendToEdge(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.MoveToEdge(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+static SharpCell.Grid.GridClipboard.ReadText(string! text) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>!
+static SharpCell.Grid.GridEdit.operator !=(SharpCell.Grid.GridEdit? left, SharpCell.Grid.GridEdit? right) -> bool
+static SharpCell.Grid.GridEdit.operator ==(SharpCell.Grid.GridEdit? left, SharpCell.Grid.GridEdit? right) -> bool
+static SharpCell.Grid.GridNavigation.MoveToEdge(SharpCell.Worksheet? sheet, SharpCell.Grid.CellPosition from, int rows, int columns) -> SharpCell.Grid.CellPosition

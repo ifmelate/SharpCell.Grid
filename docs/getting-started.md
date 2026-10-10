@@ -71,6 +71,22 @@ It shows, selects and copies as the Avalonia control does, and has the same prop
 is `Copy()`, also bound to `ApplicationCommands.Copy`, and Ctrl+A to `ApplicationCommands.SelectAll`.
 A runnable window is in [samples/SharpCell.Grid.WpfSample](../samples/SharpCell.Grid.WpfSample).
 
+## Editing
+
+```csharp snippet=editing
+var bar = new FormulaBar { View = view };   // Excel's formula bar, as a control of its own
+view.Edited += (_, edit) =>                 // after each change, the workbook recalculated
+    changed = edit.Recalculation.ChangedCells;
+view.IsReadOnly = true;                      // to only show and select
+```
+
+Cells are edited as in Excel: typing into a cell, F2 or a double-click, Enter, Tab and Escape,
+Delete, paste with Ctrl+V, undo and redo. What is typed is read as Excel reads it, in the
+workbook's culture, and the workbook is recalculated after each change. `view.Editor` is the
+`GridEditor` behind it, with the history to undo; `view.Edited` tells about each change.
+`FormulaBar` shows and edits the active cell's formula above the grid. See
+[What the grid shows](guides/showing-workbooks.md#editing) for every key.
+
 ## Selection, copying and scrolling
 
 ```csharp snippet=active-cell

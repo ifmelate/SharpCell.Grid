@@ -32,6 +32,61 @@ public static class GridNavigation
         return MergeAt(merges, target) is { } landed ? new CellPosition(landed.FirstRow, landed.FirstColumn) : target;
     }
 
+    /// <summary>
+    /// The cell Ctrl with an arrow lands on, as in Excel: from a cell with content whose neighbour
+    /// has content too, the last cell with content before an empty one; otherwise the next cell
+    /// with content that way; with none, the sheet's edge. A cell has content when it holds a
+    /// value or a formula.
+    /// </summary>
+    /// <param name="sheet">The sheet whose content is looked at; without one, the edge.</param>
+    /// <param name="from">The cell to move from.</param>
+    /// <param name="rows">-1 up, 1 down, or 0.</param>
+    /// <param name="columns">-1 left, 1 right, or 0.</param>
+    public static CellPosition MoveToEdge(Worksheet? sheet, CellPosition from, int rows, int columns)
+    {
+        (rows, columns) = (Math.Sign(rows), Math.Sign(columns));
+        var edge = new CellPosition(
+            rows < 0 ? 1 : rows > 0 ? SheetLayout.MaxRow : from.Row,
+            columns < 0 ? 1 : columns > 0 ? SheetLayout.MaxColumn : from.Column);
+        if (sheet is null || (rows == 0 && columns == 0))
+            return sheet is null ? edge : from;
+
+        bool Inside(int row, int column) => row is >= 1 and <= SheetLayout.MaxRow && column is >= 1 and <= SheetLayout.MaxColumn;
+        bool Filled(int row, int column)
+        {
+            var cell = sheet[row, column];
+            return cell.Formula is not null || cell.Value.Kind != CellValueKind.Empty;
+        }
+
+        var (nextRow, nextColumn) = (from.Row + rows, from.Column + columns);
+        if (!Inside(nextRow, nextColumn))
+            return from;
+
+        // Along a block of content to its last cell.
+        if (Filled(from.Row, from.Column) && Filled(nextRow, nextColumn))
+        {
+            while (Inside(nextRow + rows, nextColumn + columns) && Filled(nextRow + rows, nextColumn + columns))
+                (nextRow, nextColumn) = (nextRow + rows, nextColumn + columns);
+            return new CellPosition(nextRow, nextColumn);
+        }
+
+        // Over empty cells to the next with content: the nearest among the sheet's cells with content.
+        CellPosition? nearest = null;
+        var distance = int.MaxValue;
+        foreach (var cell in sheet.Cells)
+        {
+            if (cell.Formula is null && cell.Value.Kind == CellValueKind.Empty)
+                continue;
+            var d = rows != 0
+                ? (cell.Column == from.Column ? (cell.Row - from.Row) * rows : -1)
+                : (cell.Row == from.Row ? (cell.Column - from.Column) * columns : -1);
+            if (d > 0 && d < distance)
+                (nearest, distance) = (new CellPosition(cell.Row, cell.Column), d);
+        }
+
+        return nearest ?? edge;
+    }
+
     /// <summary>The merged area holding a cell, if any.</summary>
     internal static CellArea? MergeAt(IReadOnlyList<CellRange> merges, CellPosition cell)
     {

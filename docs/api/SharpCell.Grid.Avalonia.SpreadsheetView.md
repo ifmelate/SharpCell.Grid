@@ -32,6 +32,42 @@ public CellPosition? ActiveCell { get; set; }
 
 The cell with the active-cell border; null shows none. It is the active cell of [SpreadsheetView.Selection](SharpCell.Grid.Avalonia.SpreadsheetView.md#selection); setting it selects that cell alone.
 
+<a id="edittext"></a>
+### EditText
+
+```csharp
+public string? EditText { get; set; }
+```
+
+The text being typed into the active cell, which [SpreadsheetView.CommitEdit](SharpCell.Grid.Avalonia.SpreadsheetView.md#commitedit) enters; null when no cell is being edited. Setting it while editing changes the text, as a formula bar does.
+
+<a id="editor"></a>
+### Editor
+
+```csharp
+public GridEditor? Editor { get; }
+```
+
+What changes the cells, with the history to undo and redo; one per workbook, created when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set. Null without a sheet.
+
+<a id="isediting"></a>
+### IsEditing
+
+```csharp
+public bool IsEditing { get; }
+```
+
+Whether a cell is being edited.
+
+<a id="isreadonly"></a>
+### IsReadOnly
+
+```csharp
+public bool IsReadOnly { get; set; }
+```
+
+Whether cells cannot be changed: no typing, Delete, pasting, undo or redo.
+
 <a id="offset"></a>
 ### Offset
 
@@ -79,6 +115,42 @@ The sheet shown; null shows an empty grid.
 
 ## Methods
 
+<a id="beginedit-string"></a>
+### BeginEdit(string)
+
+```csharp
+public bool BeginEdit(string? text = null)
+```
+
+Starts editing the active cell, as F2 does: with its formula or value as Excel shows it to edit, or with `text`. False when the view is read-only or has no sheet.
+
+<a id="canceledit"></a>
+### CancelEdit()
+
+```csharp
+public void CancelEdit()
+```
+
+Ends editing without changing the cell, as Escape does.
+
+<a id="clearselection"></a>
+### ClearSelection()
+
+```csharp
+public void ClearSelection()
+```
+
+Clears the content of the selected cells, as Delete does; formats and styles stay.
+
+<a id="commitedit"></a>
+### CommitEdit()
+
+```csharp
+public bool CommitEdit()
+```
+
+Enters the text being typed into the active cell, as Enter does, and ends editing; true also when nothing is being edited. A formula that does not parse keeps the editor open, with the reason shown and the caret where the formula went wrong, and gives false.
+
 <a id="copyasync"></a>
 ### CopyAsync()
 
@@ -87,6 +159,24 @@ public Task CopyAsync()
 ```
 
 Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C or Cmd+C does it too, also in a browser.
+
+<a id="pasteasync"></a>
+### PasteAsync()
+
+```csharp
+public Task PasteAsync()
+```
+
+Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V does: text copied from Excel goes in cell by cell, each read as typed. The pasted cells are selected.
+
+<a id="redo"></a>
+### Redo()
+
+```csharp
+public void Redo()
+```
+
+Redoes the last undone change and selects its cells, as Ctrl+Y does.
 
 <a id="reloadlayout"></a>
 ### ReloadLayout()
@@ -109,3 +199,12 @@ Paints the visible part of the sheet through [SpreadsheetView.Painter](SharpCell
 **Parameters**
 
 - `context`: The drawing context Avalonia renders with.
+
+<a id="undo"></a>
+### Undo()
+
+```csharp
+public void Undo()
+```
+
+Undoes the last change to the cells and selects them, as Ctrl+Z does.

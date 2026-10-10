@@ -50,9 +50,12 @@ internal sealed class MainView : DockPanel
 
         DockPanel.SetDock(bar, Dock.Top);
         Children.Add(bar);
+        var formulas = new FormulaBar { View = _view, Margin = new Thickness(8, 0, 8, 6) };
+        DockPanel.SetDock(formulas, Dock.Top);
+        Children.Add(formulas);
         Children.Add(_view);
 
-        Show(Showcase.Build(), "An example built in code. Open your own file: it is read in your browser and never uploaded.");
+        Show(Showcase.Build(), "An example built in code: type into the cells, the totals follow. Open your own file: it is read in your browser and never uploaded.");
     }
 
     private async Task OpenAsync()

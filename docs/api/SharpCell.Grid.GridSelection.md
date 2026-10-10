@@ -174,6 +174,21 @@ public GridSelection ExtendTo(GridHit hit, Worksheet? sheet)
 
 The selection from the same anchor to what a Shift-click hits: to a cell, to whole columns from a column header, to whole rows from a row header, the whole sheet from the corner.
 
+<a id="extendtoedge-int-int-worksheet"></a>
+### ExtendToEdge(int, int, Worksheet)
+
+```csharp
+public GridSelection ExtendToEdge(int rows, int columns, Worksheet? sheet)
+```
+
+The selection extended from its far corner to the edge of the content, as Ctrl+Shift with an arrow does.
+
+**Parameters**
+
+- `rows`: -1 up, 1 down, or 0.
+- `columns`: -1 left, 1 right, or 0.
+- `sheet`: The sheet whose content decides the edge; see [GridNavigation.MoveToEdge](SharpCell.Grid.GridNavigation.md#movetoedge-worksheet-cellposition-int-int).
+
 <a id="move-int-int-worksheet"></a>
 ### Move(int, int, Worksheet)
 
@@ -182,6 +197,21 @@ public GridSelection Move(int rows, int columns, Worksheet? sheet)
 ```
 
 The active cell moved by whole rows and columns, as the arrows move it, and selected alone.
+
+<a id="movetoedge-int-int-worksheet"></a>
+### MoveToEdge(int, int, Worksheet)
+
+```csharp
+public GridSelection MoveToEdge(int rows, int columns, Worksheet? sheet)
+```
+
+The active cell moved to the edge of the content, as Ctrl with an arrow moves it, and selected alone.
+
+**Parameters**
+
+- `rows`: -1 up, 1 down, or 0.
+- `columns`: -1 left, 1 right, or 0.
+- `sheet`: The sheet whose content decides the edge; see [GridNavigation.MoveToEdge](SharpCell.Grid.GridNavigation.md#movetoedge-worksheet-cellposition-int-int).
 
 <a id="movewithin-int-int-worksheet"></a>
 ### MoveWithin(int, int, Worksheet)

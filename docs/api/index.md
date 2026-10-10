@@ -10,9 +10,11 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 |---|---|
 | [CellArea](SharpCell.Grid.CellArea.md) | A rectangle of cells, from its top-left to its bottom-right cell; rows and columns from 1. |
 | [CellPosition](SharpCell.Grid.CellPosition.md) | A cell of the sheet by 1-based row and column, such as the active cell. |
-| [GridClipboard](SharpCell.Grid.GridClipboard.md) | What copying cells puts on the clipboard, in the forms Excel reads when it pastes: text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells. |
+| [GridClipboard](SharpCell.Grid.GridClipboard.md) | What copying cells puts on the clipboard, in the forms Excel reads when it pastes, and the cells of text pasted from it. |
 | [GridColor](SharpCell.Grid.GridColor.md) | An opaque or translucent sRGB colour. |
 | [GridDash](SharpCell.Grid.GridDash.md) | The dash pattern of a line, after Excel's border styles. |
+| [GridEdit](SharpCell.Grid.GridEdit.md) | A change made through a [GridEditor](SharpCell.Grid.GridEditor.md). |
+| [GridEditor](SharpCell.Grid.GridEditor.md) | Changes a workbook's cells as people change them in Excel: typing into cells, Delete, pasting text copied from Excel. |
 | [GridFont](SharpCell.Grid.GridFont.md) | A font to draw text with; the size is in pixels, not points. |
 | [GridHit](SharpCell.Grid.GridHit.md) | What is under a point of the grid. |
 | [GridNavigation](SharpCell.Grid.GridNavigation.md) | How the active cell moves on a sheet, as in Excel: a merged area counts as one cell. |
@@ -31,10 +33,12 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 
 | Type | Summary |
 |---|---|
+| [FormulaBar](SharpCell.Grid.Avalonia.FormulaBar.md) | Excel's formula bar for a [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md): the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit. |
 | [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md) | Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. |
 
 ## SharpCell.Grid.Wpf
 
 | Type | Summary |
 |---|---|
+| [FormulaBar](SharpCell.Grid.Wpf.FormulaBar.md) | Excel's formula bar for a [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md): the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit. |
 | [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md) | Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. |

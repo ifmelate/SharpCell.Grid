@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -6,10 +7,11 @@ using System.Text;
 namespace SharpCell.Grid;
 
 /// <summary>
-/// What copying cells puts on the clipboard, in the forms Excel reads when it pastes: text with
-/// tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged
-/// cells. Cells are copied as shown, <see cref="Cell.Text"/> in their number format. Hidden rows and
-/// columns are copied, as Excel copies them. Whole columns or rows end at the sheet's used range.
+/// What copying cells puts on the clipboard, in the forms Excel reads when it pastes, and the cells
+/// of text pasted from it. Copied are text with tabs between cells, and an HTML table that keeps
+/// fonts, fills, borders, alignment and merged cells. Cells are copied as shown,
+/// <see cref="Cell.Text"/> in their number format. Hidden rows and columns are copied, as Excel
+/// copies them. Whole columns or rows end at the sheet's used range.
 /// </summary>
 public static class GridClipboard
 {
@@ -40,6 +42,78 @@ public static class GridClipboard
         }
 
         return text.ToString();
+    }
+
+    /// <summary>
+    /// Text from the clipboard as rows of cells, the way Excel reads text it pastes: a tab between
+    /// cells, a line break (<c>\r\n</c> or <c>\n</c>) between rows, the last line break ending the
+    /// last row. A cell starting with a double quote runs to the closing one and may hold tabs and
+    /// line breaks; two double quotes inside stand for one.
+    /// </summary>
+    public static IReadOnlyList<IReadOnlyList<string>> ReadText(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var rows = new List<IReadOnlyList<string>>();
+        var row = new List<string>();
+        var cell = new StringBuilder();
+        var i = 0;
+        while (i < text.Length)
+        {
+            if (cell.Length == 0 && text[i] == '"' && Closing(text, i) is { } end)
+            {
+                cell.Append(text.AsSpan(i + 1, end - i - 1).ToString().Replace("\"\"", "\"", StringComparison.Ordinal));
+                i = end + 1;
+                continue;
+            }
+
+            var c = text[i];
+            if (c == '\t')
+            {
+                row.Add(cell.ToString());
+                cell.Clear();
+                i++;
+            }
+            else if (c is '\r' or '\n')
+            {
+                row.Add(cell.ToString());
+                cell.Clear();
+                rows.Add(row);
+                row = [];
+                i += c == '\r' && i + 1 < text.Length && text[i + 1] == '\n' ? 2 : 1;
+            }
+            else
+            {
+                cell.Append(c);
+                i++;
+            }
+        }
+
+        if (cell.Length > 0 || row.Count > 0)
+        {
+            row.Add(cell.ToString());
+            rows.Add(row);
+        }
+
+        return rows;
+
+        // The quote that closes a quoted cell: followed by a tab, a line break or the end.
+        static int? Closing(string text, int open)
+        {
+            for (var i = open + 1; i < text.Length; i++)
+            {
+                if (text[i] != '"')
+                    continue;
+                if (i + 1 < text.Length && text[i + 1] == '"')
+                {
+                    i++;
+                    continue;
+                }
+
+                return i + 1 == text.Length || text[i + 1] is '\t' or '\r' or '\n' ? i : null;
+            }
+
+            return null;
+        }
     }
 
     /// <summary>

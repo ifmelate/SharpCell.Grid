@@ -24,15 +24,27 @@ public sealed class HeadlessSession
     public Task Run(Action body) => session.Dispatch(() =>
     {
         body();
-        Dispatcher.UIThread.RunJobs();
+        Settle();
     }, TestContext.Current.CancellationToken);
 
     public Task Run(Func<Task> body) => session.Dispatch(async () =>
     {
         await body();
-        Dispatcher.UIThread.RunJobs();
+        Settle();
         return true;
     }, TestContext.Current.CancellationToken);
+
+    // Runs what is queued and renders the frame it asks for; what that queues in turn, once more.
+    private static void Settle()
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        }
+
+        Dispatcher.UIThread.RunJobs();
+    }
 }
 
 public sealed class TestApp : Application
