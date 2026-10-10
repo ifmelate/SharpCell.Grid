@@ -1,1 +1,26 @@
 #nullable enable
+override SharpCell.Grid.Wpf.SpreadsheetView.OnKeyDown(System.Windows.Input.KeyEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnLostMouseCapture(System.Windows.Input.MouseEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseMove(System.Windows.Input.MouseEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseWheel(System.Windows.Input.MouseWheelEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnRender(System.Windows.Media.DrawingContext! drawingContext) -> void
+SharpCell.Grid.Wpf.SpreadsheetView
+SharpCell.Grid.Wpf.SpreadsheetView.ActiveCell.get -> SharpCell.Grid.CellPosition?
+SharpCell.Grid.Wpf.SpreadsheetView.ActiveCell.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Copy() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Offset.get -> System.Windows.Vector
+SharpCell.Grid.Wpf.SpreadsheetView.Offset.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Painter.get -> SharpCell.Grid.GridPainter!
+SharpCell.Grid.Wpf.SpreadsheetView.ReloadLayout() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Selection.get -> SharpCell.Grid.GridSelection?
+SharpCell.Grid.Wpf.SpreadsheetView.Selection.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SpreadsheetView() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Viewport.get -> SharpCell.Grid.GridViewport
+SharpCell.Grid.Wpf.SpreadsheetView.Worksheet.get -> SharpCell.Worksheet?
+SharpCell.Grid.Wpf.SpreadsheetView.Worksheet.set -> void
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.ActiveCellProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.OffsetProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.SelectionProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.WorksheetProperty -> System.Windows.DependencyProperty!
