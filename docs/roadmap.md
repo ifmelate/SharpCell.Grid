@@ -25,7 +25,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 |---|---|---|
 | Done | Range selection: the mouse with dragging and Shift, Shift with the arrows, whole columns and rows from their headers and with Ctrl+Space and Shift+Space, the whole sheet; Enter and Tab inside a selection | — |
 | Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
-| Next | A WPF control over the same painter: `SharpCell.Grid.Wpf` | — |
+| Done | A WPF control over the same painter: `SharpCell.Grid.Wpf`, tested on Windows in CI | — |
 
 ## Next: 0.3 — editing
 

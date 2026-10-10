@@ -1,8 +1,8 @@
 # Painting in other UI frameworks
 
-`SharpCell.Grid` holds everything about the grid that is not Avalonia: sizes and positions,
-hit testing, scrolling and painting. `SpreadsheetView` is a thin host over it, and a host for
-another UI framework is the same few calls.
+`SharpCell.Grid` holds everything about the grid that is not Avalonia or WPF: sizes and positions,
+hit testing, selection, copying, scrolling and painting. The two `SpreadsheetView` controls are
+thin hosts over it, and a host for another UI framework is the same few calls.
 
 ```csharp snippet=painter
 var painter = new GridPainter

@@ -19,6 +19,7 @@ The API may change between minor versions until 1.0.
 |---|---|
 | `SharpCell.Grid` | Geometry, hit testing, scrolling and painting, with no UI framework. |
 | `SharpCell.Grid.Avalonia` | `SpreadsheetView`, the control for [Avalonia UI](https://avaloniaui.net). |
+| `SharpCell.Grid.Wpf` | `SpreadsheetView`, the same control for WPF on Windows. |
 
 ## Install
 
@@ -26,6 +27,8 @@ The API may change between minor versions until 1.0.
 dotnet add package SharpCell.Grid.Avalonia   # the control; brings SharpCell.Grid and SharpCell
 dotnet add package SharpCell.Xlsx            # to read .xlsx files
 ```
+
+For WPF, add `SharpCell.Grid.Wpf` instead of `SharpCell.Grid.Avalonia`.
 
 ## Usage
 

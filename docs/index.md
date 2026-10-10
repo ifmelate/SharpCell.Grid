@@ -13,6 +13,7 @@ row heights, merged cells, frozen panes and text running on over empty cells.
 |---|---|
 | `SharpCell.Grid` | Geometry, hit testing, scrolling and painting, with no UI framework. |
 | `SharpCell.Grid.Avalonia` | `SpreadsheetView`, the control for [Avalonia UI](https://avaloniaui.net). Brings `SharpCell.Grid` with it. |
+| `SharpCell.Grid.Wpf` | `SpreadsheetView`, the same control for WPF on Windows. Brings `SharpCell.Grid` with it. |
 
 Namespaces: `SharpCell`, `SharpCell.Xlsx` and `SharpCell.Grid.Avalonia`.
 
@@ -28,7 +29,7 @@ an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value 
 format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
 Excel.
 
-Status: 0.x, viewing, selecting and copying. WPF comes next, then editing; see the
+Status: 0.x, viewing, selecting and copying, in Avalonia and WPF. Editing comes next; see the
 [roadmap](roadmap.md). The API may change between minor versions until 1.0.
 
 - [Getting started](getting-started.md)

@@ -1,7 +1,7 @@
 {
   "title": "SharpCell.Grid",
   "summary": "A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the SharpCell formula engine: it shows a worksheet the way Excel does, with number formats, cell styles, column widths, row heights, merged cells, frozen panes and text running on over empty cells. Only the visible cells are read, so any sheet size scrolls smoothly.",
-  "details": "Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework) and `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected and copied as in Excel (`Selection`, `CopyAsync()`, `GridSelection`, `GridClipboard`); no editing yet.",
+  "details": "Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework), `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control) and `SharpCell.Grid.Wpf` (`SpreadsheetView` for WPF, Windows only). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected and copied as in Excel (`Selection`, `CopyAsync()`, `GridSelection`, `GridClipboard`); no editing yet.",
   "baseUrl": "https://ifmelate.github.io/SharpCell.Grid/",
   "repositoryUrl": "https://github.com/ifmelate/SharpCell.Grid",
   "sections": [
@@ -9,7 +9,7 @@
       "title": "Docs",
       "pages": [
         { "path": "index.md", "title": "Overview", "description": "What SharpCell.Grid is, its packages, a picture and a first example." },
-        { "path": "getting-started.md", "title": "Getting started", "description": "Install, show an .xlsx file in an Avalonia window, refresh after changes, selection, copying and scrolling." },
+        { "path": "getting-started.md", "title": "Getting started", "description": "Install, show an .xlsx file in an Avalonia or WPF window, refresh after changes, selection, copying and scrolling." },
         { "path": "guides/showing-workbooks.md", "title": "What the grid shows", "description": "Values and number formats, cell styles, sizes, merged cells, running text, frozen panes, gridlines, mouse and keyboard, copying to Excel, and where it differs from Excel." },
         { "path": "guides/painting.md", "title": "Painting in other UI frameworks", "description": "GridPainter and IGridCanvas: geometry, hit testing, scrolling and painting for a host other than Avalonia." },
         { "path": "roadmap.md", "title": "Roadmap", "description": "What is done and what comes next: a faithful viewer, editing, working like Excel." },

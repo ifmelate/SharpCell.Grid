@@ -14,12 +14,13 @@ internal static class CSharpSignature
     // NullabilityInfoContext caches into a plain Dictionary and is not thread-safe; tests run in parallel.
     private static NullabilityInfoContext Nullability => new();
 
-    private static readonly Dictionary<Type, string> Keywords = new()
+    // By full name: the types are read as metadata, so they are not the runtime's own.
+    private static readonly Dictionary<string, string> Keywords = new(StringComparer.Ordinal)
     {
-        [typeof(void)] = "void", [typeof(object)] = "object", [typeof(string)] = "string", [typeof(bool)] = "bool",
-        [typeof(char)] = "char", [typeof(byte)] = "byte", [typeof(short)] = "short", [typeof(int)] = "int",
-        [typeof(long)] = "long", [typeof(uint)] = "uint", [typeof(ulong)] = "ulong", [typeof(float)] = "float",
-        [typeof(double)] = "double", [typeof(decimal)] = "decimal",
+        ["System.Void"] = "void", ["System.Object"] = "object", ["System.String"] = "string", ["System.Boolean"] = "bool",
+        ["System.Char"] = "char", ["System.Byte"] = "byte", ["System.Int16"] = "short", ["System.Int32"] = "int",
+        ["System.Int64"] = "long", ["System.UInt32"] = "uint", ["System.UInt64"] = "ulong", ["System.Single"] = "float",
+        ["System.Double"] = "double", ["System.Decimal"] = "decimal",
     };
 
     private static readonly Dictionary<string, string> Operators = new(StringComparer.Ordinal)
@@ -35,7 +36,7 @@ internal static class CSharpSignature
             return sb.Append("enum ").Append(type.Name).ToString();
         if (type.IsValueType)
         {
-            if (type.IsDefined(typeof(IsReadOnlyAttribute), false))
+            if (ApiReference.Has(type, "System.Runtime.CompilerServices.IsReadOnlyAttribute"))
                 sb.Append("readonly ");
             return sb.Append("struct ").Append(type.Name).ToString();
         }
@@ -47,7 +48,7 @@ internal static class CSharpSignature
         else if (type.IsAbstract)
             sb.Append("abstract ");
         sb.Append("class ").Append(type.Name);
-        if (type.BaseType is { } baseType && baseType != typeof(object))
+        if (type.BaseType is { } baseType && baseType.FullName != "System.Object")
             sb.Append(" : ").Append(TypeName(baseType));
         return sb.ToString();
     }
@@ -92,13 +93,13 @@ internal static class CSharpSignature
     {
         if (type.IsByRef)
             return TypeName(type.GetElementType()!, nullability);
-        if (Nullable.GetUnderlyingType(type) is { } underlying)
-            return TypeName(underlying) + "?";
+        if (type.IsGenericType && !type.IsGenericTypeDefinition && type.GetGenericTypeDefinition().FullName == "System.Nullable`1")
+            return TypeName(type.GetGenericArguments()[0]) + "?";
 
         string name;
         if (type.IsArray)
             name = TypeName(type.GetElementType()!, nullability?.ElementType) + "[" + new string(',', type.GetArrayRank() - 1) + "]";
-        else if (Keywords.TryGetValue(type, out var keyword))
+        else if (type.FullName is { } fullName && Keywords.TryGetValue(fullName, out var keyword))
             name = keyword;
         else if (type.IsGenericType)
         {
@@ -115,8 +116,8 @@ internal static class CSharpSignature
     private static string Method(MethodInfo method)
     {
         var modifiers = "public " + (method.IsStatic ? "static " : "")
-            + (!method.IsStatic && method.GetBaseDefinition().DeclaringType != method.DeclaringType ? "override " : "");
-        var parameters = Parameters(method.GetParameters(), method.IsDefined(typeof(ExtensionAttribute), false));
+            + (IsOverride(method) ? "override " : "");
+        var parameters = Parameters(method.GetParameters(), ApiReference.Has(method, "System.Runtime.CompilerServices.ExtensionAttribute"));
         if (method.Name is "op_Implicit" or "op_Explicit")
             return $"{modifiers}{(method.Name == "op_Implicit" ? "implicit" : "explicit")} operator {TypeName(method.ReturnType)}({parameters})";
         var returns = TypeName(method.ReturnType, Nullability.Create(method.ReturnParameter));
@@ -124,6 +125,10 @@ internal static class CSharpSignature
             ? $"{modifiers}{returns} operator {symbol}({parameters})"
             : $"{modifiers}{returns} {method.Name}({parameters})";
     }
+
+    // A virtual method that takes no new slot overrides one of a base class.
+    private static bool IsOverride(MethodInfo method) =>
+        !method.IsStatic && method.IsVirtual && (method.Attributes & MethodAttributes.NewSlot) == 0;
 
     private static string Property(PropertyInfo property)
     {
@@ -138,7 +143,7 @@ internal static class CSharpSignature
         if (property.GetMethod is { IsPublic: true })
             sb.Append("get; ");
         if (property.SetMethod is { IsPublic: true })
-            sb.Append(property.SetMethod.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(IsExternalInit)) ? "init; " : "set; ");
+            sb.Append(property.SetMethod.ReturnParameter.GetRequiredCustomModifiers().Any(m => m.FullName == "System.Runtime.CompilerServices.IsExternalInit") ? "init; " : "set; ");
         return sb.Append('}').ToString();
     }
 
@@ -152,12 +157,14 @@ internal static class CSharpSignature
         return parameter.HasDefaultValue ? text + " = " + DefaultValue(parameter) : text;
     }
 
-    private static string DefaultValue(ParameterInfo parameter) => parameter.DefaultValue switch
+    // Metadata gives an enum's default as its number; its name is the field with that value.
+    private static string DefaultValue(ParameterInfo parameter) => parameter.RawDefaultValue switch
     {
         null => parameter.ParameterType.IsValueType ? "default" : "null",
         bool b => b ? "true" : "false",
         string s => "\"" + s.Replace("\"", "\\\"", StringComparison.Ordinal) + "\"",
-        Enum e => $"{parameter.ParameterType.Name}.{e}",
+        var value when parameter.ParameterType.IsEnum => parameter.ParameterType.Name + "."
+            + parameter.ParameterType.GetFields(BindingFlags.Public | BindingFlags.Static).First(f => Equals(f.GetRawConstantValue(), value)).Name,
         IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
         var other => other.ToString() ?? "default",
     };

@@ -33,7 +33,7 @@ jobs:
       - name: Version matches the tag
         run: |
           version="${GITHUB_REF_NAME#v}"
-          for id in SharpCell.Grid SharpCell.Grid.Avalonia; do
+          for id in SharpCell.Grid SharpCell.Grid.Avalonia SharpCell.Grid.Wpf; do
             if [ ! -f "artifacts/packages/$id.$version.nupkg" ]; then
               echo "::error::Expected $id.$version.nupkg"; ls artifacts/packages; exit 1
             fi

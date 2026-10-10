@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using SharpCell.Grid.Avalonia;
 
@@ -24,7 +26,59 @@ internal static class ApiReference
         ("Operators", m => m is MethodInfo { IsSpecialName: true }),
     ];
 
-    public static IReadOnlyList<Assembly> DocumentedAssemblies() => [typeof(GridPainter).Assembly, typeof(SpreadsheetView).Assembly];
+#if DEBUG
+    private const string Configuration = "Debug";
+#else
+    private const string Configuration = "Release";
+#endif
+
+    /// <summary>
+    /// The packages' assemblies, read as metadata rather than loaded: the WPF package runs only on
+    /// Windows, and its reference assemblies come from the Windows desktop targeting pack, which
+    /// the SDK downloads to build it elsewhere.
+    /// </summary>
+    public static IReadOnlyList<Assembly> DocumentedAssemblies(RepositoryLayout layout)
+    {
+        var wpf = layout.Full($"src/SharpCell.Grid.Wpf/bin/{Configuration}/net10.0-windows/SharpCell.Grid.Wpf.dll");
+        if (!File.Exists(wpf))
+            throw new DocsException($"No {wpf}; build the solution in {Configuration} first.");
+        string[] own = [typeof(GridPainter).Assembly.Location, typeof(SpreadsheetView).Assembly.Location, wpf];
+
+        // Each assembly once by name: WPF's first, since the runtime has empty stand-ins for some of
+        // them such as WindowsBase, then the runtime's, then the tool's references.
+        var paths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var folders = new[] { DesktopReferences(), RuntimeEnvironment.GetRuntimeDirectory(), AppContext.BaseDirectory };
+        foreach (var path in own.Concat(folders.SelectMany(f => Directory.EnumerateFiles(f, "*.dll"))))
+            paths.TryAdd(Path.GetFileName(path), path);
+        var context = new MetadataLoadContext(new PathAssemblyResolver(paths.Values));
+        return own.Select(context.LoadFromAssemblyPath).ToList();
+    }
+
+    // The reference assemblies of the Windows desktop (WPF) of this runtime's major version, from
+    // the NuGet cache or the SDK's packs folder.
+    private static string DesktopReferences()
+    {
+        var major = Environment.Version.Major;
+        var dotnet = Path.GetFullPath(Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "..", "..", ".."));
+        var nuget = Environment.GetEnvironmentVariable("NUGET_PACKAGES")
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
+        var candidates = new[] { Path.Combine(nuget, "microsoft.windowsdesktop.app.ref"), Path.Combine(dotnet, "packs", "Microsoft.WindowsDesktop.App.Ref") }
+            .Where(Directory.Exists)
+            .SelectMany(Directory.EnumerateDirectories)
+            .Select(dir => (Dir: dir, Version: Version.TryParse(Path.GetFileName(dir).Split('-')[0], out var v) ? v : null))
+            .Where(c => c.Version?.Major == major)
+            .OrderByDescending(c => c.Version)
+            .Select(c => Path.Combine(c.Dir, "ref", $"net{major}.0"))
+            .Where(Directory.Exists)
+            .ToList();
+        return candidates.Count > 0
+            ? candidates[0]
+            : throw new DocsException($"No Windows desktop reference assemblies for .NET {major}; building SharpCell.Grid.Wpf downloads them.");
+    }
+
+    /// <summary>Whether a member carries an attribute, by its full name: metadata-only types are not the runtime's.</summary>
+    public static bool Has(MemberInfo member, string attribute) =>
+        member.CustomAttributes.Any(a => a.AttributeType.FullName == attribute);
 
     /// <summary>
     /// The members a page lists: declared, public, without accessors and compiler plumbing. The
@@ -33,7 +87,7 @@ internal static class ApiReference
     /// </summary>
     public static IReadOnlyList<MemberInfo> MembersOf(Type type) =>
         type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
-            .Where(m => !m.IsDefined(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), false))
+            .Where(m => !Has(m, "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
             .Where(m => m switch
             {
                 MethodInfo method => !method.IsSpecialName || method.Name.StartsWith("op_", StringComparison.Ordinal),

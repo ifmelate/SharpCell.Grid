@@ -7,7 +7,7 @@ dotnet add package SharpCell.Grid.Avalonia   # the control; brings SharpCell.Gri
 dotnet add package SharpCell.Xlsx            # to read .xlsx files
 ```
 
-The packages target .NET 8 and .NET 10 and Avalonia 12.
+The packages target .NET 8 and .NET 10 and Avalonia 12. For WPF, see [WPF](#wpf) below.
 
 ## Show a workbook
 
@@ -43,6 +43,33 @@ view.ReloadLayout();         // sizes and frozen panes are taken again
 The view reads cells each time it paints, but it does not know when a workbook changes. Column
 widths, row heights, hidden rows and columns and frozen panes are taken when `Worksheet` is set,
 and again with `ReloadLayout`.
+
+## WPF
+
+```bash
+dotnet add package SharpCell.Grid.Wpf   # the WPF control; brings SharpCell.Grid and SharpCell
+dotnet add package SharpCell.Xlsx
+```
+
+`SharpCell.Grid.Wpf` has the same `SpreadsheetView`, as a WPF `FrameworkElement` in the namespace
+`SharpCell.Grid.Wpf`, for `net8.0-windows` and `net10.0-windows`. In XAML:
+
+```xml
+<Window xmlns:grid="clr-namespace:SharpCell.Grid.Wpf;assembly=SharpCell.Grid.Wpf" ...>
+    <grid:SpreadsheetView x:Name="View" />
+</Window>
+```
+
+```csharp snippet=show-workbook-wpf
+Workbook workbook = XlsxReader.Load(path);
+workbook.Recalculate();
+View.Worksheet = workbook.Sheets[0];   // View: <grid:SpreadsheetView x:Name="View" /> in MainWindow.xaml
+```
+
+It shows, selects and copies as the Avalonia control does, and has the same properties: `Worksheet`,
+`Selection`, `ActiveCell`, `Offset` (dependency properties), `Painter`, `ReloadLayout()`; copying
+is `Copy()`, also bound to `ApplicationCommands.Copy`, and Ctrl+A to `ApplicationCommands.SelectAll`.
+A runnable window is in [samples/SharpCell.Grid.WpfSample](../samples/SharpCell.Grid.WpfSample).
 
 ## Selection, copying and scrolling
 
