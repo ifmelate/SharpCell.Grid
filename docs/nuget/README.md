@@ -12,15 +12,13 @@ smoothly.
 
 ## Show a workbook
 
-```csharp
-using SharpCell;
-using SharpCell.Grid.Avalonia;
-using SharpCell.Xlsx;
+Namespaces: `SharpCell`, `SharpCell.Xlsx` and `SharpCell.Grid.Avalonia`.
 
-Workbook workbook = XlsxReader.Load("budget.xlsx");
+```csharp snippet=show-workbook
+Workbook workbook = XlsxReader.Load(path);
 workbook.Recalculate();
 
 var view = new SpreadsheetView { Worksheet = workbook["Budget"] };
 ```
 
-Source, issues and status: https://github.com/ifmelate/SharpCell.Grid
+Documentation: https://ifmelate.github.io/SharpCell.Grid/ · source and issues: https://github.com/ifmelate/SharpCell.Grid

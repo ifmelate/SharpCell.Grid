@@ -3,6 +3,11 @@ namespace SharpCell.Grid;
 /// <summary>The colours of a grid.</summary>
 public sealed record GridTheme
 {
+    /// <summary>Colours close to Excel's light theme, as <see cref="Excel"/>; set properties in an initializer to change some.</summary>
+    public GridTheme()
+    {
+    }
+
     /// <summary>Colours close to Excel's light theme.</summary>
     public static GridTheme Excel { get; } = new();
 

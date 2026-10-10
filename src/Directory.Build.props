@@ -7,7 +7,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageProjectUrl>https://github.com/ifmelate/SharpCell.Grid</PackageProjectUrl>
+    <PackageProjectUrl>https://ifmelate.github.io/SharpCell.Grid/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ifmelate/SharpCell.Grid</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

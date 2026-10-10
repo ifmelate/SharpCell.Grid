@@ -1,0 +1,1536 @@
+# SharpCell.Grid
+
+> A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the SharpCell formula engine: it shows a worksheet the way Excel does, with number formats, cell styles, column widths, row heights, merged cells, frozen panes and text running on over empty cells. Only the visible cells are read, so any sheet size scrolls smoothly.
+
+Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework) and `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Viewing only: no editing yet.
+
+---
+
+<!-- page: index.md -->
+
+# SharpCell.Grid
+
+A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the
+[SharpCell](https://ifmelate.github.io/SharpCell/) formula engine. It shows a worksheet the way
+Excel does: each cell's value in its number format and its style, the file's column widths and
+row heights, merged cells, frozen panes and text running on over empty cells.
+
+![A sheet with styles, a merged title, wrapped text and a hidden column](images/styles.png)
+
+| Package | What it does |
+|---|---|
+| `SharpCell.Grid` | Geometry, hit testing, scrolling and painting, with no UI framework. |
+| `SharpCell.Grid.Avalonia` | `SpreadsheetView`, the control for [Avalonia UI](https://avaloniaui.net). Brings `SharpCell.Grid` with it. |
+
+Namespaces: `SharpCell`, `SharpCell.Xlsx` and `SharpCell.Grid.Avalonia`.
+
+```csharp snippet=show-workbook
+Workbook workbook = XlsxReader.Load(path);
+workbook.Recalculate();
+
+var view = new SpreadsheetView { Worksheet = workbook["Budget"] };
+```
+
+Only the visible cells are read when the grid paints, so a sheet of a million rows scrolls like
+an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value through its number
+format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
+Excel.
+
+Status: early 0.x, viewing only. Editing comes next; see the [roadmap](roadmap.md).
+
+- [Getting started](getting-started.md)
+- [What the grid shows](guides/showing-workbooks.md)
+- [Painting in other UI frameworks](guides/painting.md)
+- [API reference](api/index.md)
+
+---
+
+<!-- page: getting-started.md -->
+
+# Getting started
+
+## Install
+
+```bash
+dotnet add package SharpCell.Grid.Avalonia   # the control; brings SharpCell.Grid and SharpCell
+dotnet add package SharpCell.Xlsx            # to read .xlsx files
+```
+
+The packages target .NET 8 and .NET 10 and Avalonia 12.
+
+## Show a workbook
+
+```csharp snippet=show-workbook
+Workbook workbook = XlsxReader.Load(path);
+workbook.Recalculate();
+
+var view = new SpreadsheetView { Worksheet = workbook["Budget"] };
+```
+
+`SpreadsheetView` is an Avalonia control: put it in a window or any panel, and it takes the space
+it is given. `XlsxReader.Load` reads values, formulas, the results Excel saved, number formats,
+styles and the sheet's sizes; `Recalculate` calculates every formula with SharpCell.
+
+A runnable window is in [samples/SharpCell.Grid.Sample](../samples/SharpCell.Grid.Sample):
+
+```bash
+dotnet run --project samples/SharpCell.Grid.Sample -f net10.0 -- path/to/file.xlsx
+```
+
+## After changes
+
+```csharp snippet=refresh
+sheet["B2"].Value = 99;
+workbook.Recalculate();
+view.InvalidateVisual();     // values, formulas and styles show at the next paint
+
+sheet.SetColumnWidth(2, 20);
+sheet.FrozenRows = 1;
+view.ReloadLayout();         // sizes and frozen panes are taken again
+```
+
+The view reads cells each time it paints, but it does not know when a workbook changes. Column
+widths, row heights, hidden rows and columns and frozen panes are taken when `Worksheet` is set,
+and again with `ReloadLayout`.
+
+## The active cell and scrolling
+
+```csharp snippet=active-cell
+view.ActiveCell = new CellPosition(row: 10, column: 3);   // C10
+view.Offset = new Vector(0, 200);                // scrolled ten default rows down
+```
+
+`ActiveCell` and `Offset` are Avalonia properties, so they can be bound. The mouse picks the
+active cell, the arrow keys, Enter and Tab move it as in Excel, and the wheel scrolls three rows a
+turn.
+
+---
+
+<!-- page: guides/showing-workbooks.md -->
+
+# What the grid shows
+
+What a cell shows comes from SharpCell, and how the sheet is laid out follows Excel at 100% zoom.
+
+## Values and number formats
+
+Each cell shows `Cell.Text`: the value through its number format, with the workbook's culture.
+Excel's General alignment puts numbers and dates on the right, text on the left, logical values
+and errors in the middle.
+
+A number too wide for its column is shortened as Excel does it: a number in the General format
+loses decimals, rounding, or digits of its scientific notation; any other number shows `#` across
+the cell. Text is never shortened.
+
+## Styles
+
+![Fonts, fills, borders, wrapped text and an indent](../images/styles.png)
+
+`Cell.Style` gives the font (name, size, bold, italic, underline, strikethrough, colour), the
+fill, the four edges of the border and the alignment. Fills lie over the gridlines, as in Excel.
+Wrapped text breaks onto more lines inside its cell; an indent moves text away from the edge it
+is aligned to.
+
+## Sizes and merged cells
+
+Column widths and row heights come from the sheet, in pixels as Excel converts them: a width is
+counted in digits of the workbook's default font, so it follows the font the grid measures with.
+Hidden rows and columns take no space. A merged area shows its top-left cell across the whole
+area; clicking anywhere in it selects that cell, and the arrow keys step over it as one cell.
+
+## Running text
+
+Text wider than its cell runs on over empty neighbours, away from the side it is aligned to: to
+the right when left-aligned, to the left when right-aligned, both ways when centred. A cell with
+content, a formula that gives empty text, or a merged area stops it. Numbers, wrapped text and
+merged cells never run on.
+
+## Frozen panes and gridlines
+
+![Frozen rows and a frozen column, with gridlines turned off](../images/frozen.png)
+
+Frozen rows and columns stay in place while the rest scrolls, with a line where they are frozen,
+as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
+
+## Mouse and keyboard
+
+| Input | Result |
+|---|---|
+| Click on a cell | It becomes the active cell; inside a merged area, its top-left cell |
+| Arrow keys | Move the active cell one cell, over a merged area as one cell |
+| Enter, Shift+Enter | Down, up |
+| Tab, Shift+Tab | Right, left |
+| Wheel | Three rows a turn |
+
+## Where it differs from Excel
+
+- Fonts the system does not have fall back to another font, so sizes follow the font that is used.
+- Double underlines are drawn single; Fill, Justify and Distributed alignment are drawn as left or centred.
+- Theme colours with a tint, indent steps and centred text blocked on one side follow the OOXML
+  definitions; they are not yet compared with Excel.
+- A merged area across the line of frozen panes is drawn whole from the frozen part.
+- Not shown: conditional formats, pattern and gradient fills, rotated text, styles of whole rows
+  and columns on empty cells, charts, images and comments.
+
+---
+
+<!-- page: guides/painting.md -->
+
+# Painting in other UI frameworks
+
+`SharpCell.Grid` holds everything about the grid that is not Avalonia: sizes and positions,
+hit testing, scrolling and painting. `SpreadsheetView` is a thin host over it, and a host for
+another UI framework is the same few calls.
+
+```csharp snippet=painter
+var painter = new GridPainter
+{
+    // Text width in your UI framework's font engine, for fitting numbers and running text.
+    MeasureText = (text, font) => text.Length * font.Size * 0.5,
+};
+painter.Layout = SheetLayout.FromWorksheet(sheet, painter.MaxDigitWidth(sheet));
+painter.FrozenRows = sheet.FrozenRows;
+painter.FrozenColumns = sheet.FrozenColumns;
+
+var viewport = new GridViewport(OffsetX: 0, OffsetY: 0, Width: 800, Height: 600);
+painter.Paint(canvas, sheet, viewport, activeCell: new CellPosition(1, 1));   // canvas: your IGridCanvas
+CellPosition? clicked = painter.HitTest(viewport, x: 120, y: 30, sheet);
+```
+
+## The parts
+
+- `SheetLayout` holds the column widths and row heights in pixels, their offsets, the cell under
+  an offset and the cells in a rectangle. `SheetLayout.FromWorksheet` converts a sheet's sizes as
+  Excel does, from the width of the widest digit of the default font.
+- `GridViewport` is what is shown: the scroll offset into the sheet and the size of the grid on
+  screen, headers included.
+- `GridPainter` paints the part of the sheet in a viewport onto an `IGridCanvas`, and answers where
+  a cell is (`CellBounds`), what is under a point (`HitTest`), where to scroll (`ScrollIntoView`,
+  `Clamp`), and where the active cell moves (`GridNavigation.Move`).
+- `IGridCanvas` is what a host implements over its drawing API: fill and stroke rectangles, draw
+  lines with a dash pattern, draw text inside bounds, cut off at them, on one line or wrapped.
+
+## Measuring text
+
+`GridPainter.MeasureText` gives the width of text in a font, from the host's font engine. With it,
+numbers are fitted to their column, text runs on over empty cells, and row headers widen for long
+row numbers. Without it, nothing is fitted and Calibri 11's digit width (7 pixels) is assumed.
+
+`GridFont` sizes are in device-independent pixels: 11 points are 14.67 pixels at 96 DPI.
+`GridPainter.FontOf` converts a SharpCell font.
+
+---
+
+<!-- page: roadmap.md -->
+
+# Roadmap
+
+Where SharpCell.Grid is going, in the order the work is planned. Each step ships when its tests
+pass and what it shows is checked against Microsoft Excel. Dates are not promised; the project
+has one maintainer.
+
+## Now: 0.1 — a faithful viewer
+
+A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
+
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Headers, gridlines, `Cell.Text`, General alignment, active cell, mouse, arrows, Enter/Tab, wheel, numbers fitted to their column, row headers widened for long numbers | `Cell.Text` (0.5.0) |
+| Done | Cell styles: fonts (name, size, bold, italic, underline, strikethrough, colour), solid fills, borders, horizontal and vertical alignment, wrapped text, indent | `Cell.Style`, theme and indexed colours resolved (0.6.0) |
+| Done | Sheet geometry from the file: column widths, row heights, hidden columns and rows | `Worksheet` column widths, row heights, hidden columns (0.6.0) |
+| Done | Merged cells, painted and navigated as one cell | `Worksheet.MergedAreas` (0.6.0) |
+| Done | Text running on over empty neighbours, by its alignment, also from cells out of view | — |
+| Done | Frozen panes and the sheet's gridline setting | `Worksheet.FrozenRows`, `FrozenColumns`, `ShowGridlines` (0.6.0) |
+| 6 | Range selection with Shift and the mouse; copy as tab-separated text and HTML that Excel pastes | — |
+| 7 | WPF control over the same painter | — |
+| Release | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf` | SharpCell 0.6.0 released |
+
+## Next: 0.2 — editing
+
+- Typing into a cell and the formula bar as a separate control; F2, Escape, Enter, Tab.
+- Input read as Excel reads it: numbers, percentages, dates and times in the workbook's culture,
+  `=` for formulas, `'` for text.
+- Recalculation after each edit, repainting only what changed (SharpCell's changed cells).
+- Undo and redo, Delete, paste of values from Excel.
+
+## Later: 0.3 — working like Excel
+
+- Resizing columns and rows with the mouse, double-click to fit.
+- Inserting and deleting rows and columns, with formulas following (needs reference shifting in SharpCell).
+- The fill handle for series and copied formulas.
+- Zoom.
+- Saving changed styles and geometry (needs the .xlsx writer in SharpCell to write styles).
+
+## Quality, all along
+
+- **Oracle for geometry and display:** desktop Excel exports `Range.Text`, `Left`, `Top`,
+  `Width` and `Height` and `Range.Interior.Color` for test workbooks through SharpCell's
+  `tools/excel-oracle`; the grid's numbers are compared with them. Checked this way before 0.1:
+  the General shortening in narrow columns, theme colours with tints, indent steps and how
+  centred text runs on when one side is blocked.
+- **Snapshots** of rendered frames for every visible feature.
+- **Benchmarks:** scrolling a million-row sheet, painting a full screen of styled cells.
+- **NativeAOT and trimming** proved by a published smoke test, as in SharpCell.
+- **Documentation site** with tested code snippets and `llms.txt`, as in SharpCell.
+
+## Not planned
+
+Charts, pivot tables, conditional formatting, data validation lists, comments, images and
+macros. A workbook with them shows its cells; the rest is not drawn.
+
+---
+
+<!-- page: agents.md -->
+
+# For AI coding agents
+
+The documentation is published for agents as plain text:
+
+- [llms.txt](https://ifmelate.github.io/SharpCell.Grid/llms.txt): an index of the pages with one line each.
+- [llms-full.txt](https://ifmelate.github.io/SharpCell.Grid/llms-full.txt): all guides and the API reference in one file.
+
+Every page of the site also has its Markdown source next to it.
+
+## Rules to paste into an agent's instructions
+
+```text
+SharpCell.Grid shows SharpCell worksheets in Avalonia: new SpreadsheetView { Worksheet = sheet }.
+The view reads cells when it paints: after changing cells or recalculating, call view.InvalidateVisual().
+Sizes, hidden rows and columns and frozen panes are taken when Worksheet is set: after changing them, call view.ReloadLayout().
+Rows and columns are numbered from 1: new CellPosition(row, column).
+What a cell shows is SharpCell's Cell.Text and Cell.Style; change the workbook, not the view.
+The grid is for viewing; it does not edit cells yet.
+For another UI framework, implement IGridCanvas and call GridPainter.Paint, HitTest and ScrollIntoView.
+```
+
+---
+
+<!-- page: api/SharpCell.Grid.CellArea.md -->
+
+# CellArea
+
+```csharp
+public readonly struct CellArea
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+A rectangle of cells, from its top-left to its bottom-right cell; rows and columns from 1.
+
+## Constructors
+
+<a id="ctor-int-int-int-int"></a>
+### CellArea(int, int, int, int)
+
+```csharp
+public CellArea(int FirstRow, int FirstColumn, int LastRow, int LastColumn)
+```
+
+A rectangle of cells, from its top-left to its bottom-right cell; rows and columns from 1.
+
+**Parameters**
+
+- `FirstRow`: The top row.
+- `FirstColumn`: The left column.
+- `LastRow`: The bottom row.
+- `LastColumn`: The right column.
+
+## Properties
+
+<a id="firstcolumn"></a>
+### FirstColumn
+
+```csharp
+public int FirstColumn { get; init; }
+```
+
+The left column.
+
+<a id="firstrow"></a>
+### FirstRow
+
+```csharp
+public int FirstRow { get; init; }
+```
+
+The top row.
+
+<a id="lastcolumn"></a>
+### LastColumn
+
+```csharp
+public int LastColumn { get; init; }
+```
+
+The right column.
+
+<a id="lastrow"></a>
+### LastRow
+
+```csharp
+public int LastRow { get; init; }
+```
+
+The bottom row.
+
+## Methods
+
+<a id="contains-int-int"></a>
+### Contains(int, int)
+
+```csharp
+public bool Contains(int row, int column)
+```
+
+Whether the cell is inside the area.
+
+---
+
+<!-- page: api/SharpCell.Grid.CellPosition.md -->
+
+# CellPosition
+
+```csharp
+public readonly struct CellPosition
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+A cell of the sheet by 1-based row and column, such as the active cell.
+
+## Constructors
+
+<a id="ctor-int-int"></a>
+### CellPosition(int, int)
+
+```csharp
+public CellPosition(int row, int column)
+```
+
+A position inside the sheet.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row or column is outside the sheet.
+
+## Properties
+
+<a id="column"></a>
+### Column
+
+```csharp
+public int Column { get; }
+```
+
+The column, from 1.
+
+<a id="row"></a>
+### Row
+
+```csharp
+public int Row { get; }
+```
+
+The row, from 1.
+
+## Methods
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The A1 address, such as `B3`.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridColor.md -->
+
+# GridColor
+
+```csharp
+public readonly struct GridColor
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+An opaque or translucent sRGB colour.
+
+## Constructors
+
+<a id="ctor-byte-byte-byte-byte"></a>
+### GridColor(byte, byte, byte, byte)
+
+```csharp
+public GridColor(byte R, byte G, byte B, byte A = 255)
+```
+
+An opaque or translucent sRGB colour.
+
+**Parameters**
+
+- `R`: Red, 0 to 255.
+- `G`: Green, 0 to 255.
+- `B`: Blue, 0 to 255.
+- `A`: Opacity, 0 (transparent) to 255 (opaque).
+
+## Properties
+
+<a id="a"></a>
+### A
+
+```csharp
+public byte A { get; init; }
+```
+
+Opacity, 0 (transparent) to 255 (opaque).
+
+<a id="b"></a>
+### B
+
+```csharp
+public byte B { get; init; }
+```
+
+Blue, 0 to 255.
+
+<a id="g"></a>
+### G
+
+```csharp
+public byte G { get; init; }
+```
+
+Green, 0 to 255.
+
+<a id="r"></a>
+### R
+
+```csharp
+public byte R { get; init; }
+```
+
+Red, 0 to 255.
+
+## Methods
+
+<a id="fromrgb-int"></a>
+### FromRgb(int)
+
+```csharp
+public static GridColor FromRgb(int rgb)
+```
+
+An opaque colour from a 0xRRGGBB number.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridDash.md -->
+
+# GridDash
+
+```csharp
+public enum GridDash
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+The dash pattern of a line, after Excel's border styles.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="solid"></a>`Solid` | 0 | A solid line. |
+| <a id="dash"></a>`Dash` | 1 | Dashes. |
+| <a id="dot"></a>`Dot` | 2 | Dots. |
+| <a id="dashdot"></a>`DashDot` | 3 | Dashes and dots. |
+| <a id="dashdotdot"></a>`DashDotDot` | 4 | A dash and two dots. |
+| <a id="hair"></a>`Hair` | 5 | Fine dots, Excel's hairline. |
+
+---
+
+<!-- page: api/SharpCell.Grid.GridFont.md -->
+
+# GridFont
+
+```csharp
+public readonly struct GridFont
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+A font to draw text with; the size is in pixels, not points.
+
+## Constructors
+
+<a id="ctor-string-double-bool-bool-bool-bool"></a>
+### GridFont(string, double, bool, bool, bool, bool)
+
+```csharp
+public GridFont(string Family, double Size, bool Bold = false, bool Italic = false, bool Underline = false, bool Strikethrough = false)
+```
+
+A font to draw text with; the size is in pixels, not points.
+
+**Parameters**
+
+- `Family`: The font family, such as `Calibri`; a canvas falls back to its own font when the family is missing.
+- `Size`: The size in device-independent pixels: 11 points are 14.67 pixels at 96 DPI.
+- `Bold`: Bold text.
+- `Italic`: Italic text.
+- `Underline`: Underlined text.
+- `Strikethrough`: Text struck through.
+
+## Properties
+
+<a id="bold"></a>
+### Bold
+
+```csharp
+public bool Bold { get; init; }
+```
+
+Bold text.
+
+<a id="family"></a>
+### Family
+
+```csharp
+public string Family { get; init; }
+```
+
+The font family, such as `Calibri`; a canvas falls back to its own font when the family is missing.
+
+<a id="italic"></a>
+### Italic
+
+```csharp
+public bool Italic { get; init; }
+```
+
+Italic text.
+
+<a id="size"></a>
+### Size
+
+```csharp
+public double Size { get; init; }
+```
+
+The size in device-independent pixels: 11 points are 14.67 pixels at 96 DPI.
+
+<a id="strikethrough"></a>
+### Strikethrough
+
+```csharp
+public bool Strikethrough { get; init; }
+```
+
+Text struck through.
+
+<a id="underline"></a>
+### Underline
+
+```csharp
+public bool Underline { get; init; }
+```
+
+Underlined text.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridNavigation.md -->
+
+# GridNavigation
+
+```csharp
+public static class GridNavigation
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+How the active cell moves on a sheet, as in Excel: a merged area counts as one cell.
+
+## Methods
+
+<a id="move-worksheet-cellposition-int-int"></a>
+### Move(Worksheet, CellPosition, int, int)
+
+```csharp
+public static CellPosition Move(Worksheet? sheet, CellPosition from, int rows, int columns)
+```
+
+The cell a move by whole rows and columns lands on, kept inside the sheet. Leaving a merged area starts from its far edge; landing inside one gives its top-left cell.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridPainter.md -->
+
+# GridPainter
+
+```csharp
+public sealed class GridPainter
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+Paints a worksheet the way Excel shows it: column and row headers, gridlines, each cell's `Cell.Text` in its style (font, fill, borders, alignment, wrapping, indent), merged areas as one cell, and the active cell. Only the cells inside the viewport are read, so a sheet's size does not matter. Also answers the geometry questions of a grid on screen: where a cell is, what is under a point, where to scroll. With [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext) set, text too wide for its cell runs on over empty neighbours, numbers too wide for their column are shortened or shown as `###`, and row headers widen for long row numbers, as in Excel.
+
+## Constructors
+
+<a id="ctor"></a>
+### GridPainter()
+
+```csharp
+public GridPainter()
+```
+
+A painter with Excel's default row heights and column widths.
+
+<a id="ctor-sheetlayout"></a>
+### GridPainter(SheetLayout)
+
+```csharp
+public GridPainter(SheetLayout layout)
+```
+
+A painter over the given sizes of rows and columns.
+
+## Properties
+
+<a id="columnheaderheight"></a>
+### ColumnHeaderHeight
+
+```csharp
+public double ColumnHeaderHeight { get; set; }
+```
+
+The height of the column headers at the top.
+
+<a id="frozencolumns"></a>
+### FrozenColumns
+
+```csharp
+public int FrozenColumns { get; set; }
+```
+
+How many columns on the left stay in place while the rest scrolls; a sheet's own is `Worksheet.FrozenColumns`.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is negative or leaves no column to scroll.
+
+<a id="frozenrows"></a>
+### FrozenRows
+
+```csharp
+public int FrozenRows { get; set; }
+```
+
+How many rows at the top stay in place while the rest scrolls, as Excel's Freeze Panes; a sheet's own is `Worksheet.FrozenRows`.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is negative or leaves no row to scroll.
+
+<a id="layout"></a>
+### Layout
+
+```csharp
+public SheetLayout Layout { get; set; }
+```
+
+The sizes of rows and columns; [SheetLayout.FromWorksheet](SharpCell.Grid.SheetLayout.md#fromworksheet-worksheet-double) gives a sheet's own.
+
+<a id="measuretext"></a>
+### MeasureText
+
+```csharp
+public Func<string, GridFont, double>? MeasureText { get; set; }
+```
+
+The width in pixels of a line of text in a font. Without it, text is never fitted to its cell, row headers keep [GridPainter.RowHeaderWidth](SharpCell.Grid.GridPainter.md#rowheaderwidth), and Calibri 11's digit width is assumed.
+
+<a id="rowheaderwidth"></a>
+### RowHeaderWidth
+
+```csharp
+public double RowHeaderWidth { get; set; }
+```
+
+The width of the row headers on the left; with [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext), the least width, widened to fit the number of the last visible row.
+
+<a id="theme"></a>
+### Theme
+
+```csharp
+public GridTheme Theme { get; set; }
+```
+
+The colours of everything but the cells' own styles.
+
+## Methods
+
+<a id="cellbounds-gridviewport-cellposition"></a>
+### CellBounds(GridViewport, CellPosition)
+
+```csharp
+public GridRect CellBounds(GridViewport viewport, CellPosition cell)
+```
+
+Where a cell is on screen; it may lie outside the viewport.
+
+<a id="cellbounds-gridviewport-cellposition-cellposition"></a>
+### CellBounds(GridViewport, CellPosition, CellPosition)
+
+```csharp
+public GridRect CellBounds(GridViewport viewport, CellPosition first, CellPosition last)
+```
+
+Where a rectangle of cells is on screen, from its top-left to its bottom-right cell.
+
+<a id="clamp-gridviewport"></a>
+### Clamp(GridViewport)
+
+```csharp
+public GridViewport Clamp(GridViewport viewport)
+```
+
+The viewport with its offsets kept between the start and the end of the sheet.
+
+<a id="fontof-cellfont"></a>
+### FontOf(CellFont)
+
+```csharp
+public static GridFont FontOf(CellFont font)
+```
+
+The font of a SharpCell font at 96 DPI.
+
+<a id="hittest-gridviewport-double-double-worksheet"></a>
+### HitTest(GridViewport, double, double, Worksheet)
+
+```csharp
+public CellPosition? HitTest(GridViewport viewport, double x, double y, Worksheet? sheet = null)
+```
+
+The cell under a point of the grid; null on the headers or outside the grid. Inside a merged area of the sheet, its top-left cell.
+
+<a id="maxdigitwidth-worksheet"></a>
+### MaxDigitWidth(Worksheet)
+
+```csharp
+public double MaxDigitWidth(Worksheet? sheet)
+```
+
+The width in pixels of the widest digit of a sheet's default font, which Excel bases column widths on; 7, Calibri 11's, without [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext).
+
+<a id="paint-igridcanvas-worksheet-gridviewport-cellposition"></a>
+### Paint(IGridCanvas, Worksheet, GridViewport, CellPosition?)
+
+```csharp
+public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, CellPosition? activeCell = default)
+```
+
+Paints the part of the sheet in the viewport; without a sheet, an empty grid.
+
+<a id="scrollintoview-gridviewport-cellposition"></a>
+### ScrollIntoView(GridViewport, CellPosition)
+
+```csharp
+public GridViewport ScrollIntoView(GridViewport viewport, CellPosition cell)
+```
+
+The viewport scrolled just enough to show the whole cell, or its top-left part when it is larger than the viewport; unchanged when the cell is already in view.
+
+<a id="visiblearea-gridviewport"></a>
+### VisibleArea(GridViewport)
+
+```csharp
+public CellArea VisibleArea(GridViewport viewport)
+```
+
+The cells the viewport shows, partly or wholly, of the part that scrolls: frozen rows and columns aside.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridRect.md -->
+
+# GridRect
+
+```csharp
+public readonly struct GridRect
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+A rectangle in device-independent pixels.
+
+## Constructors
+
+<a id="ctor-double-double-double-double"></a>
+### GridRect(double, double, double, double)
+
+```csharp
+public GridRect(double X, double Y, double Width, double Height)
+```
+
+A rectangle in device-independent pixels.
+
+**Parameters**
+
+- `X`: The left edge.
+- `Y`: The top edge.
+- `Width`: The width.
+- `Height`: The height.
+
+## Properties
+
+<a id="bottom"></a>
+### Bottom
+
+```csharp
+public double Bottom { get; }
+```
+
+The bottom edge.
+
+<a id="height"></a>
+### Height
+
+```csharp
+public double Height { get; init; }
+```
+
+The height.
+
+<a id="right"></a>
+### Right
+
+```csharp
+public double Right { get; }
+```
+
+The right edge.
+
+<a id="width"></a>
+### Width
+
+```csharp
+public double Width { get; init; }
+```
+
+The width.
+
+<a id="x"></a>
+### X
+
+```csharp
+public double X { get; init; }
+```
+
+The left edge.
+
+<a id="y"></a>
+### Y
+
+```csharp
+public double Y { get; init; }
+```
+
+The top edge.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridTextAlignment.md -->
+
+# GridTextAlignment
+
+```csharp
+public enum GridTextAlignment
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+Where text sits across its bounds.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="left"></a>`Left` | 0 | Against the left edge. |
+| <a id="center"></a>`Center` | 1 | In the middle. |
+| <a id="right"></a>`Right` | 2 | Against the right edge. |
+
+---
+
+<!-- page: api/SharpCell.Grid.GridTheme.md -->
+
+# GridTheme
+
+```csharp
+public sealed class GridTheme
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+The colours of a grid.
+
+## Constructors
+
+<a id="ctor"></a>
+### GridTheme()
+
+```csharp
+public GridTheme()
+```
+
+Colours close to Excel's light theme, as [GridTheme.Excel](SharpCell.Grid.GridTheme.md#excel); set properties in an initializer to change some.
+
+## Properties
+
+<a id="activecellborder"></a>
+### ActiveCellBorder
+
+```csharp
+public GridColor ActiveCellBorder { get; init; }
+```
+
+The border around the active cell.
+
+<a id="activeheaderbackground"></a>
+### ActiveHeaderBackground
+
+```csharp
+public GridColor ActiveHeaderBackground { get; init; }
+```
+
+Behind the headers of the active cell's row and column.
+
+<a id="background"></a>
+### Background
+
+```csharp
+public GridColor Background { get; init; }
+```
+
+Behind the cells.
+
+<a id="celltext"></a>
+### CellText
+
+```csharp
+public GridColor CellText { get; init; }
+```
+
+Text of cells.
+
+<a id="excel"></a>
+### Excel
+
+```csharp
+public static GridTheme Excel { get; }
+```
+
+Colours close to Excel's light theme.
+
+<a id="frozenline"></a>
+### FrozenLine
+
+```csharp
+public GridColor FrozenLine { get; init; }
+```
+
+The line where panes are frozen.
+
+<a id="gridline"></a>
+### Gridline
+
+```csharp
+public GridColor Gridline { get; init; }
+```
+
+The lines between cells.
+
+<a id="headerbackground"></a>
+### HeaderBackground
+
+```csharp
+public GridColor HeaderBackground { get; init; }
+```
+
+Behind the row and column headers.
+
+<a id="headerline"></a>
+### HeaderLine
+
+```csharp
+public GridColor HeaderLine { get; init; }
+```
+
+The lines between headers and around them.
+
+<a id="headertext"></a>
+### HeaderText
+
+```csharp
+public GridColor HeaderText { get; init; }
+```
+
+Header text: column letters and row numbers.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridVerticalAlignment.md -->
+
+# GridVerticalAlignment
+
+```csharp
+public enum GridVerticalAlignment
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+Where text sits from top to bottom of its bounds.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="top"></a>`Top` | 0 | Against the top edge. |
+| <a id="center"></a>`Center` | 1 | In the middle. |
+| <a id="bottom"></a>`Bottom` | 2 | Against the bottom edge, as Excel places cell text. |
+
+---
+
+<!-- page: api/SharpCell.Grid.GridViewport.md -->
+
+# GridViewport
+
+```csharp
+public readonly struct GridViewport
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+What part of the sheet a grid shows: the scroll offset into the sheet and the size of the whole grid on screen, headers included.
+
+## Constructors
+
+<a id="ctor-double-double-double-double"></a>
+### GridViewport(double, double, double, double)
+
+```csharp
+public GridViewport(double OffsetX, double OffsetY, double Width, double Height)
+```
+
+What part of the sheet a grid shows: the scroll offset into the sheet and the size of the whole grid on screen, headers included.
+
+**Parameters**
+
+- `OffsetX`: How far the cells are scrolled to the left, in pixels.
+- `OffsetY`: How far the cells are scrolled up, in pixels.
+- `Width`: The width of the grid.
+- `Height`: The height of the grid.
+
+## Properties
+
+<a id="height"></a>
+### Height
+
+```csharp
+public double Height { get; init; }
+```
+
+The height of the grid.
+
+<a id="offsetx"></a>
+### OffsetX
+
+```csharp
+public double OffsetX { get; init; }
+```
+
+How far the cells are scrolled to the left, in pixels.
+
+<a id="offsety"></a>
+### OffsetY
+
+```csharp
+public double OffsetY { get; init; }
+```
+
+How far the cells are scrolled up, in pixels.
+
+<a id="width"></a>
+### Width
+
+```csharp
+public double Width { get; init; }
+```
+
+The width of the grid.
+
+---
+
+<!-- page: api/SharpCell.Grid.IGridCanvas.md -->
+
+# IGridCanvas
+
+```csharp
+public abstract class IGridCanvas
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+What [GridPainter](SharpCell.Grid.GridPainter.md) paints on. Each UI framework implements it over its own drawing API; coordinates are device-independent pixels from the grid's top-left corner.
+
+## Methods
+
+<a id="drawline-double-double-double-double-gridcolor-double-griddash"></a>
+### DrawLine(double, double, double, double, GridColor, double, GridDash)
+
+```csharp
+public void DrawLine(double x1, double y1, double x2, double y2, GridColor color, double thickness = 1, GridDash dash = GridDash.Solid)
+```
+
+Draws a line, centred on the coordinates. One-pixel lines of the grid lie on pixel centres, such as `x = 63.5`.
+
+<a id="drawtext-string-gridrect-gridtextalignment-gridverticalalignment-gridcolor-gridfont-bool"></a>
+### DrawText(string, GridRect, GridTextAlignment, GridVerticalAlignment, GridColor, GridFont, bool)
+
+```csharp
+public void DrawText(string text, GridRect bounds, GridTextAlignment alignment, GridVerticalAlignment verticalAlignment, GridColor color, GridFont font, bool wrap)
+```
+
+Draws text placed inside the bounds and cut off at them: one line, or wrapped onto as many lines as the width needs.
+
+<a id="fillrectangle-gridrect-gridcolor"></a>
+### FillRectangle(GridRect, GridColor)
+
+```csharp
+public void FillRectangle(GridRect rect, GridColor color)
+```
+
+Fills a rectangle.
+
+<a id="strokerectangle-gridrect-gridcolor-double"></a>
+### StrokeRectangle(GridRect, GridColor, double)
+
+```csharp
+public void StrokeRectangle(GridRect rect, GridColor color, double thickness)
+```
+
+Draws the outline of a rectangle, the stroke centred on its edges.
+
+---
+
+<!-- page: api/SharpCell.Grid.SheetLayout.md -->
+
+# SheetLayout
+
+```csharp
+public sealed class SheetLayout
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+Where the cells of a sheet are, in device-independent pixels from the top-left corner of cell A1: column widths, row heights, their offsets, the cell under a point and the cells inside a viewport. Covers Excel's whole sheet, 1,048,576 rows by 16,384 columns. Rows and columns are numbered from 1.
+
+## Constructors
+
+<a id="ctor"></a>
+### SheetLayout()
+
+```csharp
+public SheetLayout()
+```
+
+A layout with Excel's default sizes.
+
+<a id="ctor-double-double"></a>
+### SheetLayout(double, double)
+
+```csharp
+public SheetLayout(double defaultColumnWidth, double defaultRowHeight)
+```
+
+A layout with the given default sizes, in pixels.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A size is not positive.
+
+## Properties
+
+<a id="defaultcolumnwidth"></a>
+### DefaultColumnWidth
+
+```csharp
+public double DefaultColumnWidth { get; set; }
+```
+
+The width of every column without a width of its own.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The width is not positive.
+
+<a id="defaultrowheight"></a>
+### DefaultRowHeight
+
+```csharp
+public double DefaultRowHeight { get; set; }
+```
+
+The height of every row without a height of its own.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The height is not positive.
+
+<a id="height"></a>
+### Height
+
+```csharp
+public double Height { get; }
+```
+
+The height of all rows together.
+
+<a id="width"></a>
+### Width
+
+```csharp
+public double Width { get; }
+```
+
+The width of all columns together.
+
+## Methods
+
+<a id="columnat-double"></a>
+### ColumnAt(double)
+
+```csharp
+public int ColumnAt(double x)
+```
+
+The column under a horizontal offset, clamped to the sheet; hidden columns are never hit.
+
+<a id="columnleft-int"></a>
+### ColumnLeft(int)
+
+```csharp
+public double ColumnLeft(int column)
+```
+
+The offset of a column's left edge; 0 for column A.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="columnwidth-int"></a>
+### ColumnWidth(int)
+
+```csharp
+public double ColumnWidth(int column)
+```
+
+The width of a column.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="fromworksheet-worksheet-double"></a>
+### FromWorksheet(Worksheet, double)
+
+```csharp
+public static SheetLayout FromWorksheet(Worksheet sheet, double maxDigitWidth)
+```
+
+A layout with a worksheet's column widths, row heights and hidden rows and columns, in pixels at 100% zoom as Excel converts them: a width of `w` characters is `Truncate((256 * w + Truncate(128 / d)) / 256 * d)` pixels, `d` being the width of the widest digit of the workbook's default font (7 for Calibri 11); a height of `h` points is `h * 96 / 72` pixels, rounded. Later changes to the sheet are not followed.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `maxDigitWidth`: The width in pixels of the widest digit of the default font.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The digit width is not positive.
+
+<a id="rowat-double"></a>
+### RowAt(double)
+
+```csharp
+public int RowAt(double y)
+```
+
+The row under a vertical offset, clamped to the sheet; hidden rows are never hit.
+
+<a id="rowheight-int"></a>
+### RowHeight(int)
+
+```csharp
+public double RowHeight(int row)
+```
+
+The height of a row.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="rowtop-int"></a>
+### RowTop(int)
+
+```csharp
+public double RowTop(int row)
+```
+
+The offset of a row's top edge; 0 for row 1.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setcolumnwidth-int-double"></a>
+### SetColumnWidth(int, double)
+
+```csharp
+public void SetColumnWidth(int column, double width)
+```
+
+Gives a column a width; zero hides it, the default width forgets the change.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet, or the width is negative.
+
+<a id="setrowheight-int-double"></a>
+### SetRowHeight(int, double)
+
+```csharp
+public void SetRowHeight(int row, double height)
+```
+
+Gives a row a height; zero hides it, the default height forgets the change.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet, or the height is negative.
+
+<a id="visiblearea-double-double-double-double"></a>
+### VisibleArea(double, double, double, double)
+
+```csharp
+public CellArea VisibleArea(double x, double y, double width, double height)
+```
+
+The cells that a rectangle of the sheet touches, partly or wholly.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The width or height is negative.
+
+---
+
+<!-- page: api/SharpCell.Grid.Avalonia.SpreadsheetView.md -->
+
+# SpreadsheetView
+
+```csharp
+public class SpreadsheetView : Control
+```
+
+Namespace `SharpCell.Grid.Avalonia` · package `SharpCell.Grid.Avalonia`
+
+Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. The mouse picks the active cell, the keyboard moves it as in Excel, the wheel scrolls. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `Visual.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Avalonia.SpreadsheetView.md#reloadlayout).
+
+## Constructors
+
+<a id="ctor"></a>
+### SpreadsheetView()
+
+```csharp
+public SpreadsheetView()
+```
+
+Creates an empty view; set [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) to show a sheet.
+
+## Properties
+
+<a id="activecell"></a>
+### ActiveCell
+
+```csharp
+public CellPosition? ActiveCell { get; set; }
+```
+
+The cell with the active-cell border; null shows none.
+
+<a id="offset"></a>
+### Offset
+
+```csharp
+public Vector Offset { get; set; }
+```
+
+How far the cells are scrolled, in pixels from cell A1; kept inside the sheet when painting.
+
+<a id="painter"></a>
+### Painter
+
+```csharp
+public GridPainter Painter { get; }
+```
+
+Geometry and colours: row heights, column widths, header sizes, theme.
+
+<a id="viewport"></a>
+### Viewport
+
+```csharp
+public GridViewport Viewport { get; }
+```
+
+What the view shows now: its size and its offset, kept inside the sheet.
+
+<a id="worksheet"></a>
+### Worksheet
+
+```csharp
+public Worksheet? Worksheet { get; set; }
+```
+
+The sheet shown; null shows an empty grid.
+
+## Methods
+
+<a id="reloadlayout"></a>
+### ReloadLayout()
+
+```csharp
+public void ReloadLayout()
+```
+
+Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.
+
+<a id="render-drawingcontext"></a>
+### Render(DrawingContext)
+
+```csharp
+public override void Render(DrawingContext context)
+```
+
+Paints the visible part of the sheet through [SpreadsheetView.Painter](SharpCell.Grid.Avalonia.SpreadsheetView.md#painter).
+
+**Parameters**
+
+- `context`: The drawing context Avalonia renders with.

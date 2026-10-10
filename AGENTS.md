@@ -11,6 +11,7 @@ Instructions for AI agents and people changing this repository.
 - `tests/SharpCell.Grid.Tests` — xUnit tests: geometry and painting against a recording canvas,
   the Avalonia control headless with rendered frames compared to approved PNGs.
 - `samples/SharpCell.Grid.Sample` — a desktop window showing an .xlsx file.
+- `tools/SharpCell.Grid.Docs` — fills code snippets into Markdown, writes `docs/api`, `docs/llms*.txt`, renders the site. Copied from SharpCell's `tools/SharpCell.Docs`; its unit tests stay there.
 
 The formula engine and the .xlsx reader are the NuGet packages `SharpCell` and `SharpCell.Xlsx`
 from https://github.com/ifmelate/SharpCell. Anything the grid needs from them goes through their
@@ -22,6 +23,9 @@ public API; a missing piece is added there, not worked around here.
 dotnet build
 dotnet test                                                              # net8.0 and net10.0
 dotnet run --project samples/SharpCell.Grid.Sample -f net10.0 -- file.xlsx
+dotnet run --project tools/SharpCell.Grid.Docs -f net10.0 -- generate   # after changing docs, snippets or public API
+dotnet run --project tools/SharpCell.Grid.Docs -f net10.0 -- check
+dotnet run --project tools/SharpCell.Grid.Docs -f net10.0 -- site artifacts/site
 ```
 
 ## Snapshots
@@ -48,4 +52,6 @@ entries to `PublicAPI.Shipped.txt` when releasing.
 - What the grid shows follows Microsoft Excel: cell text comes from SharpCell's `Cell.Text`, and
   geometry and behaviour are checked against Excel, never against other spreadsheet programs.
 - `SharpCell.Grid` takes no dependency besides SharpCell and knows no UI framework.
+- Code examples in docs live in tested `.cs` files between `// snippet: name` and `// end-snippet` (in `tests/SharpCell.Grid.Tests/Docs` or `samples`); never edit the body of a `csharp snippet=` block by hand.
+- `docs/api`, `docs/llms.txt` and `docs/llms-full.txt` are generated. Pictures for the site go in `docs/images`.
 - Code, comments, docs and commit messages are in English. Commits follow `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `build:`.

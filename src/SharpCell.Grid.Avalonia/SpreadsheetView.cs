@@ -89,7 +89,8 @@ public class SpreadsheetView : Control
     /// <summary>What the view shows now: its size and its offset, kept inside the sheet.</summary>
     public GridViewport Viewport => Painter.Clamp(new GridViewport(Offset.X, Offset.Y, Bounds.Width, Bounds.Height));
 
-    /// <inheritdoc />
+    /// <summary>Paints the visible part of the sheet through <see cref="Painter"/>.</summary>
+    /// <param name="context">The drawing context Avalonia renders with.</param>
     public override void Render(DrawingContext context) =>
         Painter.Paint(new AvaloniaGridCanvas(context), Worksheet, Viewport, ActiveCell);
 

@@ -19,12 +19,10 @@ Viewing only, no editing; see the [roadmap](docs/roadmap.md).
 
 ## Usage
 
-```csharp
-using SharpCell;
-using SharpCell.Grid.Avalonia;
-using SharpCell.Xlsx;
+Namespaces: `SharpCell`, `SharpCell.Xlsx` and `SharpCell.Grid.Avalonia`.
 
-Workbook workbook = XlsxReader.Load("budget.xlsx");
+```csharp snippet=show-workbook
+Workbook workbook = XlsxReader.Load(path);
 workbook.Recalculate();
 
 var view = new SpreadsheetView { Worksheet = workbook["Budget"] };
@@ -32,6 +30,12 @@ var view = new SpreadsheetView { Worksheet = workbook["Budget"] };
 
 After changing cells or recalculating, call `view.InvalidateVisual()`. A runnable window is in
 [samples/SharpCell.Grid.Sample](samples/SharpCell.Grid.Sample).
+
+## Documentation
+
+- [Documentation site](https://ifmelate.github.io/SharpCell.Grid/): getting started, what the grid shows, painting in other UI frameworks, API reference.
+- [Roadmap](docs/roadmap.md).
+- [For AI coding agents](docs/agents.md): `llms.txt` and `llms-full.txt`.
 
 ## Support
 
