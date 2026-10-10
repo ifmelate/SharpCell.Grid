@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SharpCell.Grid</RootNamespace>
+    <Description>Excel-like spreadsheet grid for SharpCell workbooks, independent of any UI framework: row and column geometry, hit testing, visible cells and painting through a small canvas interface.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SharpCell" />
+    <InternalsVisibleTo Include="SharpCell.Grid.Tests" />
+  </ItemGroup>
+</Project>
