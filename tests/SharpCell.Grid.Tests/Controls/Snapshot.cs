@@ -6,10 +6,12 @@ using Avalonia.Media.Imaging;
 namespace SharpCell.Grid.Tests.Controls;
 
 /// <summary>
-/// Compares a rendered frame with an approved PNG in <c>Snapshots</c> next to the test. A missing
-/// or different snapshot fails the test and leaves <c>name.received.png</c> beside it: look at it,
-/// and when it is right, rename it to <c>name.png</c>. Small differences in anti-aliasing between
-/// machines are tolerated; a moved line or a changed text is not.
+/// Compares a rendered frame with an approved PNG in <c>Snapshots</c> next to the test, one per
+/// operating system: Skia rasterizes glyphs differently on Linux, macOS and Windows, so the same
+/// frame differs in a few percent of its pixels between them. A missing or different snapshot
+/// fails the test and leaves <c>name.os.received.png</c> beside it: look at it, and when it is
+/// right, rename it to <c>name.os.png</c>. Small differences in anti-aliasing are tolerated; a moved
+/// line or a changed text is not.
 /// </summary>
 internal static class Snapshot
 {
@@ -22,8 +24,9 @@ internal static class Snapshot
     {
         Assert.NotNull(frame);
         var folder = Path.Combine(Path.GetDirectoryName(testFile)!, "Snapshots");
-        var approved = Path.Combine(folder, name + ".png");
-        var received = Path.Combine(folder, name + ".received.png");
+        var platform = OperatingSystem.IsLinux() ? "linux" : OperatingSystem.IsMacOS() ? "macos" : "windows";
+        var approved = Path.Combine(folder, $"{name}.{platform}.png");
+        var received = Path.Combine(folder, $"{name}.{platform}.received.png");
 
         using var stream = new MemoryStream();
         frame.Save(stream, new PngBitmapEncoderOptions());
@@ -38,7 +41,7 @@ internal static class Snapshot
 
         Directory.CreateDirectory(folder);
         File.WriteAllBytes(received, png);
-        Assert.Fail($"Snapshot '{name}': {problem}. Review {received}; rename it to {name}.png when it is right.");
+        Assert.Fail($"Snapshot '{name}' on {platform}: {problem}. Review {received}; rename it to {name}.{platform}.png when it is right.");
     }
 
     private static string? Compare(byte[] actualPng, byte[] expectedPng)

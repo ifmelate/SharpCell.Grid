@@ -27,9 +27,12 @@ dotnet run --project samples/SharpCell.Grid.Sample -f net10.0 -- file.xlsx
 ## Snapshots
 
 Tests in `tests/SharpCell.Grid.Tests/Controls` render the control headless with Skia and the
-bundled Inter font and compare the frame with `Controls/Snapshots/<name>.png`. A missing or
-different snapshot fails and writes `<name>.received.png` next to it. Look at the received image;
-when it is right, rename it to `<name>.png` and commit it with the change that caused it.
+bundled Inter font and compare the frame with `Controls/Snapshots/<name>.<os>.png`, one per
+operating system (`linux`, `macos`, `windows`): Skia draws glyphs differently on each. A missing
+or different snapshot fails and writes `<name>.<os>.received.png` next to it. Look at the received
+image; when it is right, rename it to `<name>.<os>.png` and commit it with the change that caused
+it. CI runs on Linux: when a change alters a frame, take the Linux images from the
+`received-snapshots` artifact of the failed run, check them, and commit them too.
 
 ## Releases
 
