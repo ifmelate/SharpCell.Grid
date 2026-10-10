@@ -37,8 +37,15 @@ jobs:
         run: dotnet workload install wasm-tools
       - name: Build the live demo
         run: dotnet publish samples/SharpCell.Grid.Demo -c Release -o artifacts/demo
+      # Pages lets browsers keep files for ten minutes; the commit in the two entry points makes a
+      # visitor load this build's file list instead of an old one naming files that are gone.
       - name: Add the live demo to the site
-        run: cp -r artifacts/demo/wwwroot artifacts/site/demo
+        run: |
+          cp -r artifacts/demo/wwwroot artifacts/site/demo
+          sed -i "s|\./main\.js|./main.js?v=${GITHUB_SHA}|" artifacts/site/demo/index.html
+          sed -i "s|\./_framework/dotnet\.js|./_framework/dotnet.js?v=${GITHUB_SHA}|" artifacts/site/demo/main.js
+          rm -f artifacts/site/demo/index.html.br artifacts/site/demo/index.html.gz artifacts/site/demo/main.js.br artifacts/site/demo/main.js.gz
+          grep -q "main.js?v=" artifacts/site/demo/index.html && grep -q "dotnet.js?v=" artifacts/site/demo/main.js
       - uses: actions/upload-pages-artifact@v5
         with:
           path: artifacts/site
