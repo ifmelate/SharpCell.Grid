@@ -1,1 +1,61 @@
 #nullable enable
+override SharpCell.Grid.GridHit.GetHashCode() -> int
+override SharpCell.Grid.GridSelection.Equals(object? obj) -> bool
+override SharpCell.Grid.GridSelection.GetHashCode() -> int
+override SharpCell.Grid.GridSelection.ToString() -> string!
+SharpCell.Grid.GridClipboard
+SharpCell.Grid.GridHit
+SharpCell.Grid.GridHit.Cell.get -> SharpCell.Grid.CellPosition
+SharpCell.Grid.GridHit.Cell.init -> void
+SharpCell.Grid.GridHit.Deconstruct(out SharpCell.Grid.GridPart Part, out SharpCell.Grid.CellPosition Cell) -> void
+SharpCell.Grid.GridHit.Equals(SharpCell.Grid.GridHit other) -> bool
+SharpCell.Grid.GridHit.GridHit() -> void
+SharpCell.Grid.GridHit.GridHit(SharpCell.Grid.GridPart Part, SharpCell.Grid.CellPosition Cell) -> void
+SharpCell.Grid.GridHit.Part.get -> SharpCell.Grid.GridPart
+SharpCell.Grid.GridHit.Part.init -> void
+SharpCell.Grid.GridPainter.CellNearest(SharpCell.Grid.GridViewport viewport, double x, double y) -> SharpCell.Grid.CellPosition
+SharpCell.Grid.GridPainter.Hit(SharpCell.Grid.GridViewport viewport, double x, double y, SharpCell.Worksheet? sheet = null) -> SharpCell.Grid.GridHit?
+SharpCell.Grid.GridPainter.Paint(SharpCell.Grid.IGridCanvas! canvas, SharpCell.Worksheet? sheet, SharpCell.Grid.GridViewport viewport, SharpCell.Grid.GridSelection? selection) -> void
+SharpCell.Grid.GridPart
+SharpCell.Grid.GridPart.Cell = 0 -> SharpCell.Grid.GridPart
+SharpCell.Grid.GridPart.ColumnHeader = 1 -> SharpCell.Grid.GridPart
+SharpCell.Grid.GridPart.Corner = 3 -> SharpCell.Grid.GridPart
+SharpCell.Grid.GridPart.RowHeader = 2 -> SharpCell.Grid.GridPart
+SharpCell.Grid.GridSelection
+SharpCell.Grid.GridSelection.<Clone>$() -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.ActiveCell.get -> SharpCell.Grid.CellPosition
+SharpCell.Grid.GridSelection.Anchor.get -> SharpCell.Grid.CellPosition
+SharpCell.Grid.GridSelection.Area.get -> SharpCell.Grid.CellArea
+SharpCell.Grid.GridSelection.Contains(int row, int column) -> bool
+SharpCell.Grid.GridSelection.EntireColumns(SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.EntireRows(SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.Equals(SharpCell.Grid.GridSelection? other) -> bool
+SharpCell.Grid.GridSelection.Extend(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.ExtendTo(SharpCell.Grid.CellPosition cell, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.ExtendTo(SharpCell.Grid.GridHit hit, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.Extent.get -> SharpCell.Grid.CellPosition
+SharpCell.Grid.GridSelection.IsEntireColumns.get -> bool
+SharpCell.Grid.GridSelection.IsEntireRows.get -> bool
+SharpCell.Grid.GridSelection.IsSingleCell.get -> bool
+SharpCell.Grid.GridSelection.Move(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.MoveWithin(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridTheme.SelectedHeaderBackground.get -> SharpCell.Grid.GridColor
+SharpCell.Grid.GridTheme.SelectedHeaderBackground.init -> void
+SharpCell.Grid.GridTheme.SelectedHeaderText.get -> SharpCell.Grid.GridColor
+SharpCell.Grid.GridTheme.SelectedHeaderText.init -> void
+SharpCell.Grid.GridTheme.SelectionFill.get -> SharpCell.Grid.GridColor
+SharpCell.Grid.GridTheme.SelectionFill.init -> void
+static SharpCell.Grid.GridClipboard.Html(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> string!
+static SharpCell.Grid.GridClipboard.Text(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> string!
+static SharpCell.Grid.GridClipboard.WindowsHtml(string! html) -> string!
+static SharpCell.Grid.GridHit.operator !=(SharpCell.Grid.GridHit left, SharpCell.Grid.GridHit right) -> bool
+static SharpCell.Grid.GridHit.operator ==(SharpCell.Grid.GridHit left, SharpCell.Grid.GridHit right) -> bool
+static SharpCell.Grid.GridSelection.All(SharpCell.Grid.CellPosition activeCell) -> SharpCell.Grid.GridSelection!
+static SharpCell.Grid.GridSelection.At(SharpCell.Grid.GridHit hit, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+static SharpCell.Grid.GridSelection.Cell(SharpCell.Grid.CellPosition cell, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+static SharpCell.Grid.GridSelection.Columns(int first, int last, int activeRow, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+static SharpCell.Grid.GridSelection.operator !=(SharpCell.Grid.GridSelection? left, SharpCell.Grid.GridSelection? right) -> bool
+static SharpCell.Grid.GridSelection.operator ==(SharpCell.Grid.GridSelection? left, SharpCell.Grid.GridSelection? right) -> bool
+static SharpCell.Grid.GridSelection.Rows(int first, int last, int activeColumn, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+~override SharpCell.Grid.GridHit.Equals(object obj) -> bool
+~override SharpCell.Grid.GridHit.ToString() -> string

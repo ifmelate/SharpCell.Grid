@@ -114,18 +114,17 @@ public class GridPainterTests
 
         var canvas = Paint(null, Small, new CellPosition(3, 2), painter);
 
-        var border = Assert.Single(canvas.Calls.OfType<RecordingCanvas.Stroke>());
-        Assert.Equal(painter.Theme.ActiveCellBorder, border.Color);
-        var cell = painter.CellBounds(Small, new CellPosition(3, 2));
-        Assert.True(border.Rect.X <= cell.X && border.Rect.Right >= cell.Right - 1);
+        Assert.Equal(painter.CellBounds(Small, new CellPosition(3, 2)), canvas.Outline(painter));
     }
 
     [Fact]
     public void An_active_cell_out_of_view_is_not_painted()
     {
-        var canvas = Paint(null, Small, new CellPosition(500, 2));
+        var painter = new GridPainter();
 
-        Assert.Empty(canvas.Calls.OfType<RecordingCanvas.Stroke>());
+        var canvas = Paint(null, Small, new CellPosition(500, 2), painter);
+
+        Assert.Null(canvas.Outline(painter));
     }
 
     [Fact]

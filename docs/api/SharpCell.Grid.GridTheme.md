@@ -30,7 +30,7 @@ Colours close to Excel's light theme, as [GridTheme.Excel](SharpCell.Grid.GridTh
 public GridColor ActiveCellBorder { get; init; }
 ```
 
-The border around the active cell.
+The border around the active cell and the selection, and the line under the headers of selected cells.
 
 <a id="activeheaderbackground"></a>
 ### ActiveHeaderBackground
@@ -39,7 +39,7 @@ The border around the active cell.
 public GridColor ActiveHeaderBackground { get; init; }
 ```
 
-Behind the headers of the active cell's row and column.
+Behind the headers of the rows and columns of the selected cells.
 
 <a id="background"></a>
 ### Background
@@ -112,3 +112,30 @@ public GridColor HeaderText { get; init; }
 ```
 
 Header text: column letters and row numbers.
+
+<a id="selectedheaderbackground"></a>
+### SelectedHeaderBackground
+
+```csharp
+public GridColor SelectedHeaderBackground { get; init; }
+```
+
+Behind the headers of whole selected columns or rows.
+
+<a id="selectedheadertext"></a>
+### SelectedHeaderText
+
+```csharp
+public GridColor SelectedHeaderText { get; init; }
+```
+
+Text of the headers of whole selected columns or rows.
+
+<a id="selectionfill"></a>
+### SelectionFill
+
+```csharp
+public GridColor SelectionFill { get; init; }
+```
+
+The translucent shade over selected cells other than the active cell.

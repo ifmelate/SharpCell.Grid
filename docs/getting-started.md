@@ -44,13 +44,16 @@ The view reads cells each time it paints, but it does not know when a workbook c
 widths, row heights, hidden rows and columns and frozen panes are taken when `Worksheet` is set,
 and again with `ReloadLayout`.
 
-## The active cell and scrolling
+## Selection, copying and scrolling
 
 ```csharp snippet=active-cell
-view.ActiveCell = new CellPosition(row: 10, column: 3);   // C10
-view.Offset = new Vector(0, 200);                // scrolled ten default rows down
+view.ActiveCell = new CellPosition(row: 10, column: 3);                // C10, selected alone
+view.Selection = view.Selection!.Extend(rows: 2, columns: 1, sheet);   // C10:D12, as Shift with the arrows
+view.Offset = new Vector(0, 200);                                      // scrolled ten default rows down
+await view.CopyAsync();                                                // as Ctrl+C
 ```
 
-`ActiveCell` and `Offset` are Avalonia properties, so they can be bound. The mouse picks the
-active cell, the arrow keys, Enter and Tab move it as in Excel, and the wheel scrolls three rows a
-turn.
+`ActiveCell`, `Selection` and `Offset` are Avalonia properties, so they can be bound. The active
+cell is the selection's; setting it selects that cell alone. Cells are selected with the mouse and
+keyboard as in Excel, and copying puts them on the clipboard as text and as an HTML table, which
+Excel pastes with their styles. The wheel scrolls three rows a turn.

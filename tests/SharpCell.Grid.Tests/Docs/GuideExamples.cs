@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Input.Platform;
 using SharpCell.Grid.Avalonia;
 using SharpCell.Grid.Tests.Controls;
 using SharpCell.Xlsx;
@@ -54,16 +55,23 @@ public class GuideExamples(HeadlessSession session)
     });
 
     [Fact]
-    public Task Active_cell_and_scrolling() => session.Run(() =>
+    public Task Selection_copying_and_scrolling() => session.Run(async () =>
     {
-        var view = new SpreadsheetView { Worksheet = new Workbook().AddSheet("Sheet1") };
+        var sheet = new Workbook().AddSheet("Sheet1");
+        var view = new SpreadsheetView { Worksheet = sheet };
+        var window = new Window { Content = view };
+        window.Show();
 
         // snippet: active-cell
-        view.ActiveCell = new CellPosition(row: 10, column: 3);   // C10
-        view.Offset = new Vector(0, 200);                // scrolled ten default rows down
+        view.ActiveCell = new CellPosition(row: 10, column: 3);                // C10, selected alone
+        view.Selection = view.Selection!.Extend(rows: 2, columns: 1, sheet);   // C10:D12, as Shift with the arrows
+        view.Offset = new Vector(0, 200);                                      // scrolled ten default rows down
+        await view.CopyAsync();                                                // as Ctrl+C
         // end-snippet
 
         Assert.Equal("C10", view.ActiveCell.ToString());
+        Assert.Equal("C10:D12", view.Selection.ToString());
+        Assert.Equal("\t\r\n\t\r\n\t\r\n", await window.Clipboard!.TryGetTextAsync());
     });
 
     [Fact]
@@ -86,11 +94,17 @@ public class GuideExamples(HeadlessSession session)
         painter.FrozenColumns = sheet.FrozenColumns;
 
         var viewport = new GridViewport(OffsetX: 0, OffsetY: 0, Width: 800, Height: 600);
-        painter.Paint(canvas, sheet, viewport, activeCell: new CellPosition(1, 1));   // canvas: your IGridCanvas
-        CellPosition? clicked = painter.HitTest(viewport, x: 120, y: 30, sheet);
+        var selection = GridSelection.Cell(new CellPosition(1, 1), sheet);
+        painter.Paint(canvas, sheet, viewport, selection);   // canvas: your IGridCanvas
+
+        // A click, then a drag to (300, 90): what Excel selects, and what is copied.
+        if (painter.Hit(viewport, x: 120, y: 30, sheet) is { } hit)
+            selection = GridSelection.At(hit, sheet).ExtendTo(painter.CellNearest(viewport, 300, 90), sheet);
+        string copied = GridClipboard.Text(sheet, selection.Area);
         // end-snippet
 
         Assert.Contains(canvas.Texts, t => t.Value == "Total");
-        Assert.NotNull(clicked);
+        Assert.Equal("B1:E4", selection.ToString());
+        Assert.StartsWith("1250\t\t\t\r\n", copied);
     }
 }

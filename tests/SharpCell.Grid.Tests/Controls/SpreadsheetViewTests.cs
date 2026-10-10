@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using SharpCell.Grid.Avalonia;
 
 namespace SharpCell.Grid.Tests.Controls;
@@ -177,7 +178,7 @@ public class SpreadsheetViewTests(HeadlessSession session)
     });
 
     [Fact]
-    public Task Clicking_a_header_keeps_the_active_cell() => session.Run(() =>
+    public Task Clicking_a_row_header_selects_the_row() => session.Run(() =>
     {
         var (window, view) = Show(Budget());
         view.ActiveCell = Cells.Parse("B2");
@@ -185,7 +186,8 @@ public class SpreadsheetViewTests(HeadlessSession session)
         window.MouseDown(new Point(5, 50), MouseButton.Left);
         window.MouseUp(new Point(5, 50), MouseButton.Left);
 
-        Assert.Equal(Cells.Parse("B2"), view.ActiveCell);
+        Assert.Equal("2:2", view.Selection?.ToString());
+        Assert.Equal(Cells.Parse("A2"), view.ActiveCell);
     });
 
     [Fact]
@@ -239,5 +241,149 @@ public class SpreadsheetViewTests(HeadlessSession session)
 
         window.MouseWheel(point, new Vector(0, 2));
         Assert.Equal(0, view.Offset.Y);
+    });
+
+    [Fact]
+    public Task Dragging_selects_a_range_from_where_it_started() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+
+        window.MouseDown(CenterOf(view, "B2"), MouseButton.Left);
+        window.MouseMove(CenterOf(view, "D4"), RawInputModifiers.LeftMouseButton);
+        window.MouseUp(CenterOf(view, "D4"), MouseButton.Left);
+
+        Assert.Equal("B2:D4", view.Selection?.ToString());
+        Assert.Equal(Cells.Parse("B2"), view.ActiveCell);
+    });
+
+    [Fact]
+    public Task Dragging_past_the_edge_scrolls_after_the_mouse() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+
+        window.MouseDown(CenterOf(view, "B2"), MouseButton.Left);
+        for (var i = 0; i < 5; i++)
+            window.MouseMove(new Point(100, 400 + i), RawInputModifiers.LeftMouseButton);
+        window.MouseUp(new Point(100, 405), MouseButton.Left);
+
+        // Nine rows fit in the view; each move past its bottom edge takes one more.
+        Assert.True(view.Offset.Y > 0);
+        Assert.True(view.Selection!.Area.LastRow >= 14, view.Selection.ToString());
+        Assert.Equal(Cells.Parse("B2"), view.ActiveCell);
+    });
+
+    [Fact]
+    public Task Moving_the_mouse_without_a_button_selects_nothing() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+        window.MouseDown(CenterOf(view, "B2"), MouseButton.Left);
+        window.MouseUp(CenterOf(view, "B2"), MouseButton.Left);
+
+        window.MouseMove(CenterOf(view, "D4"));
+
+        Assert.Equal("B2", view.Selection?.ToString());
+    });
+
+    [Fact]
+    public Task Shift_click_extends_from_the_active_cell() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+        view.ActiveCell = Cells.Parse("B2");
+
+        window.MouseDown(CenterOf(view, "C4"), MouseButton.Left, RawInputModifiers.Shift);
+        window.MouseUp(CenterOf(view, "C4"), MouseButton.Left, RawInputModifiers.Shift);
+
+        Assert.Equal("B2:C4", view.Selection?.ToString());
+    });
+
+    [Fact]
+    public Task Dragging_over_column_headers_selects_whole_columns() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+        var (b, d) = (CenterOf(view, "B1"), CenterOf(view, "D1"));
+
+        window.MouseDown(new Point(b.X, 5), MouseButton.Left);
+        window.MouseMove(new Point(d.X, 5), RawInputModifiers.LeftMouseButton);
+        window.MouseUp(new Point(d.X, 5), MouseButton.Left);
+
+        Assert.Equal("B:D", view.Selection?.ToString());
+        Assert.Equal(Cells.Parse("B1"), view.ActiveCell);
+    });
+
+    [Fact]
+    public Task Shift_with_the_arrows_extends_and_an_arrow_alone_collapses() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+        view.ActiveCell = Cells.Parse("B2");
+
+        window.KeyPress(Key.Right, RawInputModifiers.Shift, PhysicalKey.ArrowRight, null);
+        window.KeyPress(Key.Down, RawInputModifiers.Shift, PhysicalKey.ArrowDown, null);
+        Assert.Equal("B2:C3", view.Selection?.ToString());
+
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Assert.Equal(Cells.Parse("B3"), view.ActiveCell);
+        Assert.Equal("B2:C3", view.Selection?.ToString());
+
+        window.KeyPress(Key.Left, RawInputModifiers.None, PhysicalKey.ArrowLeft, null);
+        Assert.Equal("A3", view.Selection?.ToString());
+    });
+
+    [Fact]
+    public Task Ctrl_space_shift_space_and_select_all() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+        view.ActiveCell = Cells.Parse("B2");
+
+        window.KeyPress(Key.Space, RawInputModifiers.Control, PhysicalKey.Space, " ");
+        Assert.Equal("B:B", view.Selection?.ToString());
+
+        window.KeyPress(Key.Space, RawInputModifiers.Shift, PhysicalKey.Space, " ");
+        Assert.Equal("1:1048576", view.Selection?.ToString());
+
+        view.ActiveCell = Cells.Parse("C3");
+        window.KeyPress(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        Assert.Equal("1:1048576", view.Selection?.ToString());
+        Assert.Equal(Cells.Parse("C3"), view.ActiveCell);
+    });
+
+    [Fact]
+    public Task Setting_the_active_cell_selects_it_alone() => session.Run(() =>
+    {
+        var (_, view) = Show(Budget());
+        view.Selection = GridSelection.Cell(Cells.Parse("B2"), view.Worksheet).Extend(2, 2, view.Worksheet);
+
+        view.ActiveCell = Cells.Parse("A1");
+
+        Assert.Equal("A1", view.Selection?.ToString());
+    });
+
+    [Fact]
+    public Task Copying_puts_the_selected_cells_on_the_clipboard() => session.Run(async () =>
+    {
+        var (window, view) = Show(Budget());
+        view.Selection = GridSelection.Cell(Cells.Parse("A1"), view.Worksheet).ExtendTo(Cells.Parse("B2"), view.Worksheet);
+
+        await view.CopyAsync();
+
+        var clipboard = window.Clipboard!;
+        Assert.Equal("Item\tPrice\r\nRent\t1,250.00\r\n", await clipboard.TryGetTextAsync());
+    });
+
+    [Fact]
+    public Task Renders_a_selection_as_approved() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+        view.Selection = GridSelection.Cell(Cells.Parse("B2"), view.Worksheet).ExtendTo(Cells.Parse("C4"), view.Worksheet);
+
+        Snapshot.Match(window.CaptureRenderedFrame(), "selection");
+    });
+
+    [Fact]
+    public Task Renders_whole_columns_as_approved() => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+        view.Selection = GridSelection.Columns(2, 3, 1, view.Worksheet);
+
+        Snapshot.Match(window.CaptureRenderedFrame(), "columns");
     });
 }

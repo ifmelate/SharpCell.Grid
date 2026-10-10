@@ -2,8 +2,9 @@
 
 A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the SharpCell formula
 engine. It shows a worksheet as Excel does: headers, gridlines, each cell's value in its number
-format and Excel's default alignment. Only the visible cells are read, so any sheet size scrolls
-smoothly.
+format and its style, column widths, row heights, merged cells and frozen panes. Cells are
+selected as in Excel and copied with their styles, ready to paste into Excel. Only the visible
+cells are read, so any sheet size scrolls smoothly.
 
 | Package | What it does |
 |---|---|

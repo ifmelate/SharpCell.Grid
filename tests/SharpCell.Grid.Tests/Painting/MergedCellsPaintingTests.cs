@@ -68,10 +68,7 @@ public class MergedCellsPaintingTests
     {
         var (canvas, painter) = Paint(Sheet(), Cells.Parse("B2"));
 
-        var border = Assert.Single(canvas.Calls.OfType<RecordingCanvas.Stroke>());
-        var area = painter.CellBounds(Viewport, Cells.Parse("B2"), Cells.Parse("D3"));
-        Assert.Equal(area.Width, border.Rect.Width);
-        Assert.Equal(area.Height, border.Rect.Height);
+        Assert.Equal(painter.CellBounds(Viewport, Cells.Parse("B2"), Cells.Parse("D3")), canvas.Outline(painter));
     }
 
     [Theory]

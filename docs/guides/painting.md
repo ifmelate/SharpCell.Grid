@@ -15,8 +15,13 @@ painter.FrozenRows = sheet.FrozenRows;
 painter.FrozenColumns = sheet.FrozenColumns;
 
 var viewport = new GridViewport(OffsetX: 0, OffsetY: 0, Width: 800, Height: 600);
-painter.Paint(canvas, sheet, viewport, activeCell: new CellPosition(1, 1));   // canvas: your IGridCanvas
-CellPosition? clicked = painter.HitTest(viewport, x: 120, y: 30, sheet);
+var selection = GridSelection.Cell(new CellPosition(1, 1), sheet);
+painter.Paint(canvas, sheet, viewport, selection);   // canvas: your IGridCanvas
+
+// A click, then a drag to (300, 90): what Excel selects, and what is copied.
+if (painter.Hit(viewport, x: 120, y: 30, sheet) is { } hit)
+    selection = GridSelection.At(hit, sheet).ExtendTo(painter.CellNearest(viewport, 300, 90), sheet);
+string copied = GridClipboard.Text(sheet, selection.Area);
 ```
 
 ## The parts
@@ -26,9 +31,15 @@ CellPosition? clicked = painter.HitTest(viewport, x: 120, y: 30, sheet);
   Excel does, from the width of the widest digit of the default font.
 - `GridViewport` is what is shown: the scroll offset into the sheet and the size of the grid on
   screen, headers included.
-- `GridPainter` paints the part of the sheet in a viewport onto an `IGridCanvas`, and answers where
-  a cell is (`CellBounds`), what is under a point (`HitTest`), where to scroll (`ScrollIntoView`,
-  `Clamp`), and where the active cell moves (`GridNavigation.Move`).
+- `GridPainter` paints the part of the sheet in a viewport and the selection onto an `IGridCanvas`,
+  and answers where a cell is (`CellBounds`), what is under a point (`HitTest` for cells, `Hit`
+  for headers and the corner too), which cell a drag has reached (`CellNearest`, past the edges the
+  next one out of view), and where to scroll (`ScrollIntoView`, `Clamp`).
+- `GridSelection` is Excel's selection: what a click selects (`At`), and each step of the mouse
+  and keyboard (`ExtendTo`, `Extend`, `Move`, `MoveWithin`, `EntireColumns`, `EntireRows`). A host
+  maps its input events to these calls; `SpreadsheetView` shows how.
+- `GridClipboard` gives the selected cells as text and as HTML, the forms Excel pastes, and
+  `WindowsHtml` wraps the HTML in the clipboard format Windows applications read.
 - `IGridCanvas` is what a host implements over its drawing API: fill and stroke rectangles, draw
   lines with a dash pattern, draw text inside bounds, cut off at them, on one line or wrapped.
 

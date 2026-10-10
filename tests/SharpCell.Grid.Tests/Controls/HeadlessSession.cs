@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Media;
 using Avalonia.Themes.Fluent;
+using Avalonia.Threading;
 
 [assembly: AssemblyFixture(typeof(SharpCell.Grid.Tests.Controls.HeadlessSession))]
 
@@ -18,7 +19,20 @@ public sealed class HeadlessSession
 {
     private readonly HeadlessUnitTestSession session = HeadlessUnitTestSession.StartNew(typeof(TestApp));
 
-    public Task Run(Action body) => session.Dispatch(body, TestContext.Current.CancellationToken);
+    // A frame still to render when the test ends would render after the application is gone, without
+    // its fonts; it is rendered while the test still runs.
+    public Task Run(Action body) => session.Dispatch(() =>
+    {
+        body();
+        Dispatcher.UIThread.RunJobs();
+    }, TestContext.Current.CancellationToken);
+
+    public Task Run(Func<Task> body) => session.Dispatch(async () =>
+    {
+        await body();
+        Dispatcher.UIThread.RunJobs();
+        return true;
+    }, TestContext.Current.CancellationToken);
 }
 
 public sealed class TestApp : Application

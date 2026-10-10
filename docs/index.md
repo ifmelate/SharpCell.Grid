@@ -28,7 +28,7 @@ an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value 
 format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
 Excel.
 
-Status: 0.x, viewing only. Range selection, copying and WPF come next, then editing; see the
+Status: 0.x, viewing, selecting and copying. WPF comes next, then editing; see the
 [roadmap](roadmap.md). The API may change between minor versions until 1.0.
 
 - [Getting started](getting-started.md)
