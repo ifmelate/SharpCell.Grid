@@ -2,7 +2,7 @@
 
 > A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the SharpCell formula engine: it shows a worksheet the way Excel does, with number formats, cell styles, column widths, row heights, merged cells, frozen panes and text running on over empty cells. Only the visible cells are read, so any sheet size scrolls smoothly.
 
-Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework) and `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Viewing only: no editing yet.
+Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework) and `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected and copied as in Excel (`Selection`, `CopyAsync()`, `GridSelection`, `GridClipboard`); no editing yet.
 
 ---
 
@@ -38,7 +38,7 @@ an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value 
 format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
 Excel.
 
-Status: 0.x, viewing only. Range selection, copying and WPF come next, then editing; see the
+Status: 0.x, viewing, selecting and copying. WPF comes next, then editing; see the
 [roadmap](roadmap.md). The API may change between minor versions until 1.0.
 
 - [Getting started](getting-started.md)
@@ -96,16 +96,19 @@ The view reads cells each time it paints, but it does not know when a workbook c
 widths, row heights, hidden rows and columns and frozen panes are taken when `Worksheet` is set,
 and again with `ReloadLayout`.
 
-## The active cell and scrolling
+## Selection, copying and scrolling
 
 ```csharp snippet=active-cell
-view.ActiveCell = new CellPosition(row: 10, column: 3);   // C10
-view.Offset = new Vector(0, 200);                // scrolled ten default rows down
+view.ActiveCell = new CellPosition(row: 10, column: 3);                // C10, selected alone
+view.Selection = view.Selection!.Extend(rows: 2, columns: 1, sheet);   // C10:D12, as Shift with the arrows
+view.Offset = new Vector(0, 200);                                      // scrolled ten default rows down
+await view.CopyAsync();                                                // as Ctrl+C
 ```
 
-`ActiveCell` and `Offset` are Avalonia properties, so they can be bound. The mouse picks the
-active cell, the arrow keys, Enter and Tab move it as in Excel, and the wheel scrolls three rows a
-turn.
+`ActiveCell`, `Selection` and `Offset` are Avalonia properties, so they can be bound. The active
+cell is the selection's; setting it selects that cell alone. Cells are selected with the mouse and
+keyboard as in Excel, and copying puts them on the clipboard as text and as an HTML table, which
+Excel pastes with their styles. The wheel scrolls three rows a turn.
 
 ---
 
@@ -159,11 +162,35 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 
 | Input | Result |
 |---|---|
-| Click on a cell | It becomes the active cell; inside a merged area, its top-left cell |
-| Arrow keys | Move the active cell one cell, over a merged area as one cell |
-| Enter, Shift+Enter | Down, up |
-| Tab, Shift+Tab | Right, left |
+| Click on a cell | Selects it alone; inside a merged area, the area |
+| Drag | Selects from where the drag started; past an edge of the view it scrolls after the mouse |
+| Shift+click | Extends the selection from the active cell |
+| Click or drag on column or row headers | Whole columns or rows; the active cell is the first on screen |
+| Click on the corner above the row headers, Ctrl+A (Cmd+A on macOS) | The whole sheet |
+| Arrow keys | Move the active cell one cell, over a merged area as one cell, and select it alone |
+| Shift+arrow keys | Extend or shrink the selection at its far corner |
+| Ctrl+Space, Shift+Space | Whole columns, whole rows of the selection |
+| Enter, Shift+Enter | Down, up; inside a selection, to the next selected cell, column by column |
+| Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
+| Ctrl+C (Cmd+C on macOS) | Copies the selected cells |
 | Wheel | Three rows a turn |
+
+A selection covers every merged area it touches whole. Selected cells but the active one are
+shaded, a border goes round them, and the headers of their rows and columns are highlighted.
+
+## Copying to Excel
+
+Copying puts the selected cells on the clipboard in two forms, both read by Excel when it pastes:
+
+- Text, as Excel copies it: a tab between cells, a line break after each row, text with line
+  breaks in quotes. Other applications, such as editors and chat, take this form.
+- An HTML table with each cell's font, fill, borders and alignment, and merged areas as one cell.
+  Excel and other spreadsheets paste it with its styles; text stays text, even when it reads as a
+  number.
+
+Cells are copied as shown, in their number format: `1,250.00` rather than `1250`, and a formula's
+value rather than the formula. Hidden rows and columns are copied. Whole columns or rows end at the
+sheet's last used row or column.
 
 ## Where it differs from Excel
 
@@ -172,6 +199,11 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 - Theme colours with a tint, indent steps and centred text blocked on one side follow the OOXML
   definitions; they are not yet compared with Excel.
 - A merged area across the line of frozen panes is drawn whole from the frozen part.
+- The colours of the selection, its shade and its headers are close to Excel's, not measured from it.
+- Ctrl+A selects the whole sheet at once, not first the cells around the active one; Ctrl with the
+  arrows, Home, Page Up and Page Down do not move yet, and only one rectangle can be selected
+  (no Ctrl+click).
+- Copied HTML is not yet checked by pasting it into desktop Excel.
 - Not shown: conditional formats, pattern and gradient fills, rotated text, styles of whole rows
   and columns on empty cells, charts, images and comments.
 
@@ -196,8 +228,13 @@ painter.FrozenRows = sheet.FrozenRows;
 painter.FrozenColumns = sheet.FrozenColumns;
 
 var viewport = new GridViewport(OffsetX: 0, OffsetY: 0, Width: 800, Height: 600);
-painter.Paint(canvas, sheet, viewport, activeCell: new CellPosition(1, 1));   // canvas: your IGridCanvas
-CellPosition? clicked = painter.HitTest(viewport, x: 120, y: 30, sheet);
+var selection = GridSelection.Cell(new CellPosition(1, 1), sheet);
+painter.Paint(canvas, sheet, viewport, selection);   // canvas: your IGridCanvas
+
+// A click, then a drag to (300, 90): what Excel selects, and what is copied.
+if (painter.Hit(viewport, x: 120, y: 30, sheet) is { } hit)
+    selection = GridSelection.At(hit, sheet).ExtendTo(painter.CellNearest(viewport, 300, 90), sheet);
+string copied = GridClipboard.Text(sheet, selection.Area);
 ```
 
 ## The parts
@@ -207,9 +244,15 @@ CellPosition? clicked = painter.HitTest(viewport, x: 120, y: 30, sheet);
   Excel does, from the width of the widest digit of the default font.
 - `GridViewport` is what is shown: the scroll offset into the sheet and the size of the grid on
   screen, headers included.
-- `GridPainter` paints the part of the sheet in a viewport onto an `IGridCanvas`, and answers where
-  a cell is (`CellBounds`), what is under a point (`HitTest`), where to scroll (`ScrollIntoView`,
-  `Clamp`), and where the active cell moves (`GridNavigation.Move`).
+- `GridPainter` paints the part of the sheet in a viewport and the selection onto an `IGridCanvas`,
+  and answers where a cell is (`CellBounds`), what is under a point (`HitTest` for cells, `Hit`
+  for headers and the corner too), which cell a drag has reached (`CellNearest`, past the edges the
+  next one out of view), and where to scroll (`ScrollIntoView`, `Clamp`).
+- `GridSelection` is Excel's selection: what a click selects (`At`), and each step of the mouse
+  and keyboard (`ExtendTo`, `Extend`, `Move`, `MoveWithin`, `EntireColumns`, `EntireRows`). A host
+  maps its input events to these calls; `SpreadsheetView` shows how.
+- `GridClipboard` gives the selected cells as text and as HTML, the forms Excel pastes, and
+  `WindowsHtml` wraps the HTML in the clipboard format Windows applications read.
 - `IGridCanvas` is what a host implements over its drawing API: fill and stroke rectangles, draw
   lines with a dash pattern, draw text inside bounds, cut off at them, on one line or wrapped.
 
@@ -249,9 +292,11 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 
 ## Now: 0.2 — selection and WPF
 
-- Range selection with Shift and the mouse, whole rows and columns from their headers.
-- Copy as tab-separated text and HTML that Excel pastes, values as shown.
-- A WPF control over the same painter: `SharpCell.Grid.Wpf`.
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Range selection: the mouse with dragging and Shift, Shift with the arrows, whole columns and rows from their headers and with Ctrl+Space and Shift+Space, the whole sheet; Enter and Tab inside a selection | — |
+| Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
+| Next | A WPF control over the same painter: `SharpCell.Grid.Wpf` | — |
 
 ## Next: 0.3 — editing
 
@@ -260,6 +305,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
   `=` for formulas, `'` for text.
 - Recalculation after each edit, repainting only what changed (SharpCell's changed cells).
 - Undo and redo, Delete, paste of values from Excel.
+- Ctrl with the arrows, Home, Page Up and Page Down; Ctrl+A on the cells around the active one first.
 
 ## Later: 0.4 — working like Excel
 
@@ -451,6 +497,53 @@ public override string ToString()
 ```
 
 The A1 address, such as `B3`.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridClipboard.md -->
+
+# GridClipboard
+
+```csharp
+public static class GridClipboard
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+What copying cells puts on the clipboard, in the forms Excel reads when it pastes: text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells. Cells are copied as shown, `Cell.Text` in their number format. Hidden rows and columns are copied, as Excel copies them. Whole columns or rows end at the sheet's used range.
+
+## Methods
+
+<a id="html-worksheet-cellarea"></a>
+### Html(Worksheet, CellArea)
+
+```csharp
+public static string Html(Worksheet sheet, CellArea area)
+```
+
+The cells as an HTML document with one table, whose cells carry their style inline and merged areas as `colspan` and `rowspan`; the table lies between the `<!--StartFragment-->` and `<!--EndFragment-->` comments. On macOS and Linux it goes on the clipboard as it is; Windows needs it wrapped by [GridClipboard.WindowsHtml](SharpCell.Grid.GridClipboard.md#windowshtml-string).
+
+<a id="text-worksheet-cellarea"></a>
+### Text(Worksheet, CellArea)
+
+```csharp
+public static string Text(Worksheet sheet, CellArea area)
+```
+
+The cells as text, as Excel puts them on the clipboard: a tab between cells, a line break after each row, the last one too. Text with a line break or a tab is put in double quotes, with any quote inside doubled.
+
+<a id="windowshtml-string"></a>
+### WindowsHtml(string)
+
+```csharp
+public static string WindowsHtml(string html)
+```
+
+HTML in the clipboard format Windows applications read, `HTML Format`: a header giving where the document and its fragment start and end, as byte offsets into its UTF-8 encoding, then the document. Put it on the clipboard as UTF-8 bytes.
+
+**Exceptions**
+
+- `ArgumentException`: The document has no `<!--StartFragment-->` and `<!--EndFragment-->` comments.
 
 ---
 
@@ -650,6 +743,56 @@ Underlined text.
 
 ---
 
+<!-- page: api/SharpCell.Grid.GridHit.md -->
+
+# GridHit
+
+```csharp
+public readonly struct GridHit
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+What is under a point of the grid.
+
+## Constructors
+
+<a id="ctor-gridpart-cellposition"></a>
+### GridHit(GridPart, CellPosition)
+
+```csharp
+public GridHit(GridPart Part, CellPosition Cell)
+```
+
+What is under a point of the grid.
+
+**Parameters**
+
+- `Part`: The part of the grid.
+- `Cell`: The cell under the point, the top-left cell of a merged area; on a header, the cell a click makes active: the top row on screen in that column, the leftmost column on screen in that row.
+
+## Properties
+
+<a id="cell"></a>
+### Cell
+
+```csharp
+public CellPosition Cell { get; init; }
+```
+
+The cell under the point, the top-left cell of a merged area; on a header, the cell a click makes active: the top row on screen in that column, the leftmost column on screen in that row.
+
+<a id="part"></a>
+### Part
+
+```csharp
+public GridPart Part { get; init; }
+```
+
+The part of the grid.
+
+---
+
 <!-- page: api/SharpCell.Grid.GridNavigation.md -->
 
 # GridNavigation
@@ -800,6 +943,15 @@ public GridRect CellBounds(GridViewport viewport, CellPosition first, CellPositi
 
 Where a rectangle of cells is on screen, from its top-left to its bottom-right cell.
 
+<a id="cellnearest-gridviewport-double-double"></a>
+### CellNearest(GridViewport, double, double)
+
+```csharp
+public CellPosition CellNearest(GridViewport viewport, double x, double y)
+```
+
+The cell nearest to a point, for dragging a selection: the cell under it, or past an edge of the cells the next one out of view that way, so that scrolling to it follows the mouse.
+
 <a id="clamp-gridviewport"></a>
 ### Clamp(GridViewport)
 
@@ -817,6 +969,15 @@ public static GridFont FontOf(CellFont font)
 ```
 
 The font of a SharpCell font at 96 DPI.
+
+<a id="hit-gridviewport-double-double-worksheet"></a>
+### Hit(GridViewport, double, double, Worksheet)
+
+```csharp
+public GridHit? Hit(GridViewport viewport, double x, double y, Worksheet? sheet = null)
+```
+
+What is under a point of the grid: a cell, a column or row header, or the corner above the row headers; null outside the grid. [GridSelection.At](SharpCell.Grid.GridSelection.md#at-gridhit-worksheet) turns it into what a click selects.
 
 <a id="hittest-gridviewport-double-double-worksheet"></a>
 ### HitTest(GridViewport, double, double, Worksheet)
@@ -843,7 +1004,16 @@ The width in pixels of the widest digit of a sheet's default font, which Excel b
 public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, CellPosition? activeCell = default)
 ```
 
-Paints the part of the sheet in the viewport; without a sheet, an empty grid.
+Paints the part of the sheet in the viewport with the active cell alone selected; without a sheet, an empty grid.
+
+<a id="paint-igridcanvas-worksheet-gridviewport-gridselection"></a>
+### Paint(IGridCanvas, Worksheet, GridViewport, GridSelection)
+
+```csharp
+public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, GridSelection? selection)
+```
+
+Paints the part of the sheet in the viewport and the selection over it, as Excel does: the selected cells but the active one shaded, a border around them, their headers highlighted. Without a sheet, an empty grid; without a selection, none.
 
 <a id="scrollintoview-gridviewport-cellposition"></a>
 ### ScrollIntoView(GridViewport, CellPosition)
@@ -862,6 +1032,29 @@ public CellArea VisibleArea(GridViewport viewport)
 ```
 
 The cells the viewport shows, partly or wholly, of the part that scrolls: frozen rows and columns aside.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridPart.md -->
+
+# GridPart
+
+```csharp
+public enum GridPart
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+The parts of a grid a point can fall on.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="cell"></a>`Cell` | 0 | A cell. |
+| <a id="columnheader"></a>`ColumnHeader` | 1 | A column header, with the column's letter. |
+| <a id="rowheader"></a>`RowHeader` | 2 | A row header, with the row's number. |
+| <a id="corner"></a>`Corner` | 3 | The corner above the row headers, which selects the whole sheet. |
 
 ---
 
@@ -953,6 +1146,233 @@ The top edge.
 
 ---
 
+<!-- page: api/SharpCell.Grid.GridSelection.md -->
+
+# GridSelection
+
+```csharp
+public sealed class GridSelection
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+The selected cells, as in Excel: a rectangle of cells and the active cell inside it. The rectangle runs from the [GridSelection.Anchor](SharpCell.Grid.GridSelection.md#anchor), where the selection started, to the [GridSelection.Extent](SharpCell.Grid.GridSelection.md#extent), the corner the mouse or Shift with the arrows moves, and grows to cover whole every merged area it touches. Whole columns span every row of the sheet, whole rows every column. A selection never changes; each step gives a new one.
+
+## Properties
+
+<a id="activecell"></a>
+### ActiveCell
+
+```csharp
+public CellPosition ActiveCell { get; }
+```
+
+The cell typing would go into, with the white background inside the shaded selection.
+
+<a id="anchor"></a>
+### Anchor
+
+```csharp
+public CellPosition Anchor { get; }
+```
+
+The corner the selection started from; it stays when the selection is extended.
+
+<a id="area"></a>
+### Area
+
+```csharp
+public CellArea Area { get; }
+```
+
+The selected cells, merged areas they touch included.
+
+<a id="extent"></a>
+### Extent
+
+```csharp
+public CellPosition Extent { get; }
+```
+
+The corner opposite the anchor, which extending the selection moves.
+
+<a id="isentirecolumns"></a>
+### IsEntireColumns
+
+```csharp
+public bool IsEntireColumns { get; }
+```
+
+Whether the selection spans every row: whole columns, or the whole sheet.
+
+<a id="isentirerows"></a>
+### IsEntireRows
+
+```csharp
+public bool IsEntireRows { get; }
+```
+
+Whether the selection spans every column: whole rows, or the whole sheet.
+
+<a id="issinglecell"></a>
+### IsSingleCell
+
+```csharp
+public bool IsSingleCell { get; }
+```
+
+Whether only the active cell is selected; a merged area counts as one cell.
+
+## Methods
+
+<a id="all-cellposition"></a>
+### All(CellPosition)
+
+```csharp
+public static GridSelection All(CellPosition activeCell)
+```
+
+The whole sheet, keeping the active cell where it is.
+
+<a id="at-gridhit-worksheet"></a>
+### At(GridHit, Worksheet)
+
+```csharp
+public static GridSelection At(GridHit hit, Worksheet? sheet)
+```
+
+What a click selects: a cell, whole columns from a column header, whole rows from a row header, the whole sheet from the corner above the row headers.
+
+<a id="cell-cellposition-worksheet"></a>
+### Cell(CellPosition, Worksheet)
+
+```csharp
+public static GridSelection Cell(CellPosition cell, Worksheet? sheet)
+```
+
+One cell, or the merged area holding it.
+
+<a id="columns-int-int-int-worksheet"></a>
+### Columns(int, int, int, Worksheet)
+
+```csharp
+public static GridSelection Columns(int first, int last, int activeRow, Worksheet? sheet)
+```
+
+Whole columns, from the first to the last, with the active cell in the first column.
+
+**Parameters**
+
+- `first`: The column the selection starts from.
+- `last`: The column it extends to; before `first` for a selection extended to the left.
+- `activeRow`: The row of the active cell: in Excel, the top row on screen.
+- `sheet`: The sheet, whose merged areas the selection covers whole.
+
+<a id="contains-int-int"></a>
+### Contains(int, int)
+
+```csharp
+public bool Contains(int row, int column)
+```
+
+Whether a cell is selected.
+
+<a id="entirecolumns-worksheet"></a>
+### EntireColumns(Worksheet)
+
+```csharp
+public GridSelection EntireColumns(Worksheet? sheet)
+```
+
+Whole columns under the selection, keeping the active cell, as Ctrl+Space does.
+
+<a id="entirerows-worksheet"></a>
+### EntireRows(Worksheet)
+
+```csharp
+public GridSelection EntireRows(Worksheet? sheet)
+```
+
+Whole rows under the selection, keeping the active cell, as Shift+Space does.
+
+<a id="extend-int-int-worksheet"></a>
+### Extend(int, int, Worksheet)
+
+```csharp
+public GridSelection Extend(int rows, int columns, Worksheet? sheet)
+```
+
+The selection grown or shrunk by whole rows and columns at its extent, as Shift with the arrows does; a step that a merged area swallows goes on until the selection changes.
+
+<a id="extendto-cellposition-worksheet"></a>
+### ExtendTo(CellPosition, Worksheet)
+
+```csharp
+public GridSelection ExtendTo(CellPosition cell, Worksheet? sheet)
+```
+
+The selection from the same anchor to a cell, as when dragging the mouse or Shift-clicking: whole columns or rows stay whole, the active cell stays.
+
+<a id="extendto-gridhit-worksheet"></a>
+### ExtendTo(GridHit, Worksheet)
+
+```csharp
+public GridSelection ExtendTo(GridHit hit, Worksheet? sheet)
+```
+
+The selection from the same anchor to what a Shift-click hits: to a cell, to whole columns from a column header, to whole rows from a row header, the whole sheet from the corner.
+
+<a id="move-int-int-worksheet"></a>
+### Move(int, int, Worksheet)
+
+```csharp
+public GridSelection Move(int rows, int columns, Worksheet? sheet)
+```
+
+The active cell moved by whole rows and columns, as the arrows move it, and selected alone.
+
+<a id="movewithin-int-int-worksheet"></a>
+### MoveWithin(int, int, Worksheet)
+
+```csharp
+public GridSelection MoveWithin(int rows, int columns, Worksheet? sheet)
+```
+
+The active cell moved as Enter and Tab move it. A single cell moves as with the arrows; inside a larger selection it moves to the next cell of the selection, which stays, and wraps around: Enter goes down each column in turn, Tab across each row. Hidden cells and the inner cells of merged areas are passed over.
+
+**Parameters**
+
+- `rows`: 1 for Enter, -1 for Shift+Enter, 0 for Tab.
+- `columns`: 1 for Tab, -1 for Shift+Tab, 0 for Enter.
+- `sheet`: The sheet, whose hidden rows and columns and merged areas are passed over.
+
+<a id="rows-int-int-int-worksheet"></a>
+### Rows(int, int, int, Worksheet)
+
+```csharp
+public static GridSelection Rows(int first, int last, int activeColumn, Worksheet? sheet)
+```
+
+Whole rows, from the first to the last, with the active cell in the first row.
+
+**Parameters**
+
+- `first`: The row the selection starts from.
+- `last`: The row it extends to; above `first` for a selection extended upwards.
+- `activeColumn`: The column of the active cell: in Excel, the leftmost column on screen.
+- `sheet`: The sheet, whose merged areas the selection covers whole.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The selected cells' address: `B3`, `B3:D7`, `C:E` for whole columns, `2:4` for whole rows.
+
+---
+
 <!-- page: api/SharpCell.Grid.GridTextAlignment.md -->
 
 # GridTextAlignment
@@ -1007,7 +1427,7 @@ Colours close to Excel's light theme, as [GridTheme.Excel](SharpCell.Grid.GridTh
 public GridColor ActiveCellBorder { get; init; }
 ```
 
-The border around the active cell.
+The border around the active cell and the selection, and the line under the headers of selected cells.
 
 <a id="activeheaderbackground"></a>
 ### ActiveHeaderBackground
@@ -1016,7 +1436,7 @@ The border around the active cell.
 public GridColor ActiveHeaderBackground { get; init; }
 ```
 
-Behind the headers of the active cell's row and column.
+Behind the headers of the rows and columns of the selected cells.
 
 <a id="background"></a>
 ### Background
@@ -1089,6 +1509,33 @@ public GridColor HeaderText { get; init; }
 ```
 
 Header text: column letters and row numbers.
+
+<a id="selectedheaderbackground"></a>
+### SelectedHeaderBackground
+
+```csharp
+public GridColor SelectedHeaderBackground { get; init; }
+```
+
+Behind the headers of whole selected columns or rows.
+
+<a id="selectedheadertext"></a>
+### SelectedHeaderText
+
+```csharp
+public GridColor SelectedHeaderText { get; init; }
+```
+
+Text of the headers of whole selected columns or rows.
+
+<a id="selectionfill"></a>
+### SelectionFill
+
+```csharp
+public GridColor SelectionFill { get; init; }
+```
+
+The translucent shade over selected cells other than the active cell.
 
 ---
 
@@ -1459,7 +1906,7 @@ public class SpreadsheetView : Control
 
 Namespace `SharpCell.Grid.Avalonia` · package `SharpCell.Grid.Avalonia`
 
-Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. The mouse picks the active cell, the keyboard moves it as in Excel, the wheel scrolls. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `Visual.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Avalonia.SpreadsheetView.md#reloadlayout).
+Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls, and copying puts the selected cells on the clipboard as Excel pastes them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `Visual.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Avalonia.SpreadsheetView.md#reloadlayout).
 
 ## Constructors
 
@@ -1481,7 +1928,7 @@ Creates an empty view; set [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.S
 public CellPosition? ActiveCell { get; set; }
 ```
 
-The cell with the active-cell border; null shows none.
+The cell with the active-cell border; null shows none. It is the active cell of [SpreadsheetView.Selection](SharpCell.Grid.Avalonia.SpreadsheetView.md#selection); setting it selects that cell alone.
 
 <a id="offset"></a>
 ### Offset
@@ -1500,6 +1947,15 @@ public GridPainter Painter { get; }
 ```
 
 Geometry and colours: row heights, column widths, header sizes, theme.
+
+<a id="selection"></a>
+### Selection
+
+```csharp
+public GridSelection? Selection { get; set; }
+```
+
+The selected cells, the active cell among them; null selects none. A new sheet starts from its active cell alone.
 
 <a id="viewport"></a>
 ### Viewport
@@ -1520,6 +1976,15 @@ public Worksheet? Worksheet { get; set; }
 The sheet shown; null shows an empty grid.
 
 ## Methods
+
+<a id="copyasync"></a>
+### CopyAsync()
+
+```csharp
+public Task CopyAsync()
+```
+
+Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C (Cmd+C on macOS) does it too.
 
 <a id="reloadlayout"></a>
 ### ReloadLayout()

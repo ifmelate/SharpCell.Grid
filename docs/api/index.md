@@ -10,12 +10,16 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 |---|---|
 | [CellArea](SharpCell.Grid.CellArea.md) | A rectangle of cells, from its top-left to its bottom-right cell; rows and columns from 1. |
 | [CellPosition](SharpCell.Grid.CellPosition.md) | A cell of the sheet by 1-based row and column, such as the active cell. |
+| [GridClipboard](SharpCell.Grid.GridClipboard.md) | What copying cells puts on the clipboard, in the forms Excel reads when it pastes: text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells. |
 | [GridColor](SharpCell.Grid.GridColor.md) | An opaque or translucent sRGB colour. |
 | [GridDash](SharpCell.Grid.GridDash.md) | The dash pattern of a line, after Excel's border styles. |
 | [GridFont](SharpCell.Grid.GridFont.md) | A font to draw text with; the size is in pixels, not points. |
+| [GridHit](SharpCell.Grid.GridHit.md) | What is under a point of the grid. |
 | [GridNavigation](SharpCell.Grid.GridNavigation.md) | How the active cell moves on a sheet, as in Excel: a merged area counts as one cell. |
 | [GridPainter](SharpCell.Grid.GridPainter.md) | Paints a worksheet the way Excel shows it: column and row headers, gridlines, each cell's `Cell.Text` in its style (font, fill, borders, alignment, wrapping, indent), merged areas as one cell, and the active cell. |
+| [GridPart](SharpCell.Grid.GridPart.md) | The parts of a grid a point can fall on. |
 | [GridRect](SharpCell.Grid.GridRect.md) | A rectangle in device-independent pixels. |
+| [GridSelection](SharpCell.Grid.GridSelection.md) | The selected cells, as in Excel: a rectangle of cells and the active cell inside it. |
 | [GridTextAlignment](SharpCell.Grid.GridTextAlignment.md) | Where text sits across its bounds. |
 | [GridTheme](SharpCell.Grid.GridTheme.md) | The colours of a grid. |
 | [GridVerticalAlignment](SharpCell.Grid.GridVerticalAlignment.md) | Where text sits from top to bottom of its bounds. |

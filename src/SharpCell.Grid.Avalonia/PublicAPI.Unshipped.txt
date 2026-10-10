@@ -1,1 +1,8 @@
 #nullable enable
+override SharpCell.Grid.Avalonia.SpreadsheetView.OnPointerCaptureLost(Avalonia.Input.PointerCaptureLostEventArgs! e) -> void
+override SharpCell.Grid.Avalonia.SpreadsheetView.OnPointerMoved(Avalonia.Input.PointerEventArgs! e) -> void
+override SharpCell.Grid.Avalonia.SpreadsheetView.OnPointerReleased(Avalonia.Input.PointerReleasedEventArgs! e) -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.CopyAsync() -> System.Threading.Tasks.Task!
+SharpCell.Grid.Avalonia.SpreadsheetView.Selection.get -> SharpCell.Grid.GridSelection?
+SharpCell.Grid.Avalonia.SpreadsheetView.Selection.set -> void
+static readonly SharpCell.Grid.Avalonia.SpreadsheetView.SelectionProperty -> Avalonia.StyledProperty<SharpCell.Grid.GridSelection?>!

@@ -116,14 +116,32 @@ public sealed class GridPainter
         return widest > 0 ? Math.Round(widest) : DefaultDigitWidth;
     }
 
-    /// <summary>Paints the part of the sheet in the viewport; without a sheet, an empty grid.</summary>
-    public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, CellPosition? activeCell = null)
+    /// <summary>Paints the part of the sheet in the viewport with the active cell alone selected; without a sheet, an empty grid.</summary>
+#pragma warning disable RS0027 // The overload taking a selection came after this one shipped; they differ in the last parameter's type.
+    public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, CellPosition? activeCell = null) =>
+        Paint(canvas, sheet, viewport, activeCell is { } cell ? GridSelection.Cell(cell, sheet) : null);
+#pragma warning restore RS0027
+
+    /// <summary>
+    /// Paints the part of the sheet in the viewport and the selection over it, as Excel does: the
+    /// selected cells but the active one shaded, a border around them, their headers highlighted.
+    /// Without a sheet, an empty grid; without a selection, none.
+    /// </summary>
+    public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, GridSelection? selection)
     {
         ArgumentNullException.ThrowIfNull(canvas);
         var theme = Theme;
         canvas.FillRectangle(new GridRect(0, 0, viewport.Width, viewport.Height), theme.Background);
         if (CellsWidth(viewport) <= 0 || CellsHeight(viewport) <= 0)
             return;
+
+        // The selection covers merged areas whole, also when it was made without the sheet.
+        var merges = sheet?.MergedAreas ?? [];
+        Selected? selected = selection is null ? null : new Selected(
+            GridSelection.Cover(selection.Area, merges),
+            GridSelection.Cover(GridSelection.Box(selection.ActiveCell, selection.ActiveCell), merges),
+            selection.IsEntireColumns,
+            selection.IsEntireRows);
 
         // The scrolled cells first, then the frozen panes over whatever of them reaches under the
         // panes: each frozen pane starts from its own background.
@@ -138,29 +156,87 @@ public sealed class GridPainter
                 canvas.FillRectangle(regions[i].Clip, theme.Background);
             if (sheet?.ShowGridlines ?? true)
                 PaintGridlines(canvas, frame);
-            if (sheet is null)
-                continue;
-            PaintFills(canvas, frame, sheet);
-            var runs = TextRuns(frame, sheet);
-            CoverGridlines(canvas, frame, sheet, runs);
-            PaintBorders(canvas, frame, sheet);
-            foreach (var run in runs)
-                PaintText(canvas, frame, sheet, run);
+            if (sheet is not null)
+            {
+                PaintFills(canvas, frame, sheet);
+                var runs = TextRuns(frame, sheet);
+                CoverGridlines(canvas, frame, sheet, runs);
+                PaintBorders(canvas, frame, sheet);
+                foreach (var run in runs)
+                    PaintText(canvas, frame, sheet, run);
+            }
+
+            if (selected is { } shade)
+                ShadeSelection(canvas, frame, shade);
         }
 
         PaintFrozenLines(canvas, viewport, rowHeaders);
-        PaintHeaders(canvas, frames, activeCell);
-        if (activeCell is { } active && frames.Count > 0)
+        PaintHeaders(canvas, frames, selected);
+        if (selected is { } outline)
         {
-            var area = frames[0].MergeAt(active.Row, active.Column, all: true) ?? new CellArea(active.Row, active.Column, active.Row, active.Column);
-            if (frames.Exists(f => Intersects(f.Area, area)))
-            {
-                var bounds = frames[0].Bounds(area);
-                canvas.StrokeRectangle(
-                    new GridRect(bounds.X - 0.5, bounds.Y - 0.5, bounds.Width, bounds.Height),
-                    theme.ActiveCellBorder,
-                    ActiveBorderThickness);
-            }
+            foreach (var frame in frames)
+                OutlineSelection(canvas, frame, outline.Area);
+        }
+    }
+
+    /// <summary>A selection as painted: its cells and the active cell's, merged areas covered.</summary>
+    private readonly record struct Selected(CellArea Area, CellArea Active, bool EntireColumns, bool EntireRows);
+
+    // Excel shades the selected cells, text and all, but leaves the active cell white.
+    private void ShadeSelection(IGridCanvas canvas, Frame frame, Selected selected)
+    {
+        if (selected.Area == selected.Active || !Intersects(frame.Area, selected.Area))
+            return;
+        var area = frame.Bounds(selected.Area);
+        var active = frame.Bounds(selected.Active);
+        var clip = frame.Clip;
+        void Fill(double left, double top, double right, double bottom)
+        {
+            left = Math.Max(left, clip.X);
+            top = Math.Max(top, clip.Y);
+            right = Math.Min(right, clip.Right);
+            bottom = Math.Min(bottom, clip.Bottom);
+            if (right > left && bottom > top)
+                canvas.FillRectangle(new GridRect(left, top, right - left, bottom - top), Theme.SelectionFill);
+        }
+
+        // Around the active cell: the bands above and below it, then those beside it.
+        Fill(area.X, area.Y, area.Right, active.Y);
+        Fill(area.X, active.Bottom, area.Right, area.Bottom);
+        Fill(area.X, Math.Max(area.Y, active.Y), active.X, Math.Min(area.Bottom, active.Bottom));
+        Fill(active.Right, Math.Max(area.Y, active.Y), area.Right, Math.Min(area.Bottom, active.Bottom));
+    }
+
+    // The border around the selection, two pixels wide over the pixel lines around it, drawn as the
+    // part of it each pane shows: a selection reaching under a frozen pane is cut off at its line.
+    // Edges along the headers lie over the headers' closing line, as in Excel.
+    private void OutlineSelection(IGridCanvas canvas, Frame frame, CellArea selection)
+    {
+        if (!Intersects(frame.Area, selection))
+            return;
+        var bounds = frame.Bounds(selection);
+        var clip = frame.Clip;
+        var color = Theme.ActiveCellBorder;
+        var (left, top) = (bounds.X - 0.5, bounds.Y - 0.5);
+        var (right, bottom) = (bounds.Right - 0.5, bounds.Bottom - 0.5);
+        var half = ActiveBorderThickness / 2;
+
+        var (y1, y2) = (Math.Max(top - half, clip.Y - half), Math.Min(bottom + half, clip.Bottom));
+        if (y2 > y1)
+        {
+            if (left >= clip.X - half && left < clip.Right)
+                canvas.DrawLine(left, y1, left, y2, color, ActiveBorderThickness);
+            if (right >= clip.X - half && right < clip.Right)
+                canvas.DrawLine(right, y1, right, y2, color, ActiveBorderThickness);
+        }
+
+        var (x1, x2) = (Math.Max(left - half, clip.X - half), Math.Min(right + half, clip.Right));
+        if (x2 > x1)
+        {
+            if (top >= clip.Y - half && top < clip.Bottom)
+                canvas.DrawLine(x1, top, x2, top, color, ActiveBorderThickness);
+            if (bottom >= clip.Y - half && bottom < clip.Bottom)
+                canvas.DrawLine(x1, bottom, x2, bottom, color, ActiveBorderThickness);
         }
     }
 
@@ -293,6 +369,58 @@ public sealed class GridPainter
             ? new CellPosition(merge.FirstRow, merge.FirstColumn)
             : cell;
     }
+
+    /// <summary>
+    /// What is under a point of the grid: a cell, a column or row header, or the corner above the
+    /// row headers; null outside the grid. <see cref="GridSelection.At"/> turns it into what a click selects.
+    /// </summary>
+    public GridHit? Hit(GridViewport viewport, double x, double y, Worksheet? sheet = null)
+    {
+        var rowHeaders = RowHeaders(viewport);
+        if (x < 0 || y < 0 || x >= viewport.Width || y >= viewport.Height)
+            return null;
+        var (onRowHeaders, onColumnHeaders) = (x < rowHeaders, y < ColumnHeaderHeight);
+        if (!onRowHeaders && !onColumnHeaders)
+            return HitTest(viewport, x, y, sheet) is { } cell ? new GridHit(GridPart.Cell, cell) : null;
+
+        // On a header, the cell a click makes active: the first on screen in that column or row.
+        var row = onColumnHeaders ? TopRow(viewport) : RowUnder(viewport, y - ColumnHeaderHeight);
+        var column = onRowHeaders ? LeftColumn(viewport) : ColumnUnder(viewport, x - rowHeaders);
+        var part = onRowHeaders && onColumnHeaders ? GridPart.Corner : onColumnHeaders ? GridPart.ColumnHeader : GridPart.RowHeader;
+        return new GridHit(part, new CellPosition(row, column));
+    }
+
+    /// <summary>
+    /// The cell nearest to a point, for dragging a selection: the cell under it, or past an edge of
+    /// the cells the next one out of view that way, so that scrolling to it follows the mouse.
+    /// </summary>
+    public CellPosition CellNearest(GridViewport viewport, double x, double y)
+    {
+        var rowHeaders = RowHeaders(viewport);
+        var (width, height) = (Math.Max(0, CellsWidth(viewport)), Math.Max(0, CellsHeight(viewport)));
+        var cellX = Math.Clamp(x - rowHeaders, 0, width == 0 ? 0 : Math.BitDecrement(width));
+        var cellY = Math.Clamp(y - ColumnHeaderHeight, 0, height == 0 ? 0 : Math.BitDecrement(height));
+        var row = RowUnder(viewport, cellY);
+        var column = ColumnUnder(viewport, cellX);
+        if (y >= viewport.Height)
+            row = ScrollRows(viewport).Last + 1;
+        else if (y < ColumnHeaderHeight && viewport.OffsetY > 0)
+            row = ScrollRows(viewport).First - 1;
+        if (x >= viewport.Width)
+            column = ScrollColumns(viewport).Last + 1;
+        else if (x < rowHeaders && viewport.OffsetX > 0)
+            column = ScrollColumns(viewport).First - 1;
+        return new CellPosition(Math.Clamp(row, 1, SheetLayout.MaxRow), Math.Clamp(column, 1, SheetLayout.MaxColumn));
+    }
+
+    // The row and column under a point of the cells, frozen panes included.
+    private int RowUnder(GridViewport viewport, double cellY) => Layout.RowAt(cellY < FrozenHeight ? cellY : cellY + viewport.OffsetY);
+
+    private int ColumnUnder(GridViewport viewport, double cellX) => Layout.ColumnAt(cellX < FrozenWidth ? cellX : cellX + viewport.OffsetX);
+
+    private int TopRow(GridViewport viewport) => FrozenRows > 0 ? 1 : ScrollRows(viewport).First;
+
+    private int LeftColumn(GridViewport viewport) => FrozenColumns > 0 ? 1 : ScrollColumns(viewport).First;
 
     /// <summary>
     /// The viewport scrolled just enough to show the whole cell, or its top-left part when it is
@@ -639,7 +767,7 @@ public sealed class GridPainter
         _ => GridVerticalAlignment.Center,
     };
 
-    private void PaintHeaders(IGridCanvas canvas, List<Frame> frames, CellPosition? activeCell)
+    private void PaintHeaders(IGridCanvas canvas, List<Frame> frames, Selected? selected)
     {
         var theme = Theme;
         if (frames.Count == 0)
@@ -668,15 +796,22 @@ public sealed class GridPainter
             }
         }
 
+        // Headers of the selected cells' columns and rows are highlighted and underlined on the side
+        // of the cells; those of whole selected columns or rows are darker still.
+        var underlines = new List<(double From, double To, bool Column)>();
         foreach (var column in columns)
         {
             var width = Layout.ColumnWidth(column);
             if (width <= 0)
                 continue;
             var bounds = new GridRect(ScreenX(viewport, rowHeaders, column), 0, width, ColumnHeaderHeight);
-            canvas.FillRectangle(bounds, activeCell?.Column == column ? theme.ActiveHeaderBackground : theme.HeaderBackground);
+            var highlighted = selected is { } s && column >= s.Area.FirstColumn && column <= s.Area.LastColumn;
+            var whole = highlighted && selected!.Value.EntireColumns;
+            canvas.FillRectangle(bounds, whole ? theme.SelectedHeaderBackground : highlighted ? theme.ActiveHeaderBackground : theme.HeaderBackground);
             canvas.DrawLine(PixelCentre(bounds.Right), 0, PixelCentre(bounds.Right), ColumnHeaderHeight, theme.HeaderLine);
-            canvas.DrawText(ColumnNames.Of(column), bounds, GridTextAlignment.Center, GridVerticalAlignment.Center, theme.HeaderText, font, wrap: false);
+            canvas.DrawText(ColumnNames.Of(column), bounds, GridTextAlignment.Center, GridVerticalAlignment.Center, whole ? theme.SelectedHeaderText : theme.HeaderText, font, wrap: false);
+            if (highlighted)
+                underlines.Add((bounds.X - 1, bounds.Right, true));
         }
 
         foreach (var row in rows)
@@ -685,15 +820,29 @@ public sealed class GridPainter
             if (height <= 0)
                 continue;
             var bounds = new GridRect(0, ScreenY(viewport, row), rowHeaders, height);
-            canvas.FillRectangle(bounds, activeCell?.Row == row ? theme.ActiveHeaderBackground : theme.HeaderBackground);
+            var highlighted = selected is { } s && row >= s.Area.FirstRow && row <= s.Area.LastRow;
+            var whole = highlighted && selected!.Value.EntireRows;
+            canvas.FillRectangle(bounds, whole ? theme.SelectedHeaderBackground : highlighted ? theme.ActiveHeaderBackground : theme.HeaderBackground);
             canvas.DrawLine(0, PixelCentre(bounds.Bottom), rowHeaders, PixelCentre(bounds.Bottom), theme.HeaderLine);
-            canvas.DrawText(row.ToString(CultureInfo.InvariantCulture), bounds, GridTextAlignment.Center, GridVerticalAlignment.Center, theme.HeaderText, font, wrap: false);
+            canvas.DrawText(row.ToString(CultureInfo.InvariantCulture), bounds, GridTextAlignment.Center, GridVerticalAlignment.Center, whole ? theme.SelectedHeaderText : theme.HeaderText, font, wrap: false);
+            if (highlighted)
+                underlines.Add((bounds.Y - 1, bounds.Bottom, false));
         }
 
         // The corner above the row headers covers whatever scrolled under it, and lines close the headers off.
         canvas.FillRectangle(new GridRect(0, 0, rowHeaders, ColumnHeaderHeight), theme.HeaderBackground);
         canvas.DrawLine(0, PixelCentre(ColumnHeaderHeight), viewport.Width, PixelCentre(ColumnHeaderHeight), theme.HeaderLine);
         canvas.DrawLine(PixelCentre(rowHeaders), 0, PixelCentre(rowHeaders), viewport.Height, theme.HeaderLine);
+
+        // The underlines cover the two pixels before the cells, the closing line among them.
+        var (underX, underY) = (Math.Floor(rowHeaders) - 1, Math.Floor(ColumnHeaderHeight) - 1);
+        foreach (var (from, to, column) in underlines)
+        {
+            if (column)
+                canvas.DrawLine(Math.Max(from, rowHeaders), underY, to, underY, theme.ActiveCellBorder, ActiveBorderThickness);
+            else
+                canvas.DrawLine(underX, Math.Max(from, ColumnHeaderHeight), underX, to, theme.ActiveCellBorder, ActiveBorderThickness);
+        }
     }
 
     // The centre of the last pixel before an edge, where a one-pixel line covers exactly that pixel.

@@ -80,6 +80,30 @@ public readonly record struct CellPosition
     public override string ToString() => ColumnNames.Of(Column) + Row.ToString(System.Globalization.CultureInfo.InvariantCulture);
 }
 
+/// <summary>The parts of a grid a point can fall on.</summary>
+public enum GridPart
+{
+    /// <summary>A cell.</summary>
+    Cell,
+
+    /// <summary>A column header, with the column's letter.</summary>
+    ColumnHeader,
+
+    /// <summary>A row header, with the row's number.</summary>
+    RowHeader,
+
+    /// <summary>The corner above the row headers, which selects the whole sheet.</summary>
+    Corner,
+}
+
+/// <summary>What is under a point of the grid.</summary>
+/// <param name="Part">The part of the grid.</param>
+/// <param name="Cell">
+/// The cell under the point, the top-left cell of a merged area; on a header, the cell a click makes
+/// active: the top row on screen in that column, the leftmost column on screen in that row.
+/// </param>
+public readonly record struct GridHit(GridPart Part, CellPosition Cell);
+
 /// <summary>
 /// What part of the sheet a grid shows: the scroll offset into the sheet and the size of the whole
 /// grid on screen, headers included.

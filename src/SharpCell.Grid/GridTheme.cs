@@ -29,12 +29,21 @@ public sealed record GridTheme
     /// <summary>Header text: column letters and row numbers.</summary>
     public GridColor HeaderText { get; init; } = GridColor.FromRgb(0x444444);
 
-    /// <summary>Behind the headers of the active cell's row and column.</summary>
+    /// <summary>Behind the headers of the rows and columns of the selected cells.</summary>
     public GridColor ActiveHeaderBackground { get; init; } = GridColor.FromRgb(0xD9D9D9);
 
     /// <summary>The line where panes are frozen.</summary>
     public GridColor FrozenLine { get; init; } = GridColor.FromRgb(0x9B9B9B);
 
-    /// <summary>The border around the active cell.</summary>
+    /// <summary>The border around the active cell and the selection, and the line under the headers of selected cells.</summary>
     public GridColor ActiveCellBorder { get; init; } = GridColor.FromRgb(0x107C41);
+
+    /// <summary>The translucent shade over selected cells other than the active cell.</summary>
+    public GridColor SelectionFill { get; init; } = new(0, 0, 0, 0x26);
+
+    /// <summary>Behind the headers of whole selected columns or rows.</summary>
+    public GridColor SelectedHeaderBackground { get; init; } = GridColor.FromRgb(0xC6C6C6);
+
+    /// <summary>Text of the headers of whole selected columns or rows.</summary>
+    public GridColor SelectedHeaderText { get; init; } = GridColor.FromRgb(0x107C41);
 }

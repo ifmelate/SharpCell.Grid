@@ -123,6 +123,15 @@ public GridRect CellBounds(GridViewport viewport, CellPosition first, CellPositi
 
 Where a rectangle of cells is on screen, from its top-left to its bottom-right cell.
 
+<a id="cellnearest-gridviewport-double-double"></a>
+### CellNearest(GridViewport, double, double)
+
+```csharp
+public CellPosition CellNearest(GridViewport viewport, double x, double y)
+```
+
+The cell nearest to a point, for dragging a selection: the cell under it, or past an edge of the cells the next one out of view that way, so that scrolling to it follows the mouse.
+
 <a id="clamp-gridviewport"></a>
 ### Clamp(GridViewport)
 
@@ -140,6 +149,15 @@ public static GridFont FontOf(CellFont font)
 ```
 
 The font of a SharpCell font at 96 DPI.
+
+<a id="hit-gridviewport-double-double-worksheet"></a>
+### Hit(GridViewport, double, double, Worksheet)
+
+```csharp
+public GridHit? Hit(GridViewport viewport, double x, double y, Worksheet? sheet = null)
+```
+
+What is under a point of the grid: a cell, a column or row header, or the corner above the row headers; null outside the grid. [GridSelection.At](SharpCell.Grid.GridSelection.md#at-gridhit-worksheet) turns it into what a click selects.
 
 <a id="hittest-gridviewport-double-double-worksheet"></a>
 ### HitTest(GridViewport, double, double, Worksheet)
@@ -166,7 +184,16 @@ The width in pixels of the widest digit of a sheet's default font, which Excel b
 public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, CellPosition? activeCell = default)
 ```
 
-Paints the part of the sheet in the viewport; without a sheet, an empty grid.
+Paints the part of the sheet in the viewport with the active cell alone selected; without a sheet, an empty grid.
+
+<a id="paint-igridcanvas-worksheet-gridviewport-gridselection"></a>
+### Paint(IGridCanvas, Worksheet, GridViewport, GridSelection)
+
+```csharp
+public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, GridSelection? selection)
+```
+
+Paints the part of the sheet in the viewport and the selection over it, as Excel does: the selected cells but the active one shaded, a border around them, their headers highlighted. Without a sheet, an empty grid; without a selection, none.
 
 <a id="scrollintoview-gridviewport-cellposition"></a>
 ### ScrollIntoView(GridViewport, CellPosition)

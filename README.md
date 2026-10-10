@@ -7,12 +7,12 @@ A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the
 [SharpCell](https://github.com/ifmelate/SharpCell) formula engine. It shows a worksheet the way
 Excel does: column and row headers, gridlines, each cell's value in its number format and its
 style (font, fill, borders, alignment, wrapping), the file's column widths and row heights,
-merged cells, frozen panes, text running on over empty neighbours, and an active cell moved with
-the mouse and keyboard. Only the visible cells are read, so a sheet of a million rows scrolls like an empty one.
+merged cells, frozen panes and text running on over empty neighbours. Cells are selected with the
+mouse and keyboard as in Excel and copied with their styles, ready to paste into Excel. Only the visible cells are read, so a sheet of a million rows scrolls like an empty one.
 
 **[Try it in your browser](https://ifmelate.github.io/SharpCell.Grid/demo/)**: open your own .xlsx file; it is read on your computer and never uploaded.
 
-Status: 0.x, viewing only: no selection of ranges or editing yet; see the [roadmap](docs/roadmap.md).
+Status: 0.x, viewing, selecting and copying to Excel; no editing yet. See the [roadmap](docs/roadmap.md).
 The API may change between minor versions until 1.0.
 
 | Package | What it does |

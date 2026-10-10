@@ -21,9 +21,11 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 
 ## Now: 0.2 — selection and WPF
 
-- Range selection with Shift and the mouse, whole rows and columns from their headers.
-- Copy as tab-separated text and HTML that Excel pastes, values as shown.
-- A WPF control over the same painter: `SharpCell.Grid.Wpf`.
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Range selection: the mouse with dragging and Shift, Shift with the arrows, whole columns and rows from their headers and with Ctrl+Space and Shift+Space, the whole sheet; Enter and Tab inside a selection | — |
+| Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
+| Next | A WPF control over the same painter: `SharpCell.Grid.Wpf` | — |
 
 ## Next: 0.3 — editing
 
@@ -32,6 +34,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
   `=` for formulas, `'` for text.
 - Recalculation after each edit, repainting only what changed (SharpCell's changed cells).
 - Undo and redo, Delete, paste of values from Excel.
+- Ctrl with the arrows, Home, Page Up and Page Down; Ctrl+A on the cells around the active one first.
 
 ## Later: 0.4 — working like Excel
 

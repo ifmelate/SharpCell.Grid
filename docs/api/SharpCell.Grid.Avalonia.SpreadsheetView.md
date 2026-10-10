@@ -8,7 +8,7 @@ public class SpreadsheetView : Control
 
 Namespace `SharpCell.Grid.Avalonia` · package `SharpCell.Grid.Avalonia`
 
-Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. The mouse picks the active cell, the keyboard moves it as in Excel, the wheel scrolls. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `Visual.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Avalonia.SpreadsheetView.md#reloadlayout).
+Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls, and copying puts the selected cells on the clipboard as Excel pastes them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `Visual.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Avalonia.SpreadsheetView.md#reloadlayout).
 
 ## Constructors
 
@@ -30,7 +30,7 @@ Creates an empty view; set [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.S
 public CellPosition? ActiveCell { get; set; }
 ```
 
-The cell with the active-cell border; null shows none.
+The cell with the active-cell border; null shows none. It is the active cell of [SpreadsheetView.Selection](SharpCell.Grid.Avalonia.SpreadsheetView.md#selection); setting it selects that cell alone.
 
 <a id="offset"></a>
 ### Offset
@@ -49,6 +49,15 @@ public GridPainter Painter { get; }
 ```
 
 Geometry and colours: row heights, column widths, header sizes, theme.
+
+<a id="selection"></a>
+### Selection
+
+```csharp
+public GridSelection? Selection { get; set; }
+```
+
+The selected cells, the active cell among them; null selects none. A new sheet starts from its active cell alone.
 
 <a id="viewport"></a>
 ### Viewport
@@ -69,6 +78,15 @@ public Worksheet? Worksheet { get; set; }
 The sheet shown; null shows an empty grid.
 
 ## Methods
+
+<a id="copyasync"></a>
+### CopyAsync()
+
+```csharp
+public Task CopyAsync()
+```
+
+Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C (Cmd+C on macOS) does it too.
 
 <a id="reloadlayout"></a>
 ### ReloadLayout()
