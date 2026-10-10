@@ -21,8 +21,8 @@ internal sealed class RecordingCanvas : IGridCanvas
     public Text TextOf(string text) => Assert.Single(Texts, t => t.Value == text);
 
     /// <summary>
-    /// What the selection border encloses, from the two-pixel lines drawn over the pixel lines
-    /// around it; the lines under highlighted headers are left out. Null when none is drawn.
+    /// What the selection border encloses, from the two-pixel lines drawn on the cells' outer
+    /// pixels; the lines under highlighted headers are left out. Null when none is drawn.
     /// </summary>
     public GridRect? Outline(GridPainter painter)
     {
@@ -37,7 +37,7 @@ internal sealed class RecordingCanvas : IGridCanvas
             return null;
         var (left, right) = (vertical.Min(l => l.X1), vertical.Max(l => l.X1));
         var (top, bottom) = (horizontal.Min(l => l.Y1), horizontal.Max(l => l.Y1));
-        return new GridRect(left + 0.5, top + 0.5, right - left, bottom - top);
+        return new GridRect(left, top, right - left + 1, bottom - top + 1);
     }
 
     public sealed record Fill(GridRect Rect, GridColor Color);

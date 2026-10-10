@@ -103,7 +103,9 @@ public class SpreadsheetViewTests
         Near(Colors.White, pixels[(int)b3.X, (int)b3.Y]);
         Near(Color.FromRgb(0xD9, 0xD9, 0xD9), pixels[(int)c4.X, (int)c4.Y], 12);
         var outline = view.Painter.CellBounds(view.Viewport, Cell("B3"), Cell("C4"));
-        Near(Color.FromRgb(0x10, 0x7C, 0x41), pixels[(int)outline.X, (int)b3.Y], 40);
+        Near(Color.FromRgb(0x10, 0x7C, 0x41), pixels[(int)outline.X - 1, (int)b3.Y]);
+        Near(Color.FromRgb(0x10, 0x7C, 0x41), pixels[(int)outline.X, (int)b3.Y]);
+        Near(Colors.White, pixels[(int)outline.X + 1, (int)b3.Y]);
     });
 
     [Fact]
