@@ -15,7 +15,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Sheet geometry from the file: column widths, row heights, hidden columns and rows | `Worksheet` column widths, row heights, hidden columns (0.6.0) |
 | Done | Merged cells, painted and navigated as one cell | `Worksheet.MergedAreas` (0.6.0) |
 | Done | Text running on over empty neighbours, by its alignment, also from cells out of view | — |
-| 5 | Frozen panes and the sheet's gridline setting | `Worksheet` frozen panes, gridlines shown |
+| Done | Frozen panes and the sheet's gridline setting | `Worksheet.FrozenRows`, `FrozenColumns`, `ShowGridlines` (0.6.0) |
 | 6 | Range selection with Shift and the mouse; copy as tab-separated text and HTML that Excel pastes | — |
 | 7 | WPF control over the same painter | — |
 | Release | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf` | SharpCell 0.6.0 released |
