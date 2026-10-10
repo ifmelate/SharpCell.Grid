@@ -127,6 +127,20 @@ public sealed record GridSelection
     public GridSelection Move(int rows, int columns, Worksheet? sheet) =>
         Cell(GridNavigation.Move(sheet, ActiveCell, rows, columns), sheet);
 
+    /// <summary>The active cell moved to the edge of the content, as Ctrl with an arrow moves it, and selected alone.</summary>
+    /// <param name="rows">-1 up, 1 down, or 0.</param>
+    /// <param name="columns">-1 left, 1 right, or 0.</param>
+    /// <param name="sheet">The sheet whose content decides the edge; see <see cref="GridNavigation.MoveToEdge"/>.</param>
+    public GridSelection MoveToEdge(int rows, int columns, Worksheet? sheet) =>
+        Cell(GridNavigation.MoveToEdge(sheet, ActiveCell, rows, columns), sheet);
+
+    /// <summary>The selection extended from its far corner to the edge of the content, as Ctrl+Shift with an arrow does.</summary>
+    /// <param name="rows">-1 up, 1 down, or 0.</param>
+    /// <param name="columns">-1 left, 1 right, or 0.</param>
+    /// <param name="sheet">The sheet whose content decides the edge; see <see cref="GridNavigation.MoveToEdge"/>.</param>
+    public GridSelection ExtendToEdge(int rows, int columns, Worksheet? sheet) =>
+        ExtendTo(GridNavigation.MoveToEdge(sheet, Extent, rows, columns), sheet);
+
     /// <summary>
     /// The active cell moved as Enter and Tab move it. A single cell moves as with the arrows; inside
     /// a larger selection it moves to the next cell of the selection, which stays, and wraps around:

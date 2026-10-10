@@ -20,3 +20,19 @@ public static CellPosition Move(Worksheet? sheet, CellPosition from, int rows, i
 ```
 
 The cell a move by whole rows and columns lands on, kept inside the sheet. Leaving a merged area starts from its far edge; landing inside one gives its top-left cell.
+
+<a id="movetoedge-worksheet-cellposition-int-int"></a>
+### MoveToEdge(Worksheet, CellPosition, int, int)
+
+```csharp
+public static CellPosition MoveToEdge(Worksheet? sheet, CellPosition from, int rows, int columns)
+```
+
+The cell Ctrl with an arrow lands on, as in Excel: from a cell with content whose neighbour has content too, the last cell with content before an empty one; otherwise the next cell with content that way; with none, the sheet's edge. A cell has content when it holds a value or a formula.
+
+**Parameters**
+
+- `sheet`: The sheet whose content is looked at; without one, the edge.
+- `from`: The cell to move from.
+- `rows`: -1 up, 1 down, or 0.
+- `columns`: -1 left, 1 right, or 0.

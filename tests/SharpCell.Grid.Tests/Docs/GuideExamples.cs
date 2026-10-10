@@ -55,6 +55,32 @@ public class GuideExamples(HeadlessSession session)
     });
 
     [Fact]
+    public Task Editing() => session.Run(() =>
+    {
+        var sheet = new Workbook().AddSheet("Sheet1");
+        sheet["B1"].Formula = "=A1*2";
+        sheet.Workbook.Recalculate();
+        var view = new SpreadsheetView { Worksheet = sheet };
+        var window = new Window { Content = view };
+        window.Show();
+        IReadOnlyList<Cell> changed = [];
+
+        // snippet: editing
+        var bar = new FormulaBar { View = view };   // Excel's formula bar, as a control of its own
+        view.Edited += (_, edit) =>                 // after each change, the workbook recalculated
+            changed = edit.Recalculation.ChangedCells;
+        view.IsReadOnly = true;                      // to only show and select
+        // end-snippet
+
+        view.IsReadOnly = false;
+        view.BeginEdit("21");
+        view.CommitEdit();
+        Assert.Equal(42.0, sheet["B1"].Value.AsNumber());
+        Assert.Contains(changed, c => c.Address == "B1");
+        Assert.Same(view, bar.View);
+    });
+
+    [Fact]
     public Task Selection_copying_and_scrolling() => session.Run(async () =>
     {
         var sheet = new Workbook().AddSheet("Sheet1");

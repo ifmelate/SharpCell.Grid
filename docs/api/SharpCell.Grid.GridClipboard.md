@@ -8,7 +8,7 @@ public static class GridClipboard
 
 Namespace `SharpCell.Grid` · package `SharpCell.Grid`
 
-What copying cells puts on the clipboard, in the forms Excel reads when it pastes: text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells. Cells are copied as shown, `Cell.Text` in their number format. Hidden rows and columns are copied, as Excel copies them. Whole columns or rows end at the sheet's used range.
+What copying cells puts on the clipboard, in the forms Excel reads when it pastes, and the cells of text pasted from it. Copied are text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells. Cells are copied as shown, `Cell.Text` in their number format. Hidden rows and columns are copied, as Excel copies them. Whole columns or rows end at the sheet's used range.
 
 ## Methods
 
@@ -20,6 +20,15 @@ public static string Html(Worksheet sheet, CellArea area)
 ```
 
 The cells as an HTML document with one table, whose cells carry their style inline and merged areas as `colspan` and `rowspan`; the table lies between the `<!--StartFragment-->` and `<!--EndFragment-->` comments. On macOS and Linux it goes on the clipboard as it is; Windows needs it wrapped by [GridClipboard.WindowsHtml](SharpCell.Grid.GridClipboard.md#windowshtml-string).
+
+<a id="readtext-string"></a>
+### ReadText(string)
+
+```csharp
+public static IReadOnlyList<IReadOnlyList<string>> ReadText(string text)
+```
+
+Text from the clipboard as rows of cells, the way Excel reads text it pastes: a tab between cells, a line break (`\r\n` or `\n`) between rows, the last line break ending the last row. A cell starting with a double quote runs to the closing one and may hold tabs and line breaks; two double quotes inside stand for one.
 
 <a id="text-worksheet-cellarea"></a>
 ### Text(Worksheet, CellArea)

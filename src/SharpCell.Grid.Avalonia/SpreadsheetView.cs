@@ -20,7 +20,7 @@ namespace SharpCell.Grid.Avalonia;
 /// recalculating, call <see cref="Visual.InvalidateVisual"/>. Sizes and frozen panes are taken when
 /// <see cref="Worksheet"/> is set; after changing them, call <see cref="ReloadLayout"/>.
 /// </summary>
-public class SpreadsheetView : Control
+public partial class SpreadsheetView : Control
 {
     /// <summary>The sheet shown; null shows an empty grid.</summary>
     public static readonly StyledProperty<Worksheet?> WorksheetProperty =
@@ -101,9 +101,14 @@ public class SpreadsheetView : Control
         base.OnPropertyChanged(change);
         if (change.Property == WorksheetProperty)
         {
+            OnWorksheetChanged(change.GetOldValue<Worksheet?>());
             ReloadLayout();
             if (ActiveCell is { } cell)
                 SetCurrentValue(SelectionProperty, GridSelection.Cell(cell, Worksheet));
+        }
+        else if (change.Property == OffsetProperty || change.Property == BoundsProperty)
+        {
+            InvalidateArrange();
         }
         else if (change.Property == SelectionProperty && ActiveCell != Selection?.ActiveCell)
         {
@@ -154,13 +159,23 @@ public class SpreadsheetView : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || IsInEditor(e.Source))
+            return;
+
+        // A click elsewhere enters what is being typed first; a formula that does not parse stays open.
+        if (IsEditing && !CommitEdit())
             return;
         Focus();
         e.Handled = true;
         var point = e.GetPosition(this);
         if (Painter.Hit(Viewport, point.X, point.Y, Worksheet) is not { } hit)
             return;
+        if (e.ClickCount == 2 && hit.Part == GridPart.Cell)
+        {
+            BeginEdit();
+            return;
+        }
+
         Selection = e.KeyModifiers.HasFlag(KeyModifiers.Shift) && Selection is { } selection
             ? selection.ExtendTo(hit, Worksheet)
             : GridSelection.At(hit, Worksheet);
@@ -215,7 +230,7 @@ public class SpreadsheetView : Control
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (Selection is not { } selection)
+        if (IsEditing || e.Handled || Selection is not { } selection)
             return;
         var sheet = Worksheet;
         // The platform's gestures, and both Ctrl and Cmd with the letter: in a browser on macOS the
@@ -229,8 +244,15 @@ public class SpreadsheetView : Control
             return;
         }
 
+        if (EditingKey(e, hotkeys, command))
+        {
+            e.Handled = true;
+            return;
+        }
+
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         var control = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        var jump = control || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
         GridSelection? next = null;
         if (hotkeys?.SelectAll.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.A))
             next = GridSelection.All(selection.ActiveCell);
@@ -239,7 +261,15 @@ public class SpreadsheetView : Control
         else if (e.Key == Key.Space && shift)
             next = selection.EntireRows(sheet);
         else if (Step(e.Key) is var (rows, columns))
-            next = shift ? selection.Extend(rows, columns, sheet) : selection.Move(rows, columns, sheet);
+            next = (jump, shift) switch
+            {
+                (true, true) => selection.ExtendToEdge(rows, columns, sheet),
+                (true, false) => selection.MoveToEdge(rows, columns, sheet),
+                (false, true) => selection.Extend(rows, columns, sheet),
+                _ => selection.Move(rows, columns, sheet),
+            };
+        else if (e.Key is Key.Home or Key.End or Key.PageUp or Key.PageDown)
+            next = Paging(e.Key, selection, jump, shift);
         else if (e.Key == Key.Enter)
             next = selection.MoveWithin(shift ? -1 : 1, 0, sheet);
         else if (e.Key == Key.Tab)
@@ -247,12 +277,43 @@ public class SpreadsheetView : Control
         if (next is null)
             return;
 
-        // Extending scrolls to the moving corner, moving to the active cell.
-        Selection = next;
-        var shown = shift && Step(e.Key) is not null ? next.Extent : next.ActiveCell;
-        if (!next.IsEntireColumns && !next.IsEntireRows || next.IsSingleCell)
-            ScrollTo(Painter.ScrollIntoView(Viewport, shown));
+        Go(next, extent: shift && (Step(e.Key) is not null || e.Key is Key.PageUp or Key.PageDown));
         e.Handled = true;
+    }
+
+    // Home: the row's first column; Ctrl+Home: A1; Ctrl+End: the last used cell; Page Up and Page
+    // Down: a screen of rows, scrolled with it.
+    private GridSelection? Paging(Key key, GridSelection selection, bool jump, bool shift)
+    {
+        var sheet = Worksheet;
+        var active = selection.ActiveCell;
+        CellPosition? target = key switch
+        {
+            Key.Home when jump => new CellPosition(1, 1),
+            Key.Home => new CellPosition(active.Row, 1),
+            Key.End when jump => sheet?.UsedRange is { } used ? new CellPosition(used.LastRow, used.LastColumn) : new CellPosition(1, 1),
+            _ => null,
+        };
+        if (target is { } cell)
+            return shift ? selection.ExtendTo(cell, sheet) : GridSelection.Cell(cell, sheet);
+        if (key == Key.End)
+            return null;
+
+        var visible = Painter.VisibleArea(Viewport);
+        var page = Math.Max(1, visible.LastRow - visible.FirstRow);
+        var sign = key == Key.PageDown ? 1 : -1;
+        var layout = Painter.Layout;
+        var first = Math.Clamp(visible.FirstRow + sign * page, 1, SheetLayout.MaxRow);
+        ScrollTo(Viewport with { OffsetY = Viewport.OffsetY + layout.RowTop(first) - layout.RowTop(visible.FirstRow) });
+        return shift ? selection.Extend(sign * page, 0, sheet) : selection.Move(sign * page, 0, sheet);
+    }
+
+    // Selects and scrolls: to the moving corner when extending, to the active cell when moving.
+    internal void Go(GridSelection next, bool extent)
+    {
+        Selection = next;
+        if (!next.IsEntireColumns && !next.IsEntireRows || next.IsSingleCell)
+            ScrollTo(Painter.ScrollIntoView(Viewport, extent ? next.Extent : next.ActiveCell));
     }
 
     private static (int Rows, int Columns)? Step(Key key) => key switch

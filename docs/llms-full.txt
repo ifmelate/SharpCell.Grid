@@ -2,7 +2,7 @@
 
 > A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the SharpCell formula engine: it shows a worksheet the way Excel does, with number formats, cell styles, column widths, row heights, merged cells, frozen panes and text running on over empty cells. Only the visible cells are read, so any sheet size scrolls smoothly.
 
-Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework), `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control) and `SharpCell.Grid.Wpf` (`SpreadsheetView` for WPF, Windows only). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected and copied as in Excel (`Selection`, `CopyAsync()`, `GridSelection`, `GridClipboard`); no editing yet.
+Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework), `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control) and `SharpCell.Grid.Wpf` (`SpreadsheetView` for WPF, Windows only). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected, copied and edited as in Excel (`Selection`, `CopyAsync()`, `BeginEdit()`, `Editor`, `Edited`, `IsReadOnly`, `FormulaBar`; without a UI framework `GridSelection`, `GridClipboard`, `GridEditor`); what is typed is read by SharpCell's `Cell.Input`.
 
 ---
 
@@ -39,7 +39,7 @@ an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value 
 format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
 Excel.
 
-Status: 0.x, viewing, selecting and copying, in Avalonia and WPF. Editing comes next; see the
+Status: 0.x, viewing, selecting, copying and editing, in Avalonia and WPF; see the
 [roadmap](roadmap.md). The API may change between minor versions until 1.0.
 
 - [Getting started](getting-started.md)
@@ -124,6 +124,22 @@ It shows, selects and copies as the Avalonia control does, and has the same prop
 is `Copy()`, also bound to `ApplicationCommands.Copy`, and Ctrl+A to `ApplicationCommands.SelectAll`.
 A runnable window is in [samples/SharpCell.Grid.WpfSample](../samples/SharpCell.Grid.WpfSample).
 
+## Editing
+
+```csharp snippet=editing
+var bar = new FormulaBar { View = view };   // Excel's formula bar, as a control of its own
+view.Edited += (_, edit) =>                 // after each change, the workbook recalculated
+    changed = edit.Recalculation.ChangedCells;
+view.IsReadOnly = true;                      // to only show and select
+```
+
+Cells are edited as in Excel: typing into a cell, F2 or a double-click, Enter, Tab and Escape,
+Delete, paste with Ctrl+V, undo and redo. What is typed is read as Excel reads it, in the
+workbook's culture, and the workbook is recalculated after each change. `view.Editor` is the
+`GridEditor` behind it, with the history to undo; `view.Edited` tells about each change.
+`FormulaBar` shows and edits the active cell's formula above the grid. See
+[What the grid shows](guides/showing-workbooks.md#editing) for every key.
+
 ## Selection, copying and scrolling
 
 ```csharp snippet=active-cell
@@ -197,11 +213,42 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Click on the corner above the row headers, Ctrl+A or Cmd+A | The whole sheet |
 | Arrow keys | Move the active cell one cell, over a merged area as one cell, and select it alone |
 | Shift+arrow keys | Extend or shrink the selection at its far corner |
+| Ctrl+arrow keys (Cmd on macOS), with Shift to extend | To the edge of the content: the end of a block of filled cells, the next filled cell, or the sheet's edge |
+| Home, Ctrl+Home, Ctrl+End | The row's first column, A1, the last used cell |
+| Page Down, Page Up | A screen of rows down or up, scrolled with it |
 | Ctrl+Space, Shift+Space | Whole columns, whole rows of the selection |
 | Enter, Shift+Enter | Down, up; inside a selection, to the next selected cell, column by column |
 | Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
-| Ctrl+C or Cmd+C | Copies the selected cells; pasting into the grid comes with editing |
+| Ctrl+C or Cmd+C | Copies the selected cells |
+| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell |
 | Wheel | Three rows a turn |
+
+## Editing
+
+| Input | Result |
+|---|---|
+| Typing | Starts editing the active cell with what was typed, replacing its content |
+| F2, double-click | Edits the active cell with its formula or value; in the text, the arrows move the caret |
+| Enter, Tab (Shift to go back) | Enters the text and moves on, inside a selection to its next cell |
+| Arrow keys after typing | Enter the text and move that way |
+| Ctrl+Enter | Enters the text into every selected cell |
+| Alt+Enter | A line break inside the cell |
+| Escape | Leaves the cell as it was |
+| Click on another cell | Enters the text and selects that cell |
+| Delete | Clears the selected cells' content; formats and styles stay |
+| Backspace | Starts editing the active cell empty |
+| Ctrl+Z, Ctrl+Y (Cmd+Z, Cmd+Shift+Z on macOS) | Undo, redo, and select the cells changed |
+
+What is typed is read as Excel reads it, through SharpCell's `Cell.Input`: `=` starts a formula,
+`'` keeps the rest as text, numbers, percentages, currency, dates and times are read in the
+workbook's culture, and a cell in the General format takes a format from what was typed (`12%`
+gives `0%`). The workbook is recalculated after each change. A formula that does not parse keeps
+the editor open, with the reason shown and the caret where it went wrong. Pasted text goes in cell
+by cell, each read as typed. `IsReadOnly` turns all of this off.
+
+`FormulaBar` is Excel's formula bar as a control of its own: the name box with the active cell's
+address, which selects an address or range typed into it, and the cell's formula or value, which
+can be edited there as in the cell.
 
 A selection covers every merged area it touches whole. Selected cells but the active one are
 shaded, a border goes round them, and the headers of their rows and columns are highlighted.
@@ -228,9 +275,14 @@ sheet's last used row or column.
   definitions; they are not yet compared with Excel.
 - A merged area across the line of frozen panes is drawn whole from the frozen part.
 - The colours of the selection, its shade and its headers are close to Excel's, not measured from it.
-- Ctrl+A selects the whole sheet at once, not first the cells around the active one; Ctrl with the
-  arrows, Home, Page Up and Page Down do not move yet, and only one rectangle can be selected
-  (no Ctrl+click).
+- Ctrl+A selects the whole sheet at once, not first the cells around the active one, and only one
+  rectangle can be selected (no Ctrl+click).
+- While a formula is typed, clicking or arrowing to a cell does not put its reference in the
+  formula; references are typed. Formulas get no number format from what they calculate (Excel
+  gives `=TODAY()` a date format).
+- Pasting takes the text of the clipboard: values, not the formats or formulas of cells copied in Excel.
+- Undo keeps values, formulas and number formats; there is no undo of styles, which cannot be
+  changed in the grid yet.
 - Copied HTML is not yet checked by pasting it into desktop Excel.
 - Not shown: conditional formats, pattern and gradient fills, rotated text, styles of whole rows
   and columns on empty cells, charts, images and comments.
@@ -279,6 +331,9 @@ string copied = GridClipboard.Text(sheet, selection.Area);
 - `GridSelection` is Excel's selection: what a click selects (`At`), and each step of the mouse
   and keyboard (`ExtendTo`, `Extend`, `Move`, `MoveWithin`, `EntireColumns`, `EntireRows`). A host
   maps its input events to these calls; `SpreadsheetView` shows how.
+- `GridEditor` changes cells as Excel does when people edit them, typing (`Enter`, through
+  SharpCell's `Cell.Input`), Delete (`Clear`) and pasting text (`Paste`), each change one step to
+  `Undo` and `Redo`, the workbook recalculated after it.
 - `GridClipboard` gives the selected cells as text and as HTML, the forms Excel pastes, and
   `WindowsHtml` wraps the HTML in the clipboard format Windows applications read.
 - `IGridCanvas` is what a host implements over its drawing API: fill and stroke rectangles, draw
@@ -326,14 +381,17 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
 | Done | A WPF control over the same painter: `SharpCell.Grid.Wpf`, tested on Windows in CI | — |
 
-## Next: 0.3 — editing
+## Now: 0.3 — editing
 
-- Typing into a cell and the formula bar as a separate control; F2, Escape, Enter, Tab.
-- Input read as Excel reads it: numbers, percentages, dates and times in the workbook's culture,
-  `=` for formulas, `'` for text.
-- Recalculation after each edit, repainting only what changed (SharpCell's changed cells).
-- Undo and redo, Delete, paste of values from Excel.
-- Ctrl with the arrows, Home, Page Up and Page Down; Ctrl+A on the cells around the active one first.
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Typing into a cell, F2 and double-click, Enter, Tab, Escape, arrows, Ctrl+Enter, Alt+Enter; `IsReadOnly` | — |
+| Done | Input read as Excel reads it: numbers, percentages, currency, dates and times in the workbook's culture, `=` for formulas, `'` for text, the number format a General cell takes | `Cell.Input` (0.8.0) |
+| Done | Recalculation after each edit, with the cells it changed (`Edited`) | `RecalculationResult.ChangedCells` (0.5.0) |
+| Done | Undo and redo, Delete, paste of text copied from Excel | — |
+| Done | The formula bar as a control of its own, with the name box | — |
+| Done | Ctrl with the arrows, Home, Ctrl+Home, Ctrl+End, Page Up and Page Down | — |
+| Later | Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula | — |
 
 ## Later: 0.4 — working like Excel
 
@@ -383,7 +441,8 @@ Rows and columns are numbered from 1: new CellPosition(row, column).
 What a cell shows is SharpCell's Cell.Text and Cell.Style; change the workbook, not the view.
 The selection is view.Selection, a GridSelection; view.ActiveCell is its active cell, and setting it selects that cell alone.
 Copying (Avalonia: await view.CopyAsync(); WPF: view.Copy()) puts text and HTML for Excel on the clipboard; GridClipboard gives the same without a view.
-The grid is for viewing and selecting; it does not edit cells yet.
+People edit cells in the view as in Excel; set view.IsReadOnly = true to only show them. Each change is recalculated and raises view.Edited (a GridEdit with the cells changed and Recalculation.ChangedCells).
+To change cells from code as typing does, set SharpCell's cell.Input, or use view.Editor (GridEditor) so the change can be undone.
 For another UI framework, implement IGridCanvas and call GridPainter.Paint, Hit, CellNearest and ScrollIntoView, with GridSelection for the input.
 ```
 
@@ -540,7 +599,7 @@ public static class GridClipboard
 
 Namespace `SharpCell.Grid` · package `SharpCell.Grid`
 
-What copying cells puts on the clipboard, in the forms Excel reads when it pastes: text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells. Cells are copied as shown, `Cell.Text` in their number format. Hidden rows and columns are copied, as Excel copies them. Whole columns or rows end at the sheet's used range.
+What copying cells puts on the clipboard, in the forms Excel reads when it pastes, and the cells of text pasted from it. Copied are text with tabs between cells, and an HTML table that keeps fonts, fills, borders, alignment and merged cells. Cells are copied as shown, `Cell.Text` in their number format. Hidden rows and columns are copied, as Excel copies them. Whole columns or rows end at the sheet's used range.
 
 ## Methods
 
@@ -552,6 +611,15 @@ public static string Html(Worksheet sheet, CellArea area)
 ```
 
 The cells as an HTML document with one table, whose cells carry their style inline and merged areas as `colspan` and `rowspan`; the table lies between the `<!--StartFragment-->` and `<!--EndFragment-->` comments. On macOS and Linux it goes on the clipboard as it is; Windows needs it wrapped by [GridClipboard.WindowsHtml](SharpCell.Grid.GridClipboard.md#windowshtml-string).
+
+<a id="readtext-string"></a>
+### ReadText(string)
+
+```csharp
+public static IReadOnlyList<IReadOnlyList<string>> ReadText(string text)
+```
+
+Text from the clipboard as rows of cells, the way Excel reads text it pastes: a tab between cells, a line break (`\r\n` or `\n`) between rows, the last line break ending the last row. A cell starting with a double quote runs to the closing one and may hold tabs and line breaks; two double quotes inside stand for one.
 
 <a id="text-worksheet-cellarea"></a>
 ### Text(Worksheet, CellArea)
@@ -680,6 +748,189 @@ The dash pattern of a line, after Excel's border styles.
 | <a id="dashdot"></a>`DashDot` | 3 | Dashes and dots. |
 | <a id="dashdotdot"></a>`DashDotDot` | 4 | A dash and two dots. |
 | <a id="hair"></a>`Hair` | 5 | Fine dots, Excel's hairline. |
+
+---
+
+<!-- page: api/SharpCell.Grid.GridEdit.md -->
+
+# GridEdit
+
+```csharp
+public sealed class GridEdit
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+A change made through a [GridEditor](SharpCell.Grid.GridEditor.md).
+
+## Constructors
+
+<a id="ctor-worksheet-cellarea-recalculationresult"></a>
+### GridEdit(Worksheet, CellArea, RecalculationResult)
+
+```csharp
+public GridEdit(Worksheet Sheet, CellArea Area, RecalculationResult Recalculation)
+```
+
+A change made through a [GridEditor](SharpCell.Grid.GridEditor.md).
+
+**Parameters**
+
+- `Sheet`: The sheet of the cells changed.
+- `Area`: The cells changed: typed into, cleared or pasted over.
+- `Recalculation`: What recalculating the workbook after the change changed, other cells included.
+
+## Properties
+
+<a id="area"></a>
+### Area
+
+```csharp
+public CellArea Area { get; init; }
+```
+
+The cells changed: typed into, cleared or pasted over.
+
+<a id="recalculation"></a>
+### Recalculation
+
+```csharp
+public RecalculationResult Recalculation { get; init; }
+```
+
+What recalculating the workbook after the change changed, other cells included.
+
+<a id="sheet"></a>
+### Sheet
+
+```csharp
+public Worksheet Sheet { get; init; }
+```
+
+The sheet of the cells changed.
+
+---
+
+<!-- page: api/SharpCell.Grid.GridEditor.md -->
+
+# GridEditor
+
+```csharp
+public sealed class GridEditor
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+Changes a workbook's cells as people change them in Excel: typing into cells, Delete, pasting text copied from Excel. Each change is one step to undo and redo, and the workbook is recalculated after it. What is typed is read as Excel reads it, through `Cell.Input`. Only the cells' content is kept for undoing: values, formulas and number formats, not styles.
+
+## Constructors
+
+<a id="ctor-workbook"></a>
+### GridEditor(Workbook)
+
+```csharp
+public GridEditor(Workbook workbook)
+```
+
+An editor for a workbook, with nothing to undo.
+
+## Properties
+
+<a id="canredo"></a>
+### CanRedo
+
+```csharp
+public bool CanRedo { get; }
+```
+
+Whether there is an undone change to redo.
+
+<a id="canundo"></a>
+### CanUndo
+
+```csharp
+public bool CanUndo { get; }
+```
+
+Whether there is a change to undo.
+
+<a id="workbook"></a>
+### Workbook
+
+```csharp
+public Workbook Workbook { get; }
+```
+
+The workbook changed.
+
+## Methods
+
+<a id="clear-worksheet-cellarea"></a>
+### Clear(Worksheet, CellArea)
+
+```csharp
+public GridEdit Clear(Worksheet sheet, CellArea area)
+```
+
+Clears the content of the cells in an area, as Delete does: values and formulas go, number formats and styles stay.
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+
+<a id="clearhistory"></a>
+### ClearHistory()
+
+```csharp
+public void ClearHistory()
+```
+
+Forgets every change, so that none can be undone, as after a workbook is replaced.
+
+<a id="enter-worksheet-cellarea-string"></a>
+### Enter(Worksheet, CellArea, string)
+
+```csharp
+public GridEdit Enter(Worksheet sheet, CellArea area, string input)
+```
+
+Types the same text into every cell of an area, as Enter does for one cell and Ctrl+Enter for a selection. Inside a merged area only its top-left cell takes the text.
+
+**Exceptions**
+
+- `FormulaParseException`: The text starts with `=` but is not a formula; no cell changes.
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+
+<a id="paste-worksheet-cellposition-string"></a>
+### Paste(Worksheet, CellPosition, string)
+
+```csharp
+public GridEdit Paste(Worksheet sheet, CellPosition at, string text)
+```
+
+Pastes text copied from Excel or another program with its top-left cell at a cell: tabs between cells, line breaks between rows, cells with line breaks in double quotes. Each cell is read as typed; an empty one clears its cell. What lies beyond the sheet's edge is left out.
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+
+<a id="redo"></a>
+### Redo()
+
+```csharp
+public GridEdit? Redo()
+```
+
+Redoes the last undone change; null when there is none.
+
+<a id="undo"></a>
+### Undo()
+
+```csharp
+public GridEdit? Undo()
+```
+
+Undoes the last change; null when there is none.
 
 ---
 
@@ -845,6 +1096,22 @@ public static CellPosition Move(Worksheet? sheet, CellPosition from, int rows, i
 ```
 
 The cell a move by whole rows and columns lands on, kept inside the sheet. Leaving a merged area starts from its far edge; landing inside one gives its top-left cell.
+
+<a id="movetoedge-worksheet-cellposition-int-int"></a>
+### MoveToEdge(Worksheet, CellPosition, int, int)
+
+```csharp
+public static CellPosition MoveToEdge(Worksheet? sheet, CellPosition from, int rows, int columns)
+```
+
+The cell Ctrl with an arrow lands on, as in Excel: from a cell with content whose neighbour has content too, the last cell with content before an empty one; otherwise the next cell with content that way; with none, the sheet's edge. A cell has content when it holds a value or a formula.
+
+**Parameters**
+
+- `sheet`: The sheet whose content is looked at; without one, the edge.
+- `from`: The cell to move from.
+- `rows`: -1 up, 1 down, or 0.
+- `columns`: -1 left, 1 right, or 0.
 
 ---
 
@@ -1352,6 +1619,21 @@ public GridSelection ExtendTo(GridHit hit, Worksheet? sheet)
 
 The selection from the same anchor to what a Shift-click hits: to a cell, to whole columns from a column header, to whole rows from a row header, the whole sheet from the corner.
 
+<a id="extendtoedge-int-int-worksheet"></a>
+### ExtendToEdge(int, int, Worksheet)
+
+```csharp
+public GridSelection ExtendToEdge(int rows, int columns, Worksheet? sheet)
+```
+
+The selection extended from its far corner to the edge of the content, as Ctrl+Shift with an arrow does.
+
+**Parameters**
+
+- `rows`: -1 up, 1 down, or 0.
+- `columns`: -1 left, 1 right, or 0.
+- `sheet`: The sheet whose content decides the edge; see [GridNavigation.MoveToEdge](SharpCell.Grid.GridNavigation.md#movetoedge-worksheet-cellposition-int-int).
+
 <a id="move-int-int-worksheet"></a>
 ### Move(int, int, Worksheet)
 
@@ -1360,6 +1642,21 @@ public GridSelection Move(int rows, int columns, Worksheet? sheet)
 ```
 
 The active cell moved by whole rows and columns, as the arrows move it, and selected alone.
+
+<a id="movetoedge-int-int-worksheet"></a>
+### MoveToEdge(int, int, Worksheet)
+
+```csharp
+public GridSelection MoveToEdge(int rows, int columns, Worksheet? sheet)
+```
+
+The active cell moved to the edge of the content, as Ctrl with an arrow moves it, and selected alone.
+
+**Parameters**
+
+- `rows`: -1 up, 1 down, or 0.
+- `columns`: -1 left, 1 right, or 0.
+- `sheet`: The sheet whose content decides the edge; see [GridNavigation.MoveToEdge](SharpCell.Grid.GridNavigation.md#movetoedge-worksheet-cellposition-int-int).
 
 <a id="movewithin-int-int-worksheet"></a>
 ### MoveWithin(int, int, Worksheet)
@@ -1926,6 +2223,42 @@ The cells that a rectangle of the sheet touches, partly or wholly.
 
 ---
 
+<!-- page: api/SharpCell.Grid.Avalonia.FormulaBar.md -->
+
+# FormulaBar
+
+```csharp
+public class FormulaBar : UserControl
+```
+
+Namespace `SharpCell.Grid.Avalonia` · package `SharpCell.Grid.Avalonia`
+
+Excel's formula bar for a [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md): the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit. Typing in the bar edits the cell, and the cell's editor shows the same text; Enter and Tab enter it, Escape leaves the cell as it was. An address or a range typed into the name box selects it.
+
+## Constructors
+
+<a id="ctor"></a>
+### FormulaBar()
+
+```csharp
+public FormulaBar()
+```
+
+A bar for no view; set [FormulaBar.View](SharpCell.Grid.Avalonia.FormulaBar.md#view) to connect it.
+
+## Properties
+
+<a id="view"></a>
+### View
+
+```csharp
+public SpreadsheetView? View { get; set; }
+```
+
+The view whose active cell the bar shows and edits.
+
+---
+
 <!-- page: api/SharpCell.Grid.Avalonia.SpreadsheetView.md -->
 
 # SpreadsheetView
@@ -1959,6 +2292,42 @@ public CellPosition? ActiveCell { get; set; }
 ```
 
 The cell with the active-cell border; null shows none. It is the active cell of [SpreadsheetView.Selection](SharpCell.Grid.Avalonia.SpreadsheetView.md#selection); setting it selects that cell alone.
+
+<a id="edittext"></a>
+### EditText
+
+```csharp
+public string? EditText { get; set; }
+```
+
+The text being typed into the active cell, which [SpreadsheetView.CommitEdit](SharpCell.Grid.Avalonia.SpreadsheetView.md#commitedit) enters; null when no cell is being edited. Setting it while editing changes the text, as a formula bar does.
+
+<a id="editor"></a>
+### Editor
+
+```csharp
+public GridEditor? Editor { get; }
+```
+
+What changes the cells, with the history to undo and redo; one per workbook, created when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set. Null without a sheet.
+
+<a id="isediting"></a>
+### IsEditing
+
+```csharp
+public bool IsEditing { get; }
+```
+
+Whether a cell is being edited.
+
+<a id="isreadonly"></a>
+### IsReadOnly
+
+```csharp
+public bool IsReadOnly { get; set; }
+```
+
+Whether cells cannot be changed: no typing, Delete, pasting, undo or redo.
 
 <a id="offset"></a>
 ### Offset
@@ -2007,6 +2376,42 @@ The sheet shown; null shows an empty grid.
 
 ## Methods
 
+<a id="beginedit-string"></a>
+### BeginEdit(string)
+
+```csharp
+public bool BeginEdit(string? text = null)
+```
+
+Starts editing the active cell, as F2 does: with its formula or value as Excel shows it to edit, or with `text`. False when the view is read-only or has no sheet.
+
+<a id="canceledit"></a>
+### CancelEdit()
+
+```csharp
+public void CancelEdit()
+```
+
+Ends editing without changing the cell, as Escape does.
+
+<a id="clearselection"></a>
+### ClearSelection()
+
+```csharp
+public void ClearSelection()
+```
+
+Clears the content of the selected cells, as Delete does; formats and styles stay.
+
+<a id="commitedit"></a>
+### CommitEdit()
+
+```csharp
+public bool CommitEdit()
+```
+
+Enters the text being typed into the active cell, as Enter does, and ends editing; true also when nothing is being edited. A formula that does not parse keeps the editor open, with the reason shown and the caret where the formula went wrong, and gives false.
+
 <a id="copyasync"></a>
 ### CopyAsync()
 
@@ -2015,6 +2420,24 @@ public Task CopyAsync()
 ```
 
 Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C or Cmd+C does it too, also in a browser.
+
+<a id="pasteasync"></a>
+### PasteAsync()
+
+```csharp
+public Task PasteAsync()
+```
+
+Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V does: text copied from Excel goes in cell by cell, each read as typed. The pasted cells are selected.
+
+<a id="redo"></a>
+### Redo()
+
+```csharp
+public void Redo()
+```
+
+Redoes the last undone change and selects its cells, as Ctrl+Y does.
 
 <a id="reloadlayout"></a>
 ### ReloadLayout()
@@ -2037,6 +2460,51 @@ Paints the visible part of the sheet through [SpreadsheetView.Painter](SharpCell
 **Parameters**
 
 - `context`: The drawing context Avalonia renders with.
+
+<a id="undo"></a>
+### Undo()
+
+```csharp
+public void Undo()
+```
+
+Undoes the last change to the cells and selects them, as Ctrl+Z does.
+
+---
+
+<!-- page: api/SharpCell.Grid.Wpf.FormulaBar.md -->
+
+# FormulaBar
+
+```csharp
+public class FormulaBar : UserControl
+```
+
+Namespace `SharpCell.Grid.Wpf` · package `SharpCell.Grid.Wpf`
+
+Excel's formula bar for a [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md): the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit. Typing in the bar edits the cell, and the cell's editor shows the same text; Enter and Tab enter it, Escape leaves the cell as it was. An address or a range typed into the name box selects it.
+
+## Constructors
+
+<a id="ctor"></a>
+### FormulaBar()
+
+```csharp
+public FormulaBar()
+```
+
+A bar for no view; set [FormulaBar.View](SharpCell.Grid.Wpf.FormulaBar.md#view) to connect it.
+
+## Properties
+
+<a id="view"></a>
+### View
+
+```csharp
+public SpreadsheetView? View { get; set; }
+```
+
+The view whose active cell the bar shows and edits.
 
 ---
 
@@ -2074,6 +2542,42 @@ public CellPosition? ActiveCell { get; set; }
 
 The cell with the active-cell border; null shows none. It is the active cell of [SpreadsheetView.Selection](SharpCell.Grid.Wpf.SpreadsheetView.md#selection); setting it selects that cell alone.
 
+<a id="edittext"></a>
+### EditText
+
+```csharp
+public string? EditText { get; set; }
+```
+
+The text being typed into the active cell, which [SpreadsheetView.CommitEdit](SharpCell.Grid.Wpf.SpreadsheetView.md#commitedit) enters; null when no cell is being edited. Setting it while editing changes the text, as a formula bar does.
+
+<a id="editor"></a>
+### Editor
+
+```csharp
+public GridEditor? Editor { get; }
+```
+
+What changes the cells, with the history to undo and redo; one per workbook, created when [SpreadsheetView.Worksheet](SharpCell.Grid.Wpf.SpreadsheetView.md#worksheet) is set. Null without a sheet.
+
+<a id="isediting"></a>
+### IsEditing
+
+```csharp
+public bool IsEditing { get; }
+```
+
+Whether a cell is being edited.
+
+<a id="isreadonly"></a>
+### IsReadOnly
+
+```csharp
+public bool IsReadOnly { get; set; }
+```
+
+Whether cells cannot be changed: no typing, Delete, pasting, undo or redo.
+
 <a id="offset"></a>
 ### Offset
 
@@ -2121,6 +2625,42 @@ The sheet shown; null shows an empty grid.
 
 ## Methods
 
+<a id="beginedit-string"></a>
+### BeginEdit(string)
+
+```csharp
+public bool BeginEdit(string? text = null)
+```
+
+Starts editing the active cell, as F2 does: with its formula or value as Excel shows it to edit, or with `text`. False when the view is read-only or has no sheet.
+
+<a id="canceledit"></a>
+### CancelEdit()
+
+```csharp
+public void CancelEdit()
+```
+
+Ends editing without changing the cell, as Escape does.
+
+<a id="clearselection"></a>
+### ClearSelection()
+
+```csharp
+public void ClearSelection()
+```
+
+Clears the content of the selected cells, as Delete does; formats and styles stay.
+
+<a id="commitedit"></a>
+### CommitEdit()
+
+```csharp
+public bool CommitEdit()
+```
+
+Enters the text being typed into the active cell, as Enter does, and ends editing; true also when nothing is being edited. A formula that does not parse keeps the editor open, with the reason shown and the caret where the formula went wrong, and gives false.
+
 <a id="copy"></a>
 ### Copy()
 
@@ -2130,6 +2670,24 @@ public void Copy()
 
 Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C and `ApplicationCommands.Copy` do it too.
 
+<a id="paste"></a>
+### Paste()
+
+```csharp
+public void Paste()
+```
+
+Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V and `ApplicationCommands.Paste` do: text copied from Excel goes in cell by cell, each read as typed. The pasted cells are selected.
+
+<a id="redo"></a>
+### Redo()
+
+```csharp
+public void Redo()
+```
+
+Redoes the last undone change and selects its cells, as Ctrl+Y does.
+
 <a id="reloadlayout"></a>
 ### ReloadLayout()
 
@@ -2138,3 +2696,12 @@ public void ReloadLayout()
 ```
 
 Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.
+
+<a id="undo"></a>
+### Undo()
+
+```csharp
+public void Undo()
+```
+
+Undoes the last change to the cells and selects them, as Ctrl+Z does.

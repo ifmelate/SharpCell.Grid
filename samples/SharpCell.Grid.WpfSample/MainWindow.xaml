@@ -3,5 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:grid="clr-namespace:SharpCell.Grid.Wpf;assembly=SharpCell.Grid.Wpf"
         Title="SharpCell.Grid" Width="960" Height="600">
-    <grid:SpreadsheetView x:Name="View" />
+    <DockPanel>
+        <grid:FormulaBar DockPanel.Dock="Top" Margin="6" View="{Binding ElementName=View}" />
+        <grid:SpreadsheetView x:Name="View" />
+    </DockPanel>
 </Window>

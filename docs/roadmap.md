@@ -27,14 +27,17 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
 | Done | A WPF control over the same painter: `SharpCell.Grid.Wpf`, tested on Windows in CI | — |
 
-## Next: 0.3 — editing
+## Now: 0.3 — editing
 
-- Typing into a cell and the formula bar as a separate control; F2, Escape, Enter, Tab.
-- Input read as Excel reads it: numbers, percentages, dates and times in the workbook's culture,
-  `=` for formulas, `'` for text.
-- Recalculation after each edit, repainting only what changed (SharpCell's changed cells).
-- Undo and redo, Delete, paste of values from Excel.
-- Ctrl with the arrows, Home, Page Up and Page Down; Ctrl+A on the cells around the active one first.
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Typing into a cell, F2 and double-click, Enter, Tab, Escape, arrows, Ctrl+Enter, Alt+Enter; `IsReadOnly` | — |
+| Done | Input read as Excel reads it: numbers, percentages, currency, dates and times in the workbook's culture, `=` for formulas, `'` for text, the number format a General cell takes | `Cell.Input` (0.8.0) |
+| Done | Recalculation after each edit, with the cells it changed (`Edited`) | `RecalculationResult.ChangedCells` (0.5.0) |
+| Done | Undo and redo, Delete, paste of text copied from Excel | — |
+| Done | The formula bar as a control of its own, with the name box | — |
+| Done | Ctrl with the arrows, Home, Ctrl+Home, Ctrl+End, Page Up and Page Down | — |
+| Later | Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula | — |
 
 ## Later: 0.4 — working like Excel
 

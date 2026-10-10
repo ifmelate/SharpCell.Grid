@@ -53,11 +53,42 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Click on the corner above the row headers, Ctrl+A or Cmd+A | The whole sheet |
 | Arrow keys | Move the active cell one cell, over a merged area as one cell, and select it alone |
 | Shift+arrow keys | Extend or shrink the selection at its far corner |
+| Ctrl+arrow keys (Cmd on macOS), with Shift to extend | To the edge of the content: the end of a block of filled cells, the next filled cell, or the sheet's edge |
+| Home, Ctrl+Home, Ctrl+End | The row's first column, A1, the last used cell |
+| Page Down, Page Up | A screen of rows down or up, scrolled with it |
 | Ctrl+Space, Shift+Space | Whole columns, whole rows of the selection |
 | Enter, Shift+Enter | Down, up; inside a selection, to the next selected cell, column by column |
 | Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
-| Ctrl+C or Cmd+C | Copies the selected cells; pasting into the grid comes with editing |
+| Ctrl+C or Cmd+C | Copies the selected cells |
+| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell |
 | Wheel | Three rows a turn |
+
+## Editing
+
+| Input | Result |
+|---|---|
+| Typing | Starts editing the active cell with what was typed, replacing its content |
+| F2, double-click | Edits the active cell with its formula or value; in the text, the arrows move the caret |
+| Enter, Tab (Shift to go back) | Enters the text and moves on, inside a selection to its next cell |
+| Arrow keys after typing | Enter the text and move that way |
+| Ctrl+Enter | Enters the text into every selected cell |
+| Alt+Enter | A line break inside the cell |
+| Escape | Leaves the cell as it was |
+| Click on another cell | Enters the text and selects that cell |
+| Delete | Clears the selected cells' content; formats and styles stay |
+| Backspace | Starts editing the active cell empty |
+| Ctrl+Z, Ctrl+Y (Cmd+Z, Cmd+Shift+Z on macOS) | Undo, redo, and select the cells changed |
+
+What is typed is read as Excel reads it, through SharpCell's `Cell.Input`: `=` starts a formula,
+`'` keeps the rest as text, numbers, percentages, currency, dates and times are read in the
+workbook's culture, and a cell in the General format takes a format from what was typed (`12%`
+gives `0%`). The workbook is recalculated after each change. A formula that does not parse keeps
+the editor open, with the reason shown and the caret where it went wrong. Pasted text goes in cell
+by cell, each read as typed. `IsReadOnly` turns all of this off.
+
+`FormulaBar` is Excel's formula bar as a control of its own: the name box with the active cell's
+address, which selects an address or range typed into it, and the cell's formula or value, which
+can be edited there as in the cell.
 
 A selection covers every merged area it touches whole. Selected cells but the active one are
 shaded, a border goes round them, and the headers of their rows and columns are highlighted.
@@ -84,9 +115,14 @@ sheet's last used row or column.
   definitions; they are not yet compared with Excel.
 - A merged area across the line of frozen panes is drawn whole from the frozen part.
 - The colours of the selection, its shade and its headers are close to Excel's, not measured from it.
-- Ctrl+A selects the whole sheet at once, not first the cells around the active one; Ctrl with the
-  arrows, Home, Page Up and Page Down do not move yet, and only one rectangle can be selected
-  (no Ctrl+click).
+- Ctrl+A selects the whole sheet at once, not first the cells around the active one, and only one
+  rectangle can be selected (no Ctrl+click).
+- While a formula is typed, clicking or arrowing to a cell does not put its reference in the
+  formula; references are typed. Formulas get no number format from what they calculate (Excel
+  gives `=TODAY()` a date format).
+- Pasting takes the text of the clipboard: values, not the formats or formulas of cells copied in Excel.
+- Undo keeps values, formulas and number formats; there is no undo of styles, which cannot be
+  changed in the grid yet.
 - Copied HTML is not yet checked by pasting it into desktop Excel.
 - Not shown: conditional formats, pattern and gradient fills, rotated text, styles of whole rows
   and columns on empty cells, charts, images and comments.

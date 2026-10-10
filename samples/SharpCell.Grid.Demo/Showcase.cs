@@ -102,7 +102,8 @@ internal static class Showcase
             "SharpCell.Grid is a free (MIT) Excel-like spreadsheet control for .NET, built on the SharpCell formula engine.",
             "It shows number formats, cell styles, column widths, row heights, merged cells, frozen panes and text running on over empty cells.",
             "This page runs it in your browser with WebAssembly: an .xlsx file you open is read here and is never uploaded.",
-            "Viewing only for now: selecting ranges, copying and editing are on the roadmap.",
+            "Type into a cell, press F2 or double-click to edit, Delete to clear, Ctrl+Z to undo; formulas recalculate as you go.",
+            "Select with the mouse and keyboard as in Excel, copy to Excel with Ctrl+C and paste from it with Ctrl+V.",
         ];
         for (var i = 0; i < lines.Length; i++)
             sheet[1 + 2 * i, 1].Value = lines[i];

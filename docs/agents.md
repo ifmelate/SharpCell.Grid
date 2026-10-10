@@ -17,6 +17,7 @@ Rows and columns are numbered from 1: new CellPosition(row, column).
 What a cell shows is SharpCell's Cell.Text and Cell.Style; change the workbook, not the view.
 The selection is view.Selection, a GridSelection; view.ActiveCell is its active cell, and setting it selects that cell alone.
 Copying (Avalonia: await view.CopyAsync(); WPF: view.Copy()) puts text and HTML for Excel on the clipboard; GridClipboard gives the same without a view.
-The grid is for viewing and selecting; it does not edit cells yet.
+People edit cells in the view as in Excel; set view.IsReadOnly = true to only show them. Each change is recalculated and raises view.Edited (a GridEdit with the cells changed and Recalculation.ChangedCells).
+To change cells from code as typing does, set SharpCell's cell.Input, or use view.Editor (GridEditor) so the change can be undone.
 For another UI framework, implement IGridCanvas and call GridPainter.Paint, Hit, CellNearest and ScrollIntoView, with GridSelection for the input.
 ```
