@@ -8,10 +8,10 @@ namespace SharpCell.Grid.Avalonia;
 
 /// <summary>
 /// Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats
-/// it in the cell's style, the sheet's column widths, row heights and merged cells. The mouse picks
+/// it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. The mouse picks
 /// the active cell, the keyboard moves it as in Excel, the wheel scrolls. Only the visible cells
 /// are read, so any sheet size works. The view reads cells when it paints; after changing cells or
-/// recalculating, call <see cref="Visual.InvalidateVisual"/>. Sizes are taken when
+/// recalculating, call <see cref="Visual.InvalidateVisual"/>. Sizes and frozen panes are taken when
 /// <see cref="Worksheet"/> is set; after changing them, call <see cref="ReloadLayout"/>.
 /// </summary>
 public class SpreadsheetView : Control
@@ -65,10 +65,13 @@ public class SpreadsheetView : Control
         Painter = new GridPainter { MeasureText = Measure };
     }
 
-    /// <summary>Takes the sheet's column widths, row heights and hidden rows and columns again.</summary>
+    /// <summary>Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.</summary>
     public void ReloadLayout()
     {
-        Painter.Layout = Worksheet is { } sheet ? SheetLayout.FromWorksheet(sheet, Painter.MaxDigitWidth(sheet)) : new SheetLayout();
+        var sheet = Worksheet;
+        Painter.Layout = sheet is not null ? SheetLayout.FromWorksheet(sheet, Painter.MaxDigitWidth(sheet)) : new SheetLayout();
+        Painter.FrozenRows = sheet?.FrozenRows ?? 0;
+        Painter.FrozenColumns = sheet?.FrozenColumns ?? 0;
         InvalidateVisual();
     }
 

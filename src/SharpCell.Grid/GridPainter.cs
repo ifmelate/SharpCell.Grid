@@ -57,6 +57,28 @@ public sealed class GridPainter
     /// <summary>The colours of everything but the cells' own styles.</summary>
     public GridTheme Theme { get; set; } = GridTheme.Excel;
 
+    private int _frozenRows;
+    private int _frozenColumns;
+
+    /// <summary>
+    /// How many rows at the top stay in place while the rest scrolls, as Excel's Freeze Panes;
+    /// a sheet's own is <see cref="Worksheet.FrozenRows"/>.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The count is negative or leaves no row to scroll.</exception>
+    public int FrozenRows
+    {
+        get => _frozenRows;
+        set => _frozenRows = value is >= 0 and < SheetLayout.MaxRow ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "Frozen rows must leave a row to scroll.");
+    }
+
+    /// <summary>How many columns on the left stay in place while the rest scrolls; a sheet's own is <see cref="Worksheet.FrozenColumns"/>.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The count is negative or leaves no column to scroll.</exception>
+    public int FrozenColumns
+    {
+        get => _frozenColumns;
+        set => _frozenColumns = value is >= 0 and < SheetLayout.MaxColumn ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "Frozen columns must leave a column to scroll.");
+    }
+
     /// <summary>The height of the column headers at the top.</summary>
     public double ColumnHeaderHeight { get; set; } = 20;
 
@@ -103,10 +125,21 @@ public sealed class GridPainter
         if (CellsWidth(viewport) <= 0 || CellsHeight(viewport) <= 0)
             return;
 
-        var frame = new Frame(this, sheet, viewport);
-        PaintGridlines(canvas, frame);
-        if (sheet is not null)
+        // The scrolled cells first, then the frozen panes over whatever of them reaches under the
+        // panes: each frozen pane starts from its own background.
+        var rowHeaders = RowHeaders(viewport);
+        var regions = Regions(viewport, rowHeaders);
+        var frames = new List<Frame>();
+        for (var i = 0; i < regions.Count; i++)
         {
+            var frame = new Frame(this, sheet, viewport, rowHeaders, regions[i]);
+            frames.Add(frame);
+            if (i > 0)
+                canvas.FillRectangle(regions[i].Clip, theme.Background);
+            if (sheet?.ShowGridlines ?? true)
+                PaintGridlines(canvas, frame);
+            if (sheet is null)
+                continue;
             PaintFills(canvas, frame, sheet);
             var runs = TextRuns(frame, sheet);
             CoverGridlines(canvas, frame, sheet, runs);
@@ -115,13 +148,14 @@ public sealed class GridPainter
                 PaintText(canvas, frame, sheet, run);
         }
 
-        PaintHeaders(canvas, frame, activeCell);
-        if (activeCell is { } active)
+        PaintFrozenLines(canvas, viewport, rowHeaders);
+        PaintHeaders(canvas, frames, activeCell);
+        if (activeCell is { } active && frames.Count > 0)
         {
-            var area = frame.MergeAt(active) ?? new CellArea(active.Row, active.Column, active.Row, active.Column);
-            if (Intersects(frame.Area, area))
+            var area = frames[0].MergeAt(active.Row, active.Column, all: true) ?? new CellArea(active.Row, active.Column, active.Row, active.Column);
+            if (frames.Exists(f => Intersects(f.Area, area)))
             {
-                var bounds = frame.Bounds(area);
+                var bounds = frames[0].Bounds(area);
                 canvas.StrokeRectangle(
                     new GridRect(bounds.X - 0.5, bounds.Y - 0.5, bounds.Width, bounds.Height),
                     theme.ActiveCellBorder,
@@ -130,13 +164,110 @@ public sealed class GridPainter
         }
     }
 
-    /// <summary>The cells the viewport shows, partly or wholly.</summary>
-    public CellArea VisibleArea(GridViewport viewport) =>
-        Layout.VisibleArea(
-            Math.Max(0, viewport.OffsetX),
-            Math.Max(0, viewport.OffsetY),
-            Math.Max(0, CellsWidth(viewport)),
-            Math.Max(0, CellsHeight(viewport)));
+    /// <summary>The cells the viewport shows, partly or wholly, of the part that scrolls: frozen rows and columns aside.</summary>
+    public CellArea VisibleArea(GridViewport viewport)
+    {
+        var (columns, rows) = (ScrollColumns(viewport), ScrollRows(viewport));
+        return new CellArea(rows.First, columns.First, rows.Last, columns.Last);
+    }
+
+    // The columns of the part that scrolls in view, and those of the frozen part; a range may be
+    // empty (Last < First) when the frozen part fills the view.
+    private (int First, int Last) ScrollColumns(GridViewport viewport)
+    {
+        var width = Math.Max(0, CellsWidth(viewport));
+        var offset = Math.Max(0, viewport.OffsetX);
+        var frozen = Math.Min(FrozenWidth, width);
+        var first = Math.Max(FrozenColumns + 1, Layout.ColumnAt(frozen + offset));
+        var last = width <= frozen ? first - 1 : Layout.ColumnAt(offset + Math.BitDecrement(width));
+        return (first, last);
+    }
+
+    private (int First, int Last) ScrollRows(GridViewport viewport)
+    {
+        var height = Math.Max(0, CellsHeight(viewport));
+        var offset = Math.Max(0, viewport.OffsetY);
+        var frozen = Math.Min(FrozenHeight, height);
+        var first = Math.Max(FrozenRows + 1, Layout.RowAt(frozen + offset));
+        var last = height <= frozen ? first - 1 : Layout.RowAt(offset + Math.BitDecrement(height));
+        return (first, last);
+    }
+
+    private (int First, int Last) FrozenColumnRange(GridViewport viewport)
+    {
+        var width = Math.Max(0, CellsWidth(viewport));
+        if (FrozenColumns == 0 || width == 0)
+            return (1, 0);
+        return (1, Math.Min(FrozenColumns, Layout.ColumnAt(Math.BitDecrement(Math.Min(FrozenWidth, width)))));
+    }
+
+    private (int First, int Last) FrozenRowRange(GridViewport viewport)
+    {
+        var height = Math.Max(0, CellsHeight(viewport));
+        if (FrozenRows == 0 || height == 0)
+            return (1, 0);
+        return (1, Math.Min(FrozenRows, Layout.RowAt(Math.BitDecrement(Math.Min(FrozenHeight, height)))));
+    }
+
+    private double FrozenWidth => FrozenColumns == 0 ? 0 : Layout.ColumnLeft(FrozenColumns) + Layout.ColumnWidth(FrozenColumns);
+
+    private double FrozenHeight => FrozenRows == 0 ? 0 : Layout.RowTop(FrozenRows) + Layout.RowHeight(FrozenRows);
+
+    /// <summary>A part of the grid painted on its own: the cells in it, the columns its text may run over, its place on screen.</summary>
+    private readonly record struct Region(CellArea Area, int MinColumn, int MaxColumn, GridRect Clip);
+
+    // The part that scrolls first, then the frozen columns, the frozen rows and their corner.
+    private List<Region> Regions(GridViewport viewport, double rowHeaders)
+    {
+        var (scrollColumns, scrollRows) = (ScrollColumns(viewport), ScrollRows(viewport));
+        var (frozenColumns, frozenRows) = (FrozenColumnRange(viewport), FrozenRowRange(viewport));
+        var frozenWidth = Math.Min(FrozenWidth, Math.Max(0, CellsWidth(viewport)));
+        var frozenHeight = Math.Min(FrozenHeight, Math.Max(0, CellsHeight(viewport)));
+        var left = new GridRect(rowHeaders, 0, frozenWidth, 0);
+        var right = new GridRect(rowHeaders + frozenWidth, 0, Math.Max(0, viewport.Width - rowHeaders - frozenWidth), 0);
+        var top = (Y: ColumnHeaderHeight, Height: frozenHeight);
+        var bottom = (Y: ColumnHeaderHeight + frozenHeight, Height: Math.Max(0, viewport.Height - ColumnHeaderHeight - frozenHeight));
+
+        var regions = new List<Region>();
+        void Add((int First, int Last) rows, (int First, int Last) columns, GridRect x, (double Y, double Height) y, bool frozenColumnsPart)
+        {
+            if (rows.Last < rows.First || columns.Last < columns.First)
+                return;
+            regions.Add(new Region(
+                new CellArea(rows.First, columns.First, rows.Last, columns.Last),
+                frozenColumnsPart ? 1 : FrozenColumns + 1,
+                frozenColumnsPart ? FrozenColumns : SheetLayout.MaxColumn,
+                new GridRect(x.X, y.Y, x.Width, y.Height)));
+        }
+
+        Add(scrollRows, scrollColumns, right, bottom, false);
+        Add(scrollRows, frozenColumns, left, bottom, true);
+        Add(frozenRows, scrollColumns, right, top, false);
+        Add(frozenRows, frozenColumns, left, top, true);
+        return regions;
+    }
+
+    // Columns left of the frozen line do not scroll; the rest move by the offset.
+    private double ScreenX(GridViewport viewport, double rowHeaders, int column) =>
+        rowHeaders + Layout.ColumnLeft(column) - (column > FrozenColumns ? viewport.OffsetX : 0);
+
+    private double ScreenY(GridViewport viewport, int row) =>
+        ColumnHeaderHeight + Layout.RowTop(row) - (row > FrozenRows ? viewport.OffsetY : 0);
+
+    private void PaintFrozenLines(IGridCanvas canvas, GridViewport viewport, double rowHeaders)
+    {
+        if (FrozenColumns > 0 && FrozenWidth < CellsWidth(viewport))
+        {
+            var x = PixelCentre(rowHeaders + FrozenWidth);
+            canvas.DrawLine(x, ColumnHeaderHeight, x, viewport.Height, Theme.FrozenLine);
+        }
+
+        if (FrozenRows > 0 && FrozenHeight < CellsHeight(viewport))
+        {
+            var y = PixelCentre(ColumnHeaderHeight + FrozenHeight);
+            canvas.DrawLine(rowHeaders, y, viewport.Width, y, Theme.FrozenLine);
+        }
+    }
 
     /// <summary>Where a cell is on screen; it may lie outside the viewport.</summary>
     public GridRect CellBounds(GridViewport viewport, CellPosition cell) => CellBounds(viewport, cell, cell);
@@ -154,9 +285,10 @@ public sealed class GridPainter
         var rowHeaders = RowHeaders(viewport);
         if (x < rowHeaders || y < ColumnHeaderHeight || x >= viewport.Width || y >= viewport.Height)
             return null;
+        var (cellX, cellY) = (x - rowHeaders, y - ColumnHeaderHeight);
         var cell = new CellPosition(
-            Layout.RowAt(y - ColumnHeaderHeight + viewport.OffsetY),
-            Layout.ColumnAt(x - rowHeaders + viewport.OffsetX));
+            Layout.RowAt(cellY < FrozenHeight ? cellY : cellY + viewport.OffsetY),
+            Layout.ColumnAt(cellX < FrozenWidth ? cellX : cellX + viewport.OffsetX));
         return sheet is not null && GridNavigation.MergeAt(sheet.MergedAreas, cell) is { } merge
             ? new CellPosition(merge.FirstRow, merge.FirstColumn)
             : cell;
@@ -168,8 +300,13 @@ public sealed class GridPainter
     /// </summary>
     public GridViewport ScrollIntoView(GridViewport viewport, CellPosition cell)
     {
-        var offsetX = Scroll(viewport.OffsetX, CellsWidth(viewport), Layout.ColumnLeft(cell.Column), Layout.ColumnWidth(cell.Column));
-        var offsetY = Scroll(viewport.OffsetY, CellsHeight(viewport), Layout.RowTop(cell.Row), Layout.RowHeight(cell.Row));
+        // Frozen cells are always in view; the others scroll in the part after the frozen line.
+        var offsetX = cell.Column <= FrozenColumns
+            ? viewport.OffsetX
+            : Scroll(viewport.OffsetX, CellsWidth(viewport) - FrozenWidth, Layout.ColumnLeft(cell.Column) - FrozenWidth, Layout.ColumnWidth(cell.Column));
+        var offsetY = cell.Row <= FrozenRows
+            ? viewport.OffsetY
+            : Scroll(viewport.OffsetY, CellsHeight(viewport) - FrozenHeight, Layout.RowTop(cell.Row) - FrozenHeight, Layout.RowHeight(cell.Row));
         return viewport with { OffsetX = offsetX, OffsetY = offsetY };
     }
 
@@ -202,13 +339,13 @@ public sealed class GridPainter
 
     private GridRect Bounds(GridViewport viewport, CellArea area, double rowHeaders)
     {
-        var left = Layout.ColumnLeft(area.FirstColumn);
-        var top = Layout.RowTop(area.FirstRow);
+        var x = ScreenX(viewport, rowHeaders, area.FirstColumn);
+        var y = ScreenY(viewport, area.FirstRow);
         return new GridRect(
-            rowHeaders + left - viewport.OffsetX,
-            ColumnHeaderHeight + top - viewport.OffsetY,
-            Layout.ColumnLeft(area.LastColumn) + Layout.ColumnWidth(area.LastColumn) - left,
-            Layout.RowTop(area.LastRow) + Layout.RowHeight(area.LastRow) - top);
+            x,
+            y,
+            ScreenX(viewport, rowHeaders, area.LastColumn) + Layout.ColumnWidth(area.LastColumn) - x,
+            ScreenY(viewport, area.LastRow) + Layout.RowHeight(area.LastRow) - y);
     }
 
     // Excel widens row headers for the digits of the visible row numbers. Rows do not depend on
@@ -218,7 +355,7 @@ public sealed class GridPainter
         if (MeasureText is not { } measure)
             return RowHeaderWidth;
         var height = Math.Max(0, CellsHeight(viewport));
-        var lastRow = Layout.RowAt(Math.Max(0, viewport.OffsetY) + (height == 0 ? 0 : Math.BitDecrement(height)));
+        var lastRow = Math.Max(FrozenRows, Layout.RowAt(Math.Max(0, viewport.OffsetY) + (height == 0 ? 0 : Math.BitDecrement(height))));
         var digits = Math.Max(MinRowHeaderDigits, lastRow.ToString(CultureInfo.InvariantCulture).Length);
         return Math.Max(RowHeaderWidth, Math.Ceiling(measure(new string('0', digits), CellFontForHeaders)) + 2 * HeaderPadding);
     }
@@ -231,20 +368,21 @@ public sealed class GridPainter
         var color = Theme.Gridline;
         var viewport = frame.Viewport;
         var area = frame.Area;
+        var clip = frame.Clip;
         for (var column = area.FirstColumn; column <= area.LastColumn; column++)
         {
             if (Layout.ColumnWidth(column) <= 0)
                 continue;
-            var right = frame.RowHeaders + Layout.ColumnLeft(column) + Layout.ColumnWidth(column) - viewport.OffsetX;
-            canvas.DrawLine(PixelCentre(right), ColumnHeaderHeight, PixelCentre(right), viewport.Height, color);
+            var right = ScreenX(viewport, frame.RowHeaders, column) + Layout.ColumnWidth(column);
+            canvas.DrawLine(PixelCentre(right), clip.Y, PixelCentre(right), clip.Bottom, color);
         }
 
         for (var row = area.FirstRow; row <= area.LastRow; row++)
         {
             if (Layout.RowHeight(row) <= 0)
                 continue;
-            var bottom = ColumnHeaderHeight + Layout.RowTop(row) + Layout.RowHeight(row) - viewport.OffsetY;
-            canvas.DrawLine(frame.RowHeaders, PixelCentre(bottom), viewport.Width, PixelCentre(bottom), color);
+            var bottom = ScreenY(viewport, row) + Layout.RowHeight(row);
+            canvas.DrawLine(clip.X, PixelCentre(bottom), clip.Right, PixelCentre(bottom), color);
         }
     }
 
@@ -366,7 +504,7 @@ public sealed class GridPainter
     // The nearest cell with content beyond the viewport's edge, when its text runs into view.
     private TextRun? Outside(Frame frame, Worksheet sheet, int row, int start, int step)
     {
-        for (var column = start; column >= 1 && column <= SheetLayout.MaxColumn && Math.Abs(column - start) < OverflowReach; column += step)
+        for (var column = start; column >= frame.MinColumn && column <= frame.MaxColumn && Math.Abs(column - start) < OverflowReach; column += step)
         {
             if (!frame.IsFree(sheet, row, column))
             {
@@ -419,7 +557,7 @@ public sealed class GridPainter
         while (room > 0)
         {
             var next = reached + step;
-            if (next < 1 || next > SheetLayout.MaxColumn || !frame.IsFree(sheet, row, next))
+            if (next < frame.MinColumn || next > frame.MaxColumn || !frame.IsFree(sheet, row, next))
                 break;
             reached = next;
             room -= Layout.ColumnWidth(next);
@@ -501,36 +639,53 @@ public sealed class GridPainter
         _ => GridVerticalAlignment.Center,
     };
 
-    private void PaintHeaders(IGridCanvas canvas, Frame frame, CellPosition? activeCell)
+    private void PaintHeaders(IGridCanvas canvas, List<Frame> frames, CellPosition? activeCell)
     {
         var theme = Theme;
-        var viewport = frame.Viewport;
-        var area = frame.Area;
-        var rowHeaders = frame.RowHeaders;
-        var font = frame.HeaderFont;
+        if (frames.Count == 0)
+            return;
+        var viewport = frames[0].Viewport;
+        var rowHeaders = frames[0].RowHeaders;
+        var font = frames[0].HeaderFont;
         canvas.FillRectangle(new GridRect(0, 0, viewport.Width, ColumnHeaderHeight), theme.HeaderBackground);
         canvas.FillRectangle(new GridRect(0, 0, rowHeaders, viewport.Height), theme.HeaderBackground);
 
-        for (var column = area.FirstColumn; column <= area.LastColumn; column++)
+        // Scrolled headers first, frozen ones over them, as with the cells.
+        var columns = new List<int>();
+        var rows = new List<int>();
+        foreach (var frame in frames)
+        {
+            for (var column = frame.Area.FirstColumn; column <= frame.Area.LastColumn; column++)
+            {
+                if (!columns.Contains(column))
+                    columns.Add(column);
+            }
+
+            for (var row = frame.Area.FirstRow; row <= frame.Area.LastRow; row++)
+            {
+                if (!rows.Contains(row))
+                    rows.Add(row);
+            }
+        }
+
+        foreach (var column in columns)
         {
             var width = Layout.ColumnWidth(column);
             if (width <= 0)
                 continue;
-            var bounds = new GridRect(rowHeaders + Layout.ColumnLeft(column) - viewport.OffsetX, 0, width, ColumnHeaderHeight);
-            if (activeCell?.Column == column)
-                canvas.FillRectangle(bounds, theme.ActiveHeaderBackground);
+            var bounds = new GridRect(ScreenX(viewport, rowHeaders, column), 0, width, ColumnHeaderHeight);
+            canvas.FillRectangle(bounds, activeCell?.Column == column ? theme.ActiveHeaderBackground : theme.HeaderBackground);
             canvas.DrawLine(PixelCentre(bounds.Right), 0, PixelCentre(bounds.Right), ColumnHeaderHeight, theme.HeaderLine);
             canvas.DrawText(ColumnNames.Of(column), bounds, GridTextAlignment.Center, GridVerticalAlignment.Center, theme.HeaderText, font, wrap: false);
         }
 
-        for (var row = area.FirstRow; row <= area.LastRow; row++)
+        foreach (var row in rows)
         {
             var height = Layout.RowHeight(row);
             if (height <= 0)
                 continue;
-            var bounds = new GridRect(0, ColumnHeaderHeight + Layout.RowTop(row) - viewport.OffsetY, rowHeaders, height);
-            if (activeCell?.Row == row)
-                canvas.FillRectangle(bounds, theme.ActiveHeaderBackground);
+            var bounds = new GridRect(0, ScreenY(viewport, row), rowHeaders, height);
+            canvas.FillRectangle(bounds, activeCell?.Row == row ? theme.ActiveHeaderBackground : theme.HeaderBackground);
             canvas.DrawLine(0, PixelCentre(bounds.Bottom), rowHeaders, PixelCentre(bounds.Bottom), theme.HeaderLine);
             canvas.DrawText(row.ToString(CultureInfo.InvariantCulture), bounds, GridTextAlignment.Center, GridVerticalAlignment.Center, theme.HeaderText, font, wrap: false);
         }
@@ -549,12 +704,15 @@ public sealed class GridPainter
     {
         private readonly GridPainter _painter;
 
-        public Frame(GridPainter painter, Worksheet? sheet, GridViewport viewport)
+        public Frame(GridPainter painter, Worksheet? sheet, GridViewport viewport, double rowHeaders, Region region)
         {
             _painter = painter;
             Viewport = viewport;
-            RowHeaders = painter.RowHeaders(viewport);
-            Area = painter.VisibleArea(viewport);
+            RowHeaders = rowHeaders;
+            Area = region.Area;
+            Clip = region.Clip;
+            MinColumn = region.MinColumn;
+            MaxColumn = region.MaxColumn;
             HeaderFont = DefaultFont(sheet);
             DigitWidth = painter.MaxDigitWidth(sheet);
             var merges = new List<CellArea>();
@@ -581,6 +739,14 @@ public sealed class GridPainter
         public double RowHeaders { get; }
 
         public CellArea Area { get; }
+
+        /// <summary>Where the region is on screen.</summary>
+        public GridRect Clip { get; }
+
+        /// <summary>The columns text may run over: those on this side of the frozen line.</summary>
+        public int MinColumn { get; }
+
+        public int MaxColumn { get; }
 
         public GridFont HeaderFont { get; }
 

@@ -63,6 +63,10 @@ SharpCell.Grid.GridPainter.CellBounds(SharpCell.Grid.GridViewport viewport, Shar
 SharpCell.Grid.GridPainter.Clamp(SharpCell.Grid.GridViewport viewport) -> SharpCell.Grid.GridViewport
 SharpCell.Grid.GridPainter.ColumnHeaderHeight.get -> double
 SharpCell.Grid.GridPainter.ColumnHeaderHeight.set -> void
+SharpCell.Grid.GridPainter.FrozenColumns.get -> int
+SharpCell.Grid.GridPainter.FrozenColumns.set -> void
+SharpCell.Grid.GridPainter.FrozenRows.get -> int
+SharpCell.Grid.GridPainter.FrozenRows.set -> void
 SharpCell.Grid.GridPainter.GridPainter() -> void
 SharpCell.Grid.GridPainter.GridPainter(SharpCell.Grid.SheetLayout! layout) -> void
 SharpCell.Grid.GridPainter.HitTest(SharpCell.Grid.GridViewport viewport, double x, double y, SharpCell.Worksheet? sheet = null) -> SharpCell.Grid.CellPosition?
@@ -108,6 +112,8 @@ SharpCell.Grid.GridTheme.Background.init -> void
 SharpCell.Grid.GridTheme.CellText.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.CellText.init -> void
 SharpCell.Grid.GridTheme.Equals(SharpCell.Grid.GridTheme? other) -> bool
+SharpCell.Grid.GridTheme.FrozenLine.get -> SharpCell.Grid.GridColor
+SharpCell.Grid.GridTheme.FrozenLine.init -> void
 SharpCell.Grid.GridTheme.GridTheme() -> void
 SharpCell.Grid.GridTheme.Gridline.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.Gridline.init -> void

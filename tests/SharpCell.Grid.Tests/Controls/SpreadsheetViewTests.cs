@@ -138,6 +138,24 @@ public class SpreadsheetViewTests(HeadlessSession session)
     });
 
     [Fact]
+    public Task Frozen_panes_stay_in_place_while_the_rest_scrolls() => session.Run(() =>
+    {
+        var sheet = Styled();
+        sheet.FrozenRows = 2;
+        sheet.FrozenColumns = 1;
+        sheet.ShowGridlines = false;
+        var (window, view) = Show(sheet, width: 560, height: 220);
+
+        var point = CenterOf(view, "B4");
+        for (var i = 0; i < 3; i++)
+            window.MouseWheel(point, new Vector(0, -1));
+        view.Offset = view.Offset.WithX(64);
+
+        Assert.Equal(view.Painter.ColumnHeaderHeight, view.Painter.CellBounds(view.Viewport, Cells.Parse("A1")).Y);
+        Snapshot.Match(window.CaptureRenderedFrame(), "frozen");
+    });
+
+    [Fact]
     public Task Renders_the_end_of_the_sheet_as_approved() => session.Run(() =>
     {
         var (window, view) = Show(null);

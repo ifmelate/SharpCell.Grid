@@ -27,6 +27,9 @@ public sealed record GridTheme
     /// <summary>Behind the headers of the active cell's row and column.</summary>
     public GridColor ActiveHeaderBackground { get; init; } = GridColor.FromRgb(0xD9D9D9);
 
+    /// <summary>The line where panes are frozen.</summary>
+    public GridColor FrozenLine { get; init; } = GridColor.FromRgb(0x9B9B9B);
+
     /// <summary>The border around the active cell.</summary>
     public GridColor ActiveCellBorder { get; init; } = GridColor.FromRgb(0x107C41);
 }
