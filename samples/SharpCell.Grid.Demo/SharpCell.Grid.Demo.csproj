@@ -5,7 +5,9 @@
     docs.yml installs it on the runner. A build without the workload compiles but does not run.
   -->
   <PropertyGroup>
-    <TargetFrameworks>net10.0-browser</TargetFrameworks>
+    <!-- One framework, so that publish needs no -f: the repository's net8.0;net10.0 is cleared. -->
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFramework>net10.0-browser</TargetFramework>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>disable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
