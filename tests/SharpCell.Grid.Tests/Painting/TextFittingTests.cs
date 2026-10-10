@@ -6,7 +6,7 @@ public class TextFittingTests
     private const double CharWidth = 7;
     private static readonly GridViewport Viewport = new(0, 0, 400, 200);
 
-    private static GridPainter Painter() => new() { MeasureText = text => text.Length * CharWidth };
+    private static GridPainter Painter() => new() { MeasureText = (text, _) => text.Length * CharWidth };
 
     private static string Shown(object value, string? format = null, string? formula = null, double columnWidth = SheetLayout.ExcelColumnWidth)
     {

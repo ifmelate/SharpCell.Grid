@@ -39,6 +39,69 @@ public sealed class SheetLayout
         rows = new AxisLayout(MaxRow, defaultRowHeight, "row");
     }
 
+    /// <summary>
+    /// A layout with a worksheet's column widths, row heights and hidden rows and columns, in
+    /// pixels at 100% zoom as Excel converts them: a width of <c>w</c> characters is
+    /// <c>Truncate((256 * w + Truncate(128 / d)) / 256 * d)</c> pixels, <c>d</c> being the width of
+    /// the widest digit of the workbook's default font (7 for Calibri 11); a height of <c>h</c>
+    /// points is <c>h * 96 / 72</c> pixels, rounded. Later changes to the sheet are not followed.
+    /// </summary>
+    /// <param name="sheet">The sheet.</param>
+    /// <param name="maxDigitWidth">The width in pixels of the widest digit of the default font.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The digit width is not positive.</exception>
+    public static SheetLayout FromWorksheet(Worksheet sheet, double maxDigitWidth)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        if (!(maxDigitWidth > 0) || double.IsInfinity(maxDigitWidth))
+            throw new ArgumentOutOfRangeException(nameof(maxDigitWidth), maxDigitWidth, "The digit width must be positive.");
+
+        // Without a default width Excel uses 8 digits and 5 pixels of padding, rounded up to a multiple of 8.
+        var columnWidth = sheet.DefaultColumnWidth is { } width
+            ? ColumnPixels(width, maxDigitWidth)
+            : Math.Ceiling((8 * maxDigitWidth + 5) / 8) * 8;
+        var rowHeight = sheet.DefaultRowHeight is { } height ? RowPixels(height) : ExcelRowHeight;
+        var layout = new SheetLayout(Math.Max(1, columnWidth), Math.Max(1, rowHeight));
+
+        foreach (var column in Each(MaxColumn, sheet.ColumnWidth))
+            layout.SetColumnWidth(column.Index, ColumnPixels(column.Size, maxDigitWidth));
+        foreach (var row in Each(MaxRow, sheet.RowHeight))
+            layout.SetRowHeight(row.Index, RowPixels(row.Size));
+        return layout.HideFrom(sheet);
+    }
+
+    private static double ColumnPixels(double width, double digit) =>
+        width <= 0 ? 0 : Math.Truncate((256 * width + Math.Truncate(128 / digit)) / 256 * digit);
+
+    private static double RowPixels(double points) => Math.Round(points * 96 / 72, MidpointRounding.AwayFromZero);
+
+    // The worksheet offers no enumeration of its sizes, so every row and column is asked: a few
+    // milliseconds for a whole sheet, paid once per layout.
+    private static System.Collections.Generic.IEnumerable<(int Index, double Size)> Each(int count, Func<int, double?> size)
+    {
+        for (var i = 1; i <= count; i++)
+        {
+            if (size(i) is { } value)
+                yield return (i, value);
+        }
+    }
+
+    private SheetLayout HideFrom(Worksheet sheet)
+    {
+        for (var column = 1; column <= MaxColumn; column++)
+        {
+            if (sheet.IsColumnHidden(column))
+                SetColumnWidth(column, 0);
+        }
+
+        for (var row = 1; row <= MaxRow; row++)
+        {
+            if (sheet.IsRowHidden(row))
+                SetRowHeight(row, 0);
+        }
+
+        return this;
+    }
+
     /// <summary>The width of every column without a width of its own.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not positive.</exception>
     public double DefaultColumnWidth

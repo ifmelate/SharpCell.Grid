@@ -5,6 +5,7 @@ SharpCell.Grid.Avalonia.SpreadsheetView.ActiveCell.set -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.Offset.get -> Avalonia.Vector
 SharpCell.Grid.Avalonia.SpreadsheetView.Offset.set -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.Painter.get -> SharpCell.Grid.GridPainter!
+SharpCell.Grid.Avalonia.SpreadsheetView.ReloadLayout() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.SpreadsheetView() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.Viewport.get -> SharpCell.Grid.GridViewport
 SharpCell.Grid.Avalonia.SpreadsheetView.Worksheet.get -> SharpCell.Worksheet?
@@ -12,6 +13,7 @@ SharpCell.Grid.Avalonia.SpreadsheetView.Worksheet.set -> void
 override SharpCell.Grid.Avalonia.SpreadsheetView.OnKeyDown(Avalonia.Input.KeyEventArgs! e) -> void
 override SharpCell.Grid.Avalonia.SpreadsheetView.OnPointerPressed(Avalonia.Input.PointerPressedEventArgs! e) -> void
 override SharpCell.Grid.Avalonia.SpreadsheetView.OnPointerWheelChanged(Avalonia.Input.PointerWheelEventArgs! e) -> void
+override SharpCell.Grid.Avalonia.SpreadsheetView.OnPropertyChanged(Avalonia.AvaloniaPropertyChangedEventArgs! change) -> void
 override SharpCell.Grid.Avalonia.SpreadsheetView.Render(Avalonia.Media.DrawingContext! context) -> void
 static readonly SharpCell.Grid.Avalonia.SpreadsheetView.ActiveCellProperty -> Avalonia.StyledProperty<SharpCell.Grid.CellPosition?>!
 static readonly SharpCell.Grid.Avalonia.SpreadsheetView.OffsetProperty -> Avalonia.StyledProperty<Avalonia.Vector>!

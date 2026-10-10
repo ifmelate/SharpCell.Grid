@@ -61,6 +61,82 @@ public class SpreadsheetViewTests(HeadlessSession session)
         Snapshot.Match(window.CaptureRenderedFrame(), "budget");
     });
 
+    private static Worksheet Styled()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Report");
+        var header = CellStyle.Default with
+        {
+            Font = CellFont.Default with { Bold = true, Color = CellColor.FromRgb(0xFFFFFF) },
+            Fill = CellColor.FromRgb(0x4472C4),
+            HorizontalAlignment = CellHorizontalAlignment.Center,
+            VerticalAlignment = CellVerticalAlignment.Center,
+        };
+        sheet["A1"].Value = "Quarterly report";
+        sheet["A1"].Style = header with { Font = header.Font with { Size = 14 } };
+        sheet.Merge("A1:D1");
+        sheet.SetRowHeight(1, 24);
+        sheet.SetColumnWidth(1, 16);
+        string[] titles = ["Region", "Q1", "Q2", "Note"];
+        for (var i = 0; i < titles.Length; i++)
+        {
+            sheet[2, i + 1].Value = titles[i];
+            sheet[2, i + 1].Style = CellStyle.Default with
+            {
+                Font = CellFont.Default with { Bold = true },
+                BottomBorder = new CellBorder(CellBorderStyle.Medium),
+            };
+        }
+
+        sheet["A3"].Value = "North";
+        sheet["B3"].Value = 1200;
+        sheet["C3"].Value = 1350;
+        sheet["A4"].Value = "South";
+        sheet["A4"].Style = CellStyle.Default with { Font = CellFont.Default with { Italic = true, Color = CellColor.FromRgb(0xC00000) } };
+        sheet["B4"].Value = 980;
+        sheet["C4"].Value = 1010;
+        sheet["B4"].Style = CellStyle.Default with { Fill = CellColor.FromRgb(0xFFF2CC) };
+        sheet["D3"].Value = "Text that wraps in its cell";
+        sheet["D3"].Style = CellStyle.Default with { WrapText = true, VerticalAlignment = CellVerticalAlignment.Top };
+        sheet.SetRowHeight(3, 45);
+        sheet["A5"].Value = "Total";
+        sheet["A5"].Style = CellStyle.Default with { HorizontalAlignment = CellHorizontalAlignment.Right, Indent = 1 };
+        sheet["B5"].Formula = "=SUM(B3:B4)";
+        sheet["C5"].Formula = "=SUM(C3:C4)";
+        foreach (var address in new[] { "B5", "C5" })
+            sheet[address].Style = CellStyle.Default with
+            {
+                Font = CellFont.Default with { Underline = CellUnderline.Double },
+                TopBorder = new CellBorder(CellBorderStyle.Thin),
+                BottomBorder = new CellBorder(CellBorderStyle.Double),
+            };
+        sheet.SetColumnHidden(5, true);
+        sheet["F2"].Value = "after a hidden column";
+        workbook.Recalculate();
+        return sheet;
+    }
+
+    [Fact]
+    public Task Renders_styles_merges_and_sizes_as_approved() => session.Run(() =>
+    {
+        var (window, view) = Show(Styled(), width: 560, height: 220);
+        view.ActiveCell = Cells.Parse("C4");
+
+        Snapshot.Match(window.CaptureRenderedFrame(), "styles");
+    });
+
+    [Fact]
+    public Task Clicking_inside_a_merge_selects_its_top_left_cell() => session.Run(() =>
+    {
+        var (window, view) = Show(Styled(), width: 560, height: 220);
+
+        var point = CenterOf(view, "C1");
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+
+        Assert.Equal(Cells.Parse("A1"), view.ActiveCell);
+    });
+
     [Fact]
     public Task Renders_the_end_of_the_sheet_as_approved() => session.Run(() =>
     {
@@ -146,13 +222,4 @@ public class SpreadsheetViewTests(HeadlessSession session)
         window.MouseWheel(point, new Vector(0, 2));
         Assert.Equal(0, view.Offset.Y);
     });
-}
-
-internal static class Cells
-{
-    public static CellPosition Parse(string address)
-    {
-        var letters = address.TakeWhile(char.IsLetter).Aggregate(0, (column, letter) => column * 26 + letter - 'A' + 1);
-        return new CellPosition(int.Parse(address.AsSpan(address.TakeWhile(char.IsLetter).Count())), letters);
-    }
 }

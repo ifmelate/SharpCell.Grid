@@ -13,33 +13,6 @@ SharpCell.Grid.CellArea.LastColumn.get -> int
 SharpCell.Grid.CellArea.LastColumn.init -> void
 SharpCell.Grid.CellArea.LastRow.get -> int
 SharpCell.Grid.CellArea.LastRow.init -> void
-SharpCell.Grid.SheetLayout
-SharpCell.Grid.SheetLayout.ColumnAt(double x) -> int
-SharpCell.Grid.SheetLayout.ColumnLeft(int column) -> double
-SharpCell.Grid.SheetLayout.ColumnWidth(int column) -> double
-SharpCell.Grid.SheetLayout.DefaultColumnWidth.get -> double
-SharpCell.Grid.SheetLayout.DefaultColumnWidth.set -> void
-SharpCell.Grid.SheetLayout.DefaultRowHeight.get -> double
-SharpCell.Grid.SheetLayout.DefaultRowHeight.set -> void
-SharpCell.Grid.SheetLayout.Height.get -> double
-SharpCell.Grid.SheetLayout.RowAt(double y) -> int
-SharpCell.Grid.SheetLayout.RowHeight(int row) -> double
-SharpCell.Grid.SheetLayout.RowTop(int row) -> double
-SharpCell.Grid.SheetLayout.SetColumnWidth(int column, double width) -> void
-SharpCell.Grid.SheetLayout.SetRowHeight(int row, double height) -> void
-SharpCell.Grid.SheetLayout.SheetLayout() -> void
-SharpCell.Grid.SheetLayout.SheetLayout(double defaultColumnWidth, double defaultRowHeight) -> void
-SharpCell.Grid.SheetLayout.VisibleArea(double x, double y, double width, double height) -> SharpCell.Grid.CellArea
-SharpCell.Grid.SheetLayout.Width.get -> double
-const SharpCell.Grid.SheetLayout.ExcelColumnWidth = 64 -> double
-const SharpCell.Grid.SheetLayout.ExcelRowHeight = 20 -> double
-const SharpCell.Grid.SheetLayout.MaxColumn = 16384 -> int
-const SharpCell.Grid.SheetLayout.MaxRow = 1048576 -> int
-override SharpCell.Grid.CellArea.GetHashCode() -> int
-static SharpCell.Grid.CellArea.operator !=(SharpCell.Grid.CellArea left, SharpCell.Grid.CellArea right) -> bool
-static SharpCell.Grid.CellArea.operator ==(SharpCell.Grid.CellArea left, SharpCell.Grid.CellArea right) -> bool
-~override SharpCell.Grid.CellArea.Equals(object obj) -> bool
-~override SharpCell.Grid.CellArea.ToString() -> string
 SharpCell.Grid.CellPosition
 SharpCell.Grid.CellPosition.CellPosition() -> void
 SharpCell.Grid.CellPosition.CellPosition(int row, int column) -> void
@@ -59,15 +32,45 @@ SharpCell.Grid.GridColor.GridColor() -> void
 SharpCell.Grid.GridColor.GridColor(byte R, byte G, byte B, byte A = 255) -> void
 SharpCell.Grid.GridColor.R.get -> byte
 SharpCell.Grid.GridColor.R.init -> void
+SharpCell.Grid.GridDash
+SharpCell.Grid.GridDash.Dash = 1 -> SharpCell.Grid.GridDash
+SharpCell.Grid.GridDash.DashDot = 3 -> SharpCell.Grid.GridDash
+SharpCell.Grid.GridDash.DashDotDot = 4 -> SharpCell.Grid.GridDash
+SharpCell.Grid.GridDash.Dot = 2 -> SharpCell.Grid.GridDash
+SharpCell.Grid.GridDash.Hair = 5 -> SharpCell.Grid.GridDash
+SharpCell.Grid.GridDash.Solid = 0 -> SharpCell.Grid.GridDash
+SharpCell.Grid.GridFont
+SharpCell.Grid.GridFont.Bold.get -> bool
+SharpCell.Grid.GridFont.Bold.init -> void
+SharpCell.Grid.GridFont.Deconstruct(out string! Family, out double Size, out bool Bold, out bool Italic, out bool Underline, out bool Strikethrough) -> void
+SharpCell.Grid.GridFont.Equals(SharpCell.Grid.GridFont other) -> bool
+SharpCell.Grid.GridFont.Family.get -> string!
+SharpCell.Grid.GridFont.Family.init -> void
+SharpCell.Grid.GridFont.GridFont() -> void
+SharpCell.Grid.GridFont.GridFont(string! Family, double Size, bool Bold = false, bool Italic = false, bool Underline = false, bool Strikethrough = false) -> void
+SharpCell.Grid.GridFont.Italic.get -> bool
+SharpCell.Grid.GridFont.Italic.init -> void
+SharpCell.Grid.GridFont.Size.get -> double
+SharpCell.Grid.GridFont.Size.init -> void
+SharpCell.Grid.GridFont.Strikethrough.get -> bool
+SharpCell.Grid.GridFont.Strikethrough.init -> void
+SharpCell.Grid.GridFont.Underline.get -> bool
+SharpCell.Grid.GridFont.Underline.init -> void
+SharpCell.Grid.GridNavigation
 SharpCell.Grid.GridPainter
 SharpCell.Grid.GridPainter.CellBounds(SharpCell.Grid.GridViewport viewport, SharpCell.Grid.CellPosition cell) -> SharpCell.Grid.GridRect
+SharpCell.Grid.GridPainter.CellBounds(SharpCell.Grid.GridViewport viewport, SharpCell.Grid.CellPosition first, SharpCell.Grid.CellPosition last) -> SharpCell.Grid.GridRect
 SharpCell.Grid.GridPainter.Clamp(SharpCell.Grid.GridViewport viewport) -> SharpCell.Grid.GridViewport
 SharpCell.Grid.GridPainter.ColumnHeaderHeight.get -> double
 SharpCell.Grid.GridPainter.ColumnHeaderHeight.set -> void
 SharpCell.Grid.GridPainter.GridPainter() -> void
 SharpCell.Grid.GridPainter.GridPainter(SharpCell.Grid.SheetLayout! layout) -> void
-SharpCell.Grid.GridPainter.HitTest(SharpCell.Grid.GridViewport viewport, double x, double y) -> SharpCell.Grid.CellPosition?
+SharpCell.Grid.GridPainter.HitTest(SharpCell.Grid.GridViewport viewport, double x, double y, SharpCell.Worksheet? sheet = null) -> SharpCell.Grid.CellPosition?
 SharpCell.Grid.GridPainter.Layout.get -> SharpCell.Grid.SheetLayout!
+SharpCell.Grid.GridPainter.Layout.set -> void
+SharpCell.Grid.GridPainter.MaxDigitWidth(SharpCell.Worksheet? sheet) -> double
+SharpCell.Grid.GridPainter.MeasureText.get -> System.Func<string!, SharpCell.Grid.GridFont, double>?
+SharpCell.Grid.GridPainter.MeasureText.set -> void
 SharpCell.Grid.GridPainter.Paint(SharpCell.Grid.IGridCanvas! canvas, SharpCell.Worksheet? sheet, SharpCell.Grid.GridViewport viewport, SharpCell.Grid.CellPosition? activeCell = null) -> void
 SharpCell.Grid.GridPainter.RowHeaderWidth.get -> double
 SharpCell.Grid.GridPainter.RowHeaderWidth.set -> void
@@ -132,23 +135,53 @@ SharpCell.Grid.GridViewport.OffsetY.init -> void
 SharpCell.Grid.GridViewport.Width.get -> double
 SharpCell.Grid.GridViewport.Width.init -> void
 SharpCell.Grid.IGridCanvas
-SharpCell.Grid.IGridCanvas.DrawLine(double x1, double y1, double x2, double y2, SharpCell.Grid.GridColor color) -> void
-SharpCell.Grid.IGridCanvas.DrawText(string! text, SharpCell.Grid.GridRect bounds, SharpCell.Grid.GridTextAlignment alignment, SharpCell.Grid.GridVerticalAlignment verticalAlignment, SharpCell.Grid.GridColor color) -> void
+SharpCell.Grid.IGridCanvas.DrawLine(double x1, double y1, double x2, double y2, SharpCell.Grid.GridColor color, double thickness = 1, SharpCell.Grid.GridDash dash = SharpCell.Grid.GridDash.Solid) -> void
+SharpCell.Grid.IGridCanvas.DrawText(string! text, SharpCell.Grid.GridRect bounds, SharpCell.Grid.GridTextAlignment alignment, SharpCell.Grid.GridVerticalAlignment verticalAlignment, SharpCell.Grid.GridColor color, SharpCell.Grid.GridFont font, bool wrap) -> void
 SharpCell.Grid.IGridCanvas.FillRectangle(SharpCell.Grid.GridRect rect, SharpCell.Grid.GridColor color) -> void
 SharpCell.Grid.IGridCanvas.StrokeRectangle(SharpCell.Grid.GridRect rect, SharpCell.Grid.GridColor color, double thickness) -> void
+SharpCell.Grid.SheetLayout
+SharpCell.Grid.SheetLayout.ColumnAt(double x) -> int
+SharpCell.Grid.SheetLayout.ColumnLeft(int column) -> double
+SharpCell.Grid.SheetLayout.ColumnWidth(int column) -> double
+SharpCell.Grid.SheetLayout.DefaultColumnWidth.get -> double
+SharpCell.Grid.SheetLayout.DefaultColumnWidth.set -> void
+SharpCell.Grid.SheetLayout.DefaultRowHeight.get -> double
+SharpCell.Grid.SheetLayout.DefaultRowHeight.set -> void
+SharpCell.Grid.SheetLayout.Height.get -> double
+SharpCell.Grid.SheetLayout.RowAt(double y) -> int
+SharpCell.Grid.SheetLayout.RowHeight(int row) -> double
+SharpCell.Grid.SheetLayout.RowTop(int row) -> double
+SharpCell.Grid.SheetLayout.SetColumnWidth(int column, double width) -> void
+SharpCell.Grid.SheetLayout.SetRowHeight(int row, double height) -> void
+SharpCell.Grid.SheetLayout.SheetLayout() -> void
+SharpCell.Grid.SheetLayout.SheetLayout(double defaultColumnWidth, double defaultRowHeight) -> void
+SharpCell.Grid.SheetLayout.VisibleArea(double x, double y, double width, double height) -> SharpCell.Grid.CellArea
+SharpCell.Grid.SheetLayout.Width.get -> double
+const SharpCell.Grid.SheetLayout.ExcelColumnWidth = 64 -> double
+const SharpCell.Grid.SheetLayout.ExcelRowHeight = 20 -> double
+const SharpCell.Grid.SheetLayout.MaxColumn = 16384 -> int
+const SharpCell.Grid.SheetLayout.MaxRow = 1048576 -> int
+override SharpCell.Grid.CellArea.GetHashCode() -> int
 override SharpCell.Grid.CellPosition.GetHashCode() -> int
 override SharpCell.Grid.CellPosition.ToString() -> string!
 override SharpCell.Grid.GridColor.GetHashCode() -> int
+override SharpCell.Grid.GridFont.GetHashCode() -> int
 override SharpCell.Grid.GridRect.GetHashCode() -> int
 override SharpCell.Grid.GridTheme.Equals(object? obj) -> bool
 override SharpCell.Grid.GridTheme.GetHashCode() -> int
 override SharpCell.Grid.GridTheme.ToString() -> string!
 override SharpCell.Grid.GridViewport.GetHashCode() -> int
+static SharpCell.Grid.CellArea.operator !=(SharpCell.Grid.CellArea left, SharpCell.Grid.CellArea right) -> bool
+static SharpCell.Grid.CellArea.operator ==(SharpCell.Grid.CellArea left, SharpCell.Grid.CellArea right) -> bool
 static SharpCell.Grid.CellPosition.operator !=(SharpCell.Grid.CellPosition left, SharpCell.Grid.CellPosition right) -> bool
 static SharpCell.Grid.CellPosition.operator ==(SharpCell.Grid.CellPosition left, SharpCell.Grid.CellPosition right) -> bool
 static SharpCell.Grid.GridColor.FromRgb(int rgb) -> SharpCell.Grid.GridColor
 static SharpCell.Grid.GridColor.operator !=(SharpCell.Grid.GridColor left, SharpCell.Grid.GridColor right) -> bool
 static SharpCell.Grid.GridColor.operator ==(SharpCell.Grid.GridColor left, SharpCell.Grid.GridColor right) -> bool
+static SharpCell.Grid.GridFont.operator !=(SharpCell.Grid.GridFont left, SharpCell.Grid.GridFont right) -> bool
+static SharpCell.Grid.GridFont.operator ==(SharpCell.Grid.GridFont left, SharpCell.Grid.GridFont right) -> bool
+static SharpCell.Grid.GridNavigation.Move(SharpCell.Worksheet? sheet, SharpCell.Grid.CellPosition from, int rows, int columns) -> SharpCell.Grid.CellPosition
+static SharpCell.Grid.GridPainter.FontOf(SharpCell.CellFont! font) -> SharpCell.Grid.GridFont
 static SharpCell.Grid.GridRect.operator !=(SharpCell.Grid.GridRect left, SharpCell.Grid.GridRect right) -> bool
 static SharpCell.Grid.GridRect.operator ==(SharpCell.Grid.GridRect left, SharpCell.Grid.GridRect right) -> bool
 static SharpCell.Grid.GridTheme.Excel.get -> SharpCell.Grid.GridTheme!
@@ -156,12 +189,15 @@ static SharpCell.Grid.GridTheme.operator !=(SharpCell.Grid.GridTheme? left, Shar
 static SharpCell.Grid.GridTheme.operator ==(SharpCell.Grid.GridTheme? left, SharpCell.Grid.GridTheme? right) -> bool
 static SharpCell.Grid.GridViewport.operator !=(SharpCell.Grid.GridViewport left, SharpCell.Grid.GridViewport right) -> bool
 static SharpCell.Grid.GridViewport.operator ==(SharpCell.Grid.GridViewport left, SharpCell.Grid.GridViewport right) -> bool
+static SharpCell.Grid.SheetLayout.FromWorksheet(SharpCell.Worksheet! sheet, double maxDigitWidth) -> SharpCell.Grid.SheetLayout!
+~override SharpCell.Grid.CellArea.Equals(object obj) -> bool
+~override SharpCell.Grid.CellArea.ToString() -> string
 ~override SharpCell.Grid.CellPosition.Equals(object obj) -> bool
 ~override SharpCell.Grid.GridColor.Equals(object obj) -> bool
 ~override SharpCell.Grid.GridColor.ToString() -> string
+~override SharpCell.Grid.GridFont.Equals(object obj) -> bool
+~override SharpCell.Grid.GridFont.ToString() -> string
 ~override SharpCell.Grid.GridRect.Equals(object obj) -> bool
 ~override SharpCell.Grid.GridRect.ToString() -> string
 ~override SharpCell.Grid.GridViewport.Equals(object obj) -> bool
 ~override SharpCell.Grid.GridViewport.ToString() -> string
-SharpCell.Grid.GridPainter.MeasureText.get -> System.Func<string!, double>?
-SharpCell.Grid.GridPainter.MeasureText.set -> void

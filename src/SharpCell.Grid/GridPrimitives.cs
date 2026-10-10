@@ -89,3 +89,34 @@ public readonly record struct CellPosition
 /// <param name="Width">The width of the grid.</param>
 /// <param name="Height">The height of the grid.</param>
 public readonly record struct GridViewport(double OffsetX, double OffsetY, double Width, double Height);
+
+/// <summary>A font to draw text with; the size is in pixels, not points.</summary>
+/// <param name="Family">The font family, such as <c>Calibri</c>; a canvas falls back to its own font when the family is missing.</param>
+/// <param name="Size">The size in device-independent pixels: 11 points are 14.67 pixels at 96 DPI.</param>
+/// <param name="Bold">Bold text.</param>
+/// <param name="Italic">Italic text.</param>
+/// <param name="Underline">Underlined text.</param>
+/// <param name="Strikethrough">Text struck through.</param>
+public readonly record struct GridFont(string Family, double Size, bool Bold = false, bool Italic = false, bool Underline = false, bool Strikethrough = false);
+
+/// <summary>The dash pattern of a line, after Excel's border styles.</summary>
+public enum GridDash
+{
+    /// <summary>A solid line.</summary>
+    Solid,
+
+    /// <summary>Dashes.</summary>
+    Dash,
+
+    /// <summary>Dots.</summary>
+    Dot,
+
+    /// <summary>Dashes and dots.</summary>
+    DashDot,
+
+    /// <summary>A dash and two dots.</summary>
+    DashDotDot,
+
+    /// <summary>Fine dots, Excel's hairline.</summary>
+    Hair,
+}

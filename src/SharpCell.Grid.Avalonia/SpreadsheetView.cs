@@ -1,18 +1,18 @@
 using System;
-using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Media;
 
 namespace SharpCell.Grid.Avalonia;
 
 /// <summary>
-/// Shows a SharpCell worksheet as Excel does: headers, gridlines and each cell's text as Excel
-/// formats it. The mouse picks the active cell, the keyboard moves it as in Excel, the wheel
-/// scrolls. Only the visible cells are read, so any sheet size works. The view reads the sheet
-/// when it paints; after changing cells or recalculating, call <see cref="Visual.InvalidateVisual"/>.
+/// Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats
+/// it in the cell's style, the sheet's column widths, row heights and merged cells. The mouse picks
+/// the active cell, the keyboard moves it as in Excel, the wheel scrolls. Only the visible cells
+/// are read, so any sheet size works. The view reads cells when it paints; after changing cells or
+/// recalculating, call <see cref="Visual.InvalidateVisual"/>. Sizes are taken when
+/// <see cref="Worksheet"/> is set; after changing them, call <see cref="ReloadLayout"/>.
 /// </summary>
 public class SpreadsheetView : Control
 {
@@ -65,6 +65,21 @@ public class SpreadsheetView : Control
         Painter = new GridPainter { MeasureText = Measure };
     }
 
+    /// <summary>Takes the sheet's column widths, row heights and hidden rows and columns again.</summary>
+    public void ReloadLayout()
+    {
+        Painter.Layout = Worksheet is { } sheet ? SheetLayout.FromWorksheet(sheet, Painter.MaxDigitWidth(sheet)) : new SheetLayout();
+        InvalidateVisual();
+    }
+
+    /// <inheritdoc />
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == WorksheetProperty)
+            ReloadLayout();
+    }
+
     /// <summary>Geometry and colours: row heights, column widths, header sizes, theme.</summary>
     public GridPainter Painter { get; }
 
@@ -73,7 +88,7 @@ public class SpreadsheetView : Control
 
     /// <inheritdoc />
     public override void Render(DrawingContext context) =>
-        Painter.Paint(new AvaloniaGridCanvas(context, Typeface, TextElement.GetFontSize(this)), Worksheet, Viewport, ActiveCell);
+        Painter.Paint(new AvaloniaGridCanvas(context), Worksheet, Viewport, ActiveCell);
 
     /// <inheritdoc />
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -82,7 +97,7 @@ public class SpreadsheetView : Control
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             return;
         var point = e.GetPosition(this);
-        if (Painter.HitTest(Viewport, point.X, point.Y) is { } cell)
+        if (Painter.HitTest(Viewport, point.X, point.Y, Worksheet) is { } cell)
             ActiveCell = cell;
         Focus();
         e.Handled = true;
@@ -119,18 +134,13 @@ public class SpreadsheetView : Control
         if (move is not var (rows, columns))
             return;
 
-        var target = new CellPosition(
-            Math.Clamp(active.Row + rows, 1, SheetLayout.MaxRow),
-            Math.Clamp(active.Column + columns, 1, SheetLayout.MaxColumn));
+        var target = GridNavigation.Move(Worksheet, active, rows, columns);
         ActiveCell = target;
         ScrollTo(Painter.ScrollIntoView(Viewport, target));
         e.Handled = true;
     }
 
-    private Typeface Typeface => new(TextElement.GetFontFamily(this));
-
-    private double Measure(string text) =>
-        new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface, TextElement.GetFontSize(this), null).Width;
+    private static double Measure(string text, GridFont font) => AvaloniaGridCanvas.Format(text, font, null).Width;
 
     private void ScrollTo(GridViewport viewport)
     {
