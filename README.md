@@ -9,7 +9,7 @@ default alignment, and an active cell moved with the mouse and keyboard. Only th
 are read, so a sheet of a million rows scrolls like an empty one.
 
 Status: early 0.x, not on NuGet yet. Viewing only: no editing, cell styles (fonts, fills,
-borders), merged cells or column widths from files yet.
+borders), merged cells or column widths from files yet; see the [roadmap](docs/roadmap.md).
 
 | Package | What it does |
 |---|---|
