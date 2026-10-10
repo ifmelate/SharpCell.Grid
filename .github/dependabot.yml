@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # SharpCell and Avalonia are the libraries' dependencies; the rest are test, build and sample packages.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      packages:
+        patterns: ['*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']

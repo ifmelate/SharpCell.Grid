@@ -1,0 +1,49 @@
+name: Bug
+description: The grid shows cells differently from Microsoft Excel, misbehaves on input, or crashes.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Attach the smallest .xlsx that shows the problem and a screenshot of the same cells in Microsoft
+        Excel. **Do not attach confidential workbooks**; remove everything not needed to reproduce. A wrong
+        calculated value belongs to [SharpCell](https://github.com/ifmelate/SharpCell/issues).
+  - type: textarea
+    id: workbook
+    attributes:
+      label: Workbook
+      description: Drag the .xlsx file here.
+    validations:
+      required: true
+  - type: textarea
+    id: excel
+    attributes:
+      label: Screenshot from Microsoft Excel
+      description: The same cells in Excel at 100% zoom.
+    validations:
+      required: true
+  - type: textarea
+    id: grid
+    attributes:
+      label: Screenshot from SharpCell.Grid
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: For input problems, the clicks and keys that lead to it.
+  - type: input
+    id: platform
+    attributes:
+      label: UI framework, version and OS
+      placeholder: Avalonia 12.1.4, macOS 15
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SharpCell.Grid version
+      placeholder: 0.1.0
+    validations:
+      required: true

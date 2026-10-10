@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Formula results and .xlsx reading
+    url: https://github.com/ifmelate/SharpCell/issues
+    about: A wrong calculated value or a file that does not load belongs to SharpCell, the engine.
