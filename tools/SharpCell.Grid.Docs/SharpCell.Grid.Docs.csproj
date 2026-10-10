@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Copied from SharpCell's tools/SharpCell.Docs at eba57bd; its own tests stay there. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>SharpCell.Grid.Docs</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="SharpCell.Grid.Tests" />
+    <PackageReference Include="Markdig" />
+    <ProjectReference Include="../../src/SharpCell.Grid/SharpCell.Grid.csproj" />
+    <ProjectReference Include="../../src/SharpCell.Grid.Avalonia/SharpCell.Grid.Avalonia.csproj" />
+  </ItemGroup>
+</Project>

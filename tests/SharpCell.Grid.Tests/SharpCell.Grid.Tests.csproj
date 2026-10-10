@@ -17,5 +17,6 @@
     <Using Include="Xunit" />
     <ProjectReference Include="../../src/SharpCell.Grid/SharpCell.Grid.csproj" />
     <ProjectReference Include="../../src/SharpCell.Grid.Avalonia/SharpCell.Grid.Avalonia.csproj" />
+    <ProjectReference Include="../../tools/SharpCell.Grid.Docs/SharpCell.Grid.Docs.csproj" />
   </ItemGroup>
 </Project>
