@@ -15,6 +15,8 @@ A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the
 Excel does: each cell's value in its number format and its style, the file's column widths and
 row heights, merged cells, frozen panes and text running on over empty cells.
 
+**[Try it in your browser](https://ifmelate.github.io/SharpCell.Grid/demo/)**: open your own .xlsx file; it is read on your computer and never uploaded.
+
 ![A sheet with styles, a merged title, wrapped text and a hidden column](images/styles.png)
 
 | Package | What it does |
@@ -242,6 +244,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Merged cells, painted and navigated as one cell | `Worksheet.MergedAreas` (0.6.0) |
 | Done | Text running on over empty neighbours, by its alignment, also from cells out of view | — |
 | Done | Frozen panes and the sheet's gridline setting | `Worksheet.FrozenRows`, `FrozenColumns`, `ShowGridlines` (0.6.0) |
+| Done | A live demo in the browser through WebAssembly, on the documentation site | — |
 | Released | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia` | SharpCell 0.6.0 |
 
 ## Now: 0.2 — selection and WPF

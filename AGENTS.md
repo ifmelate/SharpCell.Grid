@@ -11,6 +11,7 @@ Instructions for AI agents and people changing this repository.
 - `tests/SharpCell.Grid.Tests` — xUnit tests: geometry and painting against a recording canvas,
   the Avalonia control headless with rendered frames compared to approved PNGs.
 - `samples/SharpCell.Grid.Sample` — a desktop window showing an .xlsx file.
+- `samples/SharpCell.Grid.Demo` — the live demo on the site, in the browser through WebAssembly. Publishing it needs `dotnet workload install wasm-tools`; `docs.yml` does that and puts it in `demo/`.
 - `tools/SharpCell.Grid.Docs` — fills code snippets into Markdown, writes `docs/api`, `docs/llms*.txt`, renders the site. Copied from SharpCell's `tools/SharpCell.Docs`; its unit tests stay there.
 
 The formula engine and the .xlsx reader are the NuGet packages `SharpCell` and `SharpCell.Xlsx`

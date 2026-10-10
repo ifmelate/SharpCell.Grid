@@ -16,6 +16,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Merged cells, painted and navigated as one cell | `Worksheet.MergedAreas` (0.6.0) |
 | Done | Text running on over empty neighbours, by its alignment, also from cells out of view | — |
 | Done | Frozen panes and the sheet's gridline setting | `Worksheet.FrozenRows`, `FrozenColumns`, `ShowGridlines` (0.6.0) |
+| Done | A live demo in the browser through WebAssembly, on the documentation site | — |
 | Released | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia` | SharpCell 0.6.0 |
 
 ## Now: 0.2 — selection and WPF

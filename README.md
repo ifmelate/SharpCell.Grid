@@ -10,6 +10,8 @@ style (font, fill, borders, alignment, wrapping), the file's column widths and r
 merged cells, frozen panes, text running on over empty neighbours, and an active cell moved with
 the mouse and keyboard. Only the visible cells are read, so a sheet of a million rows scrolls like an empty one.
 
+**[Try it in your browser](https://ifmelate.github.io/SharpCell.Grid/demo/)**: open your own .xlsx file; it is read on your computer and never uploaded.
+
 Status: 0.x, viewing only: no selection of ranges or editing yet; see the [roadmap](docs/roadmap.md).
 The API may change between minor versions until 1.0.
 

@@ -32,6 +32,13 @@ jobs:
         run: dotnet run --project tools/SharpCell.Grid.Docs -f net10.0 -- check
       - name: Build the site
         run: dotnet run --project tools/SharpCell.Grid.Docs -f net10.0 -- site artifacts/site
+      # The live demo: Skia's native code is linked into dotnet.wasm, which needs the workload.
+      - name: Install the WebAssembly tools
+        run: dotnet workload install wasm-tools
+      - name: Build the live demo
+        run: dotnet publish samples/SharpCell.Grid.Demo -c Release -o artifacts/demo
+      - name: Add the live demo to the site
+        run: cp -r artifacts/demo/wwwroot artifacts/site/demo
       - uses: actions/upload-pages-artifact@v5
         with:
           path: artifacts/site

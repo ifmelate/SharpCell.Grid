@@ -5,6 +5,8 @@ A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the
 Excel does: each cell's value in its number format and its style, the file's column widths and
 row heights, merged cells, frozen panes and text running on over empty cells.
 
+**[Try it in your browser](https://ifmelate.github.io/SharpCell.Grid/demo/)**: open your own .xlsx file; it is read on your computer and never uploaded.
+
 ![A sheet with styles, a merged title, wrapped text and a hidden column](images/styles.png)
 
 | Package | What it does |
