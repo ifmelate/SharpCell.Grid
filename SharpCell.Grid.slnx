@@ -7,6 +7,7 @@
     <Project Path="tools/SharpCell.Grid.Docs/SharpCell.Grid.Docs.csproj" />
   </Folder>
   <Folder Name="/samples/">
+    <Project Path="samples/SharpCell.Grid.Demo/SharpCell.Grid.Demo.csproj" />
     <Project Path="samples/SharpCell.Grid.Sample/SharpCell.Grid.Sample.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -1,0 +1,34 @@
+html, body, #out {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.splash {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: white;
+    color: #1b2a4e;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    pointer-events: none;
+}
+
+.splash h1 {
+    font-weight: 500;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.splash p {
+    margin: 0;
+    color: #555;
+}
+
+.splash.splash-close {
+    display: none;
+}
