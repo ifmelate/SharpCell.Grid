@@ -9,9 +9,9 @@ namespace SharpCell.Grid;
 /// <see cref="Cell.Text"/> in its style (font, fill, borders, alignment, wrapping, indent), merged
 /// areas as one cell, and the active cell. Only the cells inside the viewport are read, so a
 /// sheet's size does not matter. Also answers the geometry questions of a grid on screen: where a
-/// cell is, what is under a point, where to scroll. With <see cref="MeasureText"/> set, numbers
-/// too wide for their column are shortened or shown as <c>###</c>, and row headers widen for long
-/// row numbers, as in Excel.
+/// cell is, what is under a point, where to scroll. With <see cref="MeasureText"/> set, text too
+/// wide for its cell runs on over empty neighbours, numbers too wide for their column are shortened
+/// or shown as <c>###</c>, and row headers widen for long row numbers, as in Excel.
 /// </summary>
 public sealed class GridPainter
 {
@@ -28,6 +28,9 @@ public sealed class GridPainter
 
     // An indent step of Excel at 100% zoom with Calibri 11, in pixels.
     private const double IndentStep = 9;
+
+    // How far left or right of the viewport a cell is looked for whose text runs into view.
+    private const int OverflowReach = 128;
 
     private SheetLayout _layout;
 
@@ -105,8 +108,11 @@ public sealed class GridPainter
         if (sheet is not null)
         {
             PaintFills(canvas, frame, sheet);
+            var runs = TextRuns(frame, sheet);
+            CoverGridlines(canvas, frame, sheet, runs);
             PaintBorders(canvas, frame, sheet);
-            PaintTexts(canvas, frame, sheet);
+            foreach (var run in runs)
+                PaintText(canvas, frame, sheet, run);
         }
 
         PaintHeaders(canvas, frame, activeCell);
@@ -324,25 +330,130 @@ public sealed class GridPainter
             canvas.DrawLine(x1, y1 + shift, x2, y2 + shift, color, thickness, dash);
     }
 
-    private void PaintTexts(IGridCanvas canvas, Frame frame, Worksheet sheet)
-    {
-        foreach (var merge in frame.Merges)
-            PaintText(canvas, frame, sheet, merge);
+    /// <summary>A cell's text and the cells it is painted across: the cell, its merged area, or the empty cells it runs on over.</summary>
+    private readonly record struct TextRun(int Row, int Column, CellArea Span);
 
-        foreach (var (row, column) in frame.Cells())
+    private List<TextRun> TextRuns(Frame frame, Worksheet sheet)
+    {
+        var runs = new List<TextRun>();
+        foreach (var merge in frame.Merges)
+            runs.Add(new TextRun(merge.FirstRow, merge.FirstColumn, merge));
+
+        var area = frame.Area;
+        for (var row = area.FirstRow; row <= area.LastRow; row++)
         {
-            if (frame.MergeAt(new CellPosition(row, column)) is null)
-                PaintText(canvas, frame, sheet, new CellArea(row, column, row, column));
+            if (Layout.RowHeight(row) <= 0)
+                continue;
+
+            // Text of a cell left or right of the viewport can run into it.
+            if (Outside(frame, sheet, row, area.FirstColumn - 1, -1) is { } fromLeft)
+                runs.Add(fromLeft);
+            if (Outside(frame, sheet, row, area.LastColumn + 1, 1) is { } fromRight)
+                runs.Add(fromRight);
+
+            for (var column = area.FirstColumn; column <= area.LastColumn; column++)
+            {
+                if (Layout.ColumnWidth(column) <= 0 || frame.MergeAt(new CellPosition(row, column)) is not null)
+                    continue;
+                if (sheet[row, column].Text.Length > 0)
+                    runs.Add(new TextRun(row, column, Span(frame, sheet, row, column)));
+            }
+        }
+
+        return runs;
+    }
+
+    // The nearest cell with content beyond the viewport's edge, when its text runs into view.
+    private TextRun? Outside(Frame frame, Worksheet sheet, int row, int start, int step)
+    {
+        for (var column = start; column >= 1 && column <= SheetLayout.MaxColumn && Math.Abs(column - start) < OverflowReach; column += step)
+        {
+            if (!frame.IsFree(sheet, row, column))
+            {
+                if (frame.MergeAt(row, column, all: true) is not null)
+                    return null;
+                var span = Span(frame, sheet, row, column);
+                return Intersects(span, frame.Area) ? new TextRun(row, column, span) : null;
+            }
+        }
+
+        return null;
+    }
+
+    // Excel lets unwrapped text that is wider than its cell run on over empty cells, away from the
+    // side it is aligned to; a cell with content or a merged area stops it. Numbers never run on.
+    private CellArea Span(Frame frame, Worksheet sheet, int row, int column)
+    {
+        var single = new CellArea(row, column, row, column);
+        var cell = sheet[row, column];
+        if (MeasureText is not { } measure || cell.Value.Kind != CellValueKind.Text)
+            return single;
+        var style = cell.Style;
+        if (style.WrapText || style.HorizontalAlignment is CellHorizontalAlignment.Fill or CellHorizontalAlignment.Justify or CellHorizontalAlignment.Distributed)
+            return single;
+
+        var needed = measure(cell.Text, FontOf(style.Font)) + 2 * TextPadding + 1 + Indent(style, frame);
+        var own = Layout.ColumnWidth(column);
+        if (needed <= own)
+            return single;
+
+        var alignment = Horizontal(style.HorizontalAlignment, CellValueKind.Text);
+        var (first, last) = (column, column);
+        if (alignment == GridTextAlignment.Left)
+            last = Extend(frame, sheet, row, column, 1, needed - own);
+        else if (alignment == GridTextAlignment.Right)
+            first = Extend(frame, sheet, row, column, -1, needed - own);
+        else
+        {
+            first = Extend(frame, sheet, row, column, -1, (needed - own) / 2);
+            last = Extend(frame, sheet, row, column, 1, (needed - own) / 2);
+        }
+
+        return new CellArea(row, first, row, last);
+    }
+
+    // The last column, stepping from a cell, that free cells reach before the room is covered.
+    private int Extend(Frame frame, Worksheet sheet, int row, int column, int step, double room)
+    {
+        var reached = column;
+        while (room > 0)
+        {
+            var next = reached + step;
+            if (next < 1 || next > SheetLayout.MaxColumn || !frame.IsFree(sheet, row, next))
+                break;
+            reached = next;
+            room -= Layout.ColumnWidth(next);
+        }
+
+        return reached;
+    }
+
+    private double Indent(CellStyle style, Frame frame) => style.Indent * IndentStep * frame.DigitWidth / DefaultDigitWidth;
+
+    // Under running text the gridlines between its cells do not show; a filled cell covers its own.
+    private void CoverGridlines(IGridCanvas canvas, Frame frame, Worksheet sheet, List<TextRun> runs)
+    {
+        foreach (var run in runs)
+        {
+            if (run.Span.FirstColumn == run.Span.LastColumn || frame.MergeAt(new CellPosition(run.Row, run.Column)) is not null)
+                continue;
+            for (var column = run.Span.FirstColumn; column < run.Span.LastColumn; column++)
+            {
+                if (Layout.ColumnWidth(column) <= 0 || sheet[run.Row, column].Style.Fill is not null)
+                    continue;
+                var bounds = frame.Bounds(new CellArea(run.Row, column, run.Row, column));
+                canvas.FillRectangle(new GridRect(Math.Floor(bounds.Right) - 1, bounds.Y, 1, Math.Max(0, bounds.Height - 1)), Theme.Background);
+            }
         }
     }
 
-    private void PaintText(IGridCanvas canvas, Frame frame, Worksheet sheet, CellArea area)
+    private void PaintText(IGridCanvas canvas, Frame frame, Worksheet sheet, TextRun run)
     {
-        var cell = sheet[area.FirstRow, area.FirstColumn];
+        var cell = sheet[run.Row, run.Column];
         var text = cell.Text;
         if (text.Length == 0)
             return;
-        var bounds = frame.Bounds(area);
+        var bounds = frame.Bounds(run.Span);
         if (bounds.Width <= 0 || bounds.Height <= 0)
             return;
 
@@ -352,7 +463,7 @@ public sealed class GridPainter
 
         // The text keeps clear of the gridline on the cell's right and bottom edges; an indent
         // moves it away from the edge it is aligned to.
-        var indent = style.Indent * IndentStep * frame.DigitWidth / DefaultDigitWidth;
+        var indent = Indent(style, frame);
         var left = bounds.X + TextPadding + (alignment == GridTextAlignment.Left ? indent : 0);
         var right = bounds.Right - TextPadding - 1 - (alignment == GridTextAlignment.Right ? indent : 0);
         var inner = new GridRect(left, bounds.Y, Math.Max(0, right - left), Math.Max(0, bounds.Height - 1));
@@ -447,18 +558,23 @@ public sealed class GridPainter
             HeaderFont = DefaultFont(sheet);
             DigitWidth = painter.MaxDigitWidth(sheet);
             var merges = new List<CellArea>();
+            var all = new List<CellArea>();
             if (sheet is not null)
             {
                 foreach (var range in sheet.MergedAreas)
                 {
                     var merge = new CellArea(range.FirstRow, range.FirstColumn, range.LastRow, range.LastColumn);
+                    all.Add(merge);
                     if (Intersects(Area, merge))
                         merges.Add(merge);
                 }
             }
 
             Merges = merges;
+            _allMerges = all;
         }
+
+        private readonly List<CellArea> _allMerges;
 
         public GridViewport Viewport { get; }
 
@@ -472,15 +588,25 @@ public sealed class GridPainter
 
         public IReadOnlyList<CellArea> Merges { get; }
 
-        public CellArea? MergeAt(CellPosition cell)
+        public CellArea? MergeAt(CellPosition cell) => MergeAt(cell.Row, cell.Column, all: false);
+
+        /// <summary>The merged area holding a cell: among the visible ones, or among all of the sheet's.</summary>
+        public CellArea? MergeAt(int row, int column, bool all)
         {
-            foreach (var merge in Merges)
+            foreach (var merge in all ? _allMerges : Merges)
             {
-                if (merge.Contains(cell.Row, cell.Column))
+                if (merge.Contains(row, column))
                     return merge;
             }
 
             return null;
+        }
+
+        /// <summary>Whether text may run on over a cell: it holds nothing, not even a formula, and is not merged.</summary>
+        public bool IsFree(Worksheet sheet, int row, int column)
+        {
+            var cell = sheet[row, column];
+            return cell.Value.Kind == CellValueKind.Empty && cell.Formula is null && MergeAt(row, column, all: true) is null;
         }
 
         public GridRect Bounds(CellArea area) => _painter.Bounds(Viewport, area, RowHeaders);

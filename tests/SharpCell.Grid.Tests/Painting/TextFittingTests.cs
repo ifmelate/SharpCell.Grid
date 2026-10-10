@@ -31,7 +31,7 @@ public class TextFittingTests
         var canvas = new RecordingCanvas();
         painter.Paint(canvas, sheet, Viewport);
         var cell = painter.CellBounds(Viewport, new CellPosition(1, 1));
-        return Assert.Single(canvas.Texts, t => t.Bounds.X >= cell.X && t.Bounds.Right <= cell.Right && t.Bounds.Y >= cell.Y).Value;
+        return Assert.Single(canvas.Texts, t => t.Bounds.X >= cell.X && t.Bounds.X < cell.Right && t.Bounds.Y >= cell.Y && t.Bounds.Y < cell.Bottom).Value;
     }
 
     // A 64 px column leaves 59 px for text: 8 characters of 7 px.
