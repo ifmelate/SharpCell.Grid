@@ -42,6 +42,8 @@ public class SpreadsheetViewTests
 
     private static Color[,] Render(SpreadsheetView view)
     {
+        // A changed property only marks the view; layout paints it again before it is captured.
+        view.UpdateLayout();
         var bitmap = new RenderTargetBitmap(Width, Height, 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(view);
         var pixels = new byte[Width * Height * 4];
