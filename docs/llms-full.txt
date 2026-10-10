@@ -2,7 +2,7 @@
 
 > A free (MIT) Excel-like spreadsheet control for .NET 8 and later, built on the SharpCell formula engine: it shows a worksheet the way Excel does, with number formats, cell styles, column widths, row heights, merged cells, frozen panes and text running on over empty cells. Only the visible cells are read, so any sheet size scrolls smoothly.
 
-Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework) and `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected and copied as in Excel (`Selection`, `CopyAsync()`, `GridSelection`, `GridClipboard`); no editing yet.
+Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework), `SharpCell.Grid.Avalonia` (`SpreadsheetView`, the Avalonia control) and `SharpCell.Grid.Wpf` (`SpreadsheetView` for WPF, Windows only). Namespaces: `SharpCell.Grid`, `SharpCell.Grid.Avalonia`, `SharpCell.Grid.Wpf`; workbooks come from `SharpCell` and `SharpCell.Xlsx`. The view reads cells when it paints: after changing cells or recalculating, call `InvalidateVisual()`; after changing sizes or frozen panes, call `ReloadLayout()`. Cells are selected and copied as in Excel (`Selection`, `CopyAsync()`, `GridSelection`, `GridClipboard`); no editing yet.
 
 ---
 
@@ -23,6 +23,7 @@ row heights, merged cells, frozen panes and text running on over empty cells.
 |---|---|
 | `SharpCell.Grid` | Geometry, hit testing, scrolling and painting, with no UI framework. |
 | `SharpCell.Grid.Avalonia` | `SpreadsheetView`, the control for [Avalonia UI](https://avaloniaui.net). Brings `SharpCell.Grid` with it. |
+| `SharpCell.Grid.Wpf` | `SpreadsheetView`, the same control for WPF on Windows. Brings `SharpCell.Grid` with it. |
 
 Namespaces: `SharpCell`, `SharpCell.Xlsx` and `SharpCell.Grid.Avalonia`.
 
@@ -38,7 +39,7 @@ an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value 
 format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
 Excel.
 
-Status: 0.x, viewing, selecting and copying. WPF comes next, then editing; see the
+Status: 0.x, viewing, selecting and copying, in Avalonia and WPF. Editing comes next; see the
 [roadmap](roadmap.md). The API may change between minor versions until 1.0.
 
 - [Getting started](getting-started.md)
@@ -59,7 +60,7 @@ dotnet add package SharpCell.Grid.Avalonia   # the control; brings SharpCell.Gri
 dotnet add package SharpCell.Xlsx            # to read .xlsx files
 ```
 
-The packages target .NET 8 and .NET 10 and Avalonia 12.
+The packages target .NET 8 and .NET 10 and Avalonia 12. For WPF, see [WPF](#wpf) below.
 
 ## Show a workbook
 
@@ -95,6 +96,33 @@ view.ReloadLayout();         // sizes and frozen panes are taken again
 The view reads cells each time it paints, but it does not know when a workbook changes. Column
 widths, row heights, hidden rows and columns and frozen panes are taken when `Worksheet` is set,
 and again with `ReloadLayout`.
+
+## WPF
+
+```bash
+dotnet add package SharpCell.Grid.Wpf   # the WPF control; brings SharpCell.Grid and SharpCell
+dotnet add package SharpCell.Xlsx
+```
+
+`SharpCell.Grid.Wpf` has the same `SpreadsheetView`, as a WPF `FrameworkElement` in the namespace
+`SharpCell.Grid.Wpf`, for `net8.0-windows` and `net10.0-windows`. In XAML:
+
+```xml
+<Window xmlns:grid="clr-namespace:SharpCell.Grid.Wpf;assembly=SharpCell.Grid.Wpf" ...>
+    <grid:SpreadsheetView x:Name="View" />
+</Window>
+```
+
+```csharp snippet=show-workbook-wpf
+Workbook workbook = XlsxReader.Load(path);
+workbook.Recalculate();
+View.Worksheet = workbook.Sheets[0];   // View: <grid:SpreadsheetView x:Name="View" /> in MainWindow.xaml
+```
+
+It shows, selects and copies as the Avalonia control does, and has the same properties: `Worksheet`,
+`Selection`, `ActiveCell`, `Offset` (dependency properties), `Painter`, `ReloadLayout()`; copying
+is `Copy()`, also bound to `ApplicationCommands.Copy`, and Ctrl+A to `ApplicationCommands.SelectAll`.
+A runnable window is in [samples/SharpCell.Grid.WpfSample](../samples/SharpCell.Grid.WpfSample).
 
 ## Selection, copying and scrolling
 
@@ -213,9 +241,9 @@ sheet's last used row or column.
 
 # Painting in other UI frameworks
 
-`SharpCell.Grid` holds everything about the grid that is not Avalonia: sizes and positions,
-hit testing, scrolling and painting. `SpreadsheetView` is a thin host over it, and a host for
-another UI framework is the same few calls.
+`SharpCell.Grid` holds everything about the grid that is not Avalonia or WPF: sizes and positions,
+hit testing, selection, copying, scrolling and painting. The two `SpreadsheetView` controls are
+thin hosts over it, and a host for another UI framework is the same few calls.
 
 ```csharp snippet=painter
 var painter = new GridPainter
@@ -296,7 +324,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 |---|---|---|
 | Done | Range selection: the mouse with dragging and Shift, Shift with the arrows, whole columns and rows from their headers and with Ctrl+Space and Shift+Space, the whole sheet; Enter and Tab inside a selection | — |
 | Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
-| Next | A WPF control over the same painter: `SharpCell.Grid.Wpf` | — |
+| Done | A WPF control over the same painter: `SharpCell.Grid.Wpf`, tested on Windows in CI | — |
 
 ## Next: 0.3 — editing
 
@@ -348,13 +376,15 @@ Every page of the site also has its Markdown source next to it.
 ## Rules to paste into an agent's instructions
 
 ```text
-SharpCell.Grid shows SharpCell worksheets in Avalonia: new SpreadsheetView { Worksheet = sheet }.
+SharpCell.Grid shows SharpCell worksheets in Avalonia (SharpCell.Grid.Avalonia) or WPF (SharpCell.Grid.Wpf): new SpreadsheetView { Worksheet = sheet }.
 The view reads cells when it paints: after changing cells or recalculating, call view.InvalidateVisual().
 Sizes, hidden rows and columns and frozen panes are taken when Worksheet is set: after changing them, call view.ReloadLayout().
 Rows and columns are numbered from 1: new CellPosition(row, column).
 What a cell shows is SharpCell's Cell.Text and Cell.Style; change the workbook, not the view.
-The grid is for viewing; it does not edit cells yet.
-For another UI framework, implement IGridCanvas and call GridPainter.Paint, HitTest and ScrollIntoView.
+The selection is view.Selection, a GridSelection; view.ActiveCell is its active cell, and setting it selects that cell alone.
+Copying (Avalonia: await view.CopyAsync(); WPF: view.Copy()) puts text and HTML for Excel on the clipboard; GridClipboard gives the same without a view.
+The grid is for viewing and selecting; it does not edit cells yet.
+For another UI framework, implement IGridCanvas and call GridPainter.Paint, Hit, CellNearest and ScrollIntoView, with GridSelection for the input.
 ```
 
 ---
@@ -2007,3 +2037,104 @@ Paints the visible part of the sheet through [SpreadsheetView.Painter](SharpCell
 **Parameters**
 
 - `context`: The drawing context Avalonia renders with.
+
+---
+
+<!-- page: api/SharpCell.Grid.Wpf.SpreadsheetView.md -->
+
+# SpreadsheetView
+
+```csharp
+public class SpreadsheetView : FrameworkElement
+```
+
+Namespace `SharpCell.Grid.Wpf` · package `SharpCell.Grid.Wpf`
+
+Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls, and Ctrl+C puts the selected cells on the clipboard as Excel pastes them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `UIElement.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Wpf.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Wpf.SpreadsheetView.md#reloadlayout).
+
+## Constructors
+
+<a id="ctor"></a>
+### SpreadsheetView()
+
+```csharp
+public SpreadsheetView()
+```
+
+Creates an empty view; set [SpreadsheetView.Worksheet](SharpCell.Grid.Wpf.SpreadsheetView.md#worksheet) to show a sheet.
+
+## Properties
+
+<a id="activecell"></a>
+### ActiveCell
+
+```csharp
+public CellPosition? ActiveCell { get; set; }
+```
+
+The cell with the active-cell border; null shows none. It is the active cell of [SpreadsheetView.Selection](SharpCell.Grid.Wpf.SpreadsheetView.md#selection); setting it selects that cell alone.
+
+<a id="offset"></a>
+### Offset
+
+```csharp
+public Vector Offset { get; set; }
+```
+
+How far the cells are scrolled, in pixels from cell A1; kept inside the sheet when painting.
+
+<a id="painter"></a>
+### Painter
+
+```csharp
+public GridPainter Painter { get; }
+```
+
+Geometry and colours: row heights, column widths, header sizes, theme.
+
+<a id="selection"></a>
+### Selection
+
+```csharp
+public GridSelection? Selection { get; set; }
+```
+
+The selected cells, the active cell among them; null selects none. A new sheet starts from its active cell alone.
+
+<a id="viewport"></a>
+### Viewport
+
+```csharp
+public GridViewport Viewport { get; }
+```
+
+What the view shows now: its size and its offset, kept inside the sheet.
+
+<a id="worksheet"></a>
+### Worksheet
+
+```csharp
+public Worksheet? Worksheet { get; set; }
+```
+
+The sheet shown; null shows an empty grid.
+
+## Methods
+
+<a id="copy"></a>
+### Copy()
+
+```csharp
+public void Copy()
+```
+
+Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C and `ApplicationCommands.Copy` do it too.
+
+<a id="reloadlayout"></a>
+### ReloadLayout()
+
+```csharp
+public void ReloadLayout()
+```
+
+Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.

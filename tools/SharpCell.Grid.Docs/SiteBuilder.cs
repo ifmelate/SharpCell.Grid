@@ -22,7 +22,7 @@ internal static class SiteBuilder
     public static void Build(RepositoryLayout layout, string output)
     {
         var config = SiteConfig.Load(layout.Full("docs/site.json"));
-        var api = ApiReference.Generate(ApiReference.DocumentedAssemblies());
+        var api = ApiReference.Generate(ApiReference.DocumentedAssemblies(layout));
         var titles = config.Sections.SelectMany(s => s.Pages).ToDictionary(p => p.Path, p => p.Title, StringComparer.Ordinal);
         titles["api/index.md"] = "API reference";
         foreach (var page in api.Pages)

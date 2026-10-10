@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    A WPF window with a SpreadsheetView showing the first sheet of an .xlsx file given on the
+    command line, or of budget.xlsx without one. Windows only: dotnet run, project
+    samples/SharpCell.Grid.WpfSample. Elsewhere it builds but does not run.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SharpCell.Xlsx" />
+    <ProjectReference Include="../../src/SharpCell.Grid.Wpf/SharpCell.Grid.Wpf.csproj" />
+    <None Include="budget.xlsx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

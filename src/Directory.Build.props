@@ -1,7 +1,7 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
-  <!-- NuGet packages: SharpCell.Grid and SharpCell.Grid.Avalonia. -->
+  <!-- NuGet packages: SharpCell.Grid, SharpCell.Grid.Avalonia and SharpCell.Grid.Wpf. -->
   <PropertyGroup>
     <ImplicitUsings>disable</ImplicitUsings>
     <IsAotCompatible>true</IsAotCompatible>

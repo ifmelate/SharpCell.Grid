@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/SharpCell.Grid/SharpCell.Grid.csproj" />
     <Project Path="src/SharpCell.Grid.Avalonia/SharpCell.Grid.Avalonia.csproj" />
+    <Project Path="src/SharpCell.Grid.Wpf/SharpCell.Grid.Wpf.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/SharpCell.Grid.Docs/SharpCell.Grid.Docs.csproj" />
@@ -9,8 +10,10 @@
   <Folder Name="/samples/">
     <Project Path="samples/SharpCell.Grid.Demo/SharpCell.Grid.Demo.csproj" />
     <Project Path="samples/SharpCell.Grid.Sample/SharpCell.Grid.Sample.csproj" />
+    <Project Path="samples/SharpCell.Grid.WpfSample/SharpCell.Grid.WpfSample.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SharpCell.Grid.Tests/SharpCell.Grid.Tests.csproj" />
+    <Project Path="tests/SharpCell.Grid.Wpf.Tests/SharpCell.Grid.Wpf.Tests.csproj" />
   </Folder>
 </Solution>

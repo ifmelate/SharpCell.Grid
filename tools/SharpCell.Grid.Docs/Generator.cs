@@ -17,7 +17,7 @@ internal static class Generator
         foreach (var target in layout.SnippetTargets())
             files.Add(new GeneratedFile(target, Snippets.Apply(File.ReadAllText(layout.Full(target)), snippets, target)));
 
-        var api = ApiReference.Generate(ApiReference.DocumentedAssemblies());
+        var api = ApiReference.Generate(ApiReference.DocumentedAssemblies(layout));
         files.AddRange(api.Files);
 
         var config = SiteConfig.Load(layout.Full("docs/site.json"));

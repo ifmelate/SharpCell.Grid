@@ -32,3 +32,9 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 | Type | Summary |
 |---|---|
 | [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md) | Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. |
+
+## SharpCell.Grid.Wpf
+
+| Type | Summary |
+|---|---|
+| [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md) | Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. |

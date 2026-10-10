@@ -207,9 +207,9 @@ public sealed class GridPainter
         Fill(active.Right, Math.Max(area.Y, active.Y), area.Right, Math.Min(area.Bottom, active.Bottom));
     }
 
-    // The border around the selection, two pixels wide over the pixel lines around it, drawn as the
-    // part of it each pane shows: a selection reaching under a frozen pane is cut off at its line.
-    // Edges along the headers lie over the headers' closing line, as in Excel.
+    // The border around the selection, two whole pixels wide: the gridline on each side and the
+    // pixel inside it. It is drawn as the part of it each pane shows: a selection reaching under a
+    // frozen pane is cut off at its line. Edges along the headers lie over the headers' closing line.
     private void OutlineSelection(IGridCanvas canvas, Frame frame, CellArea selection)
     {
         if (!Intersects(frame.Area, selection))
@@ -217,8 +217,8 @@ public sealed class GridPainter
         var bounds = frame.Bounds(selection);
         var clip = frame.Clip;
         var color = Theme.ActiveCellBorder;
-        var (left, top) = (bounds.X - 0.5, bounds.Y - 0.5);
-        var (right, bottom) = (bounds.Right - 0.5, bounds.Bottom - 0.5);
+        var (left, top) = (Math.Floor(bounds.X), Math.Floor(bounds.Y));
+        var (right, bottom) = (Math.Floor(bounds.Right) - 1, Math.Floor(bounds.Bottom) - 1);
         var half = ActiveBorderThickness / 2;
 
         var (y1, y2) = (Math.Max(top - half, clip.Y - half), Math.Min(bottom + half, clip.Bottom));

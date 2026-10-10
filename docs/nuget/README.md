@@ -10,6 +10,7 @@ cells are read, so any sheet size scrolls smoothly.
 |---|---|
 | `SharpCell.Grid` | Geometry, hit testing, scrolling and painting, with no UI framework. |
 | `SharpCell.Grid.Avalonia` | `SpreadsheetView`, the control for Avalonia UI. Brings `SharpCell.Grid` with it. |
+| `SharpCell.Grid.Wpf` | `SpreadsheetView`, the same control for WPF on Windows. Brings `SharpCell.Grid` with it. |
 
 ## Show a workbook
 

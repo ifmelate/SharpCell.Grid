@@ -20,7 +20,7 @@ public class DocsTests
     [Fact]
     public void Every_public_member_has_a_summary()
     {
-        var assemblies = ApiReference.DocumentedAssemblies();
+        var assemblies = ApiReference.DocumentedAssemblies(Repository());
         var docs = XmlDocs.Load(assemblies);
         var empty = assemblies
             .SelectMany(a => a.GetExportedTypes())

@@ -9,7 +9,10 @@
   <ItemGroup>
     <InternalsVisibleTo Include="SharpCell.Grid.Tests" />
     <PackageReference Include="Markdig" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" />
     <ProjectReference Include="../../src/SharpCell.Grid/SharpCell.Grid.csproj" />
     <ProjectReference Include="../../src/SharpCell.Grid.Avalonia/SharpCell.Grid.Avalonia.csproj" />
+    <!-- Windows only, so it is built first and read from its output folder, never loaded. -->
+    <ProjectReference Include="../../src/SharpCell.Grid.Wpf/SharpCell.Grid.Wpf.csproj" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=net10.0-windows" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
 </Project>

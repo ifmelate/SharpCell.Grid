@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- WPF runs on Windows only; EnableWindowsTargeting lets macOS and Linux build and pack it. -->
+    <TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <IsAotCompatible>false</IsAotCompatible>
+    <IsTrimmable>false</IsTrimmable>
+    <RootNamespace>SharpCell.Grid.Wpf</RootNamespace>
+    <Description>Excel-like spreadsheet control for WPF that shows SharpCell workbooks. Brings SharpCell.Grid with it.</Description>
+    <PackageTags>excel;spreadsheet;grid;xlsx;control;wpf;sharpcell</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SharpCell.Grid/SharpCell.Grid.csproj" />
+    <InternalsVisibleTo Include="SharpCell.Grid.Wpf.Tests" />
+  </ItemGroup>
+</Project>
