@@ -14,8 +14,8 @@ namespace SharpCell.Grid.Avalonia;
 /// it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and
 /// gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or
 /// the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the
-/// whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel
-/// scrolls, and copying puts the selected cells on the clipboard as Excel pastes them. Only the
+/// whole sheet from the corner or with Ctrl+A or Cmd+A. Enter and Tab move inside a selection, the
+/// wheel scrolls, and Ctrl+C or Cmd+C puts the selected cells on the clipboard as Excel pastes them. Only the
 /// visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or
 /// recalculating, call <see cref="Visual.InvalidateVisual"/>. Sizes and frozen panes are taken when
 /// <see cref="Worksheet"/> is set; after changing them, call <see cref="ReloadLayout"/>.
@@ -128,7 +128,7 @@ public class SpreadsheetView : Control
 
     /// <summary>
     /// Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between
-    /// cells, and as an HTML table with their styles. Ctrl+C (Cmd+C on macOS) does it too.
+    /// cells, and as an HTML table with their styles. Ctrl+C or Cmd+C does it too, also in a browser.
     /// </summary>
     public async Task CopyAsync()
     {
@@ -218,8 +218,11 @@ public class SpreadsheetView : Control
         if (Selection is not { } selection)
             return;
         var sheet = Worksheet;
+        // The platform's gestures, and both Ctrl and Cmd with the letter: in a browser on macOS the
+        // platform is the browser, whose gestures use Ctrl, while people press Cmd.
         var hotkeys = Application.Current?.PlatformSettings?.HotkeyConfiguration;
-        if (hotkeys is not null && hotkeys.Copy.Exists(g => g.Matches(e)))
+        var command = e.KeyModifiers is KeyModifiers.Control or KeyModifiers.Meta;
+        if (hotkeys?.Copy.Exists(g => g.Matches(e)) == true || (command && e.Key is Key.C or Key.Insert))
         {
             _ = CopyAsync();
             e.Handled = true;
@@ -229,7 +232,7 @@ public class SpreadsheetView : Control
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         var control = e.KeyModifiers.HasFlag(KeyModifiers.Control);
         GridSelection? next = null;
-        if (hotkeys is not null && hotkeys.SelectAll.Exists(g => g.Matches(e)))
+        if (hotkeys?.SelectAll.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.A))
             next = GridSelection.All(selection.ActiveCell);
         else if (e.Key == Key.Space && control)
             next = selection.EntireColumns(sheet);

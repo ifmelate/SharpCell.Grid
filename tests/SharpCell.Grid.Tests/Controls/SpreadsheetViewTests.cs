@@ -369,6 +369,33 @@ public class SpreadsheetViewTests(HeadlessSession session)
         Assert.Equal("Item\tPrice\r\nRent\t1,250.00\r\n", await clipboard.TryGetTextAsync());
     });
 
+    [Theory]
+    [InlineData(RawInputModifiers.Control)]
+    [InlineData(RawInputModifiers.Meta)]   // Cmd on a Mac, also in a browser, whose gestures use Ctrl
+    public Task Ctrl_c_and_cmd_c_copy(RawInputModifiers modifier) => session.Run(async () =>
+    {
+        var (window, view) = Show(Budget());
+        view.Selection = GridSelection.Cell(Cells.Parse("A1"), view.Worksheet).ExtendTo(Cells.Parse("B1"), view.Worksheet);
+        await window.Clipboard!.SetTextAsync("before");
+
+        window.KeyPress(Key.C, modifier, PhysicalKey.C, "c");
+        await Task.Delay(50);
+
+        Assert.Equal("Item\tPrice\r\n", await window.Clipboard!.TryGetTextAsync());
+    });
+
+    [Theory]
+    [InlineData(RawInputModifiers.Control)]
+    [InlineData(RawInputModifiers.Meta)]
+    public Task Ctrl_a_and_cmd_a_select_the_whole_sheet(RawInputModifiers modifier) => session.Run(() =>
+    {
+        var (window, view) = Show(Budget());
+
+        window.KeyPress(Key.A, modifier, PhysicalKey.A, "a");
+
+        Assert.Equal("1:1048576", view.Selection?.ToString());
+    });
+
     [Fact]
     public Task Renders_a_selection_as_approved() => session.Run(() =>
     {

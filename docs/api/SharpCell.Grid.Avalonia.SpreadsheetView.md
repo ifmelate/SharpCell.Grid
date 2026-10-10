@@ -8,7 +8,7 @@ public class SpreadsheetView : Control
 
 Namespace `SharpCell.Grid.Avalonia` · package `SharpCell.Grid.Avalonia`
 
-Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls, and copying puts the selected cells on the clipboard as Excel pastes them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `Visual.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Avalonia.SpreadsheetView.md#reloadlayout).
+Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A or Cmd+A. Enter and Tab move inside a selection, the wheel scrolls, and Ctrl+C or Cmd+C puts the selected cells on the clipboard as Excel pastes them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `Visual.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Avalonia.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Avalonia.SpreadsheetView.md#reloadlayout).
 
 ## Constructors
 
@@ -86,7 +86,7 @@ The sheet shown; null shows an empty grid.
 public Task CopyAsync()
 ```
 
-Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C (Cmd+C on macOS) does it too.
+Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C or Cmd+C does it too, also in a browser.
 
 <a id="reloadlayout"></a>
 ### ReloadLayout()

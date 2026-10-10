@@ -50,13 +50,13 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Drag | Selects from where the drag started; past an edge of the view it scrolls after the mouse |
 | Shift+click | Extends the selection from the active cell |
 | Click or drag on column or row headers | Whole columns or rows; the active cell is the first on screen |
-| Click on the corner above the row headers, Ctrl+A (Cmd+A on macOS) | The whole sheet |
+| Click on the corner above the row headers, Ctrl+A or Cmd+A | The whole sheet |
 | Arrow keys | Move the active cell one cell, over a merged area as one cell, and select it alone |
 | Shift+arrow keys | Extend or shrink the selection at its far corner |
 | Ctrl+Space, Shift+Space | Whole columns, whole rows of the selection |
 | Enter, Shift+Enter | Down, up; inside a selection, to the next selected cell, column by column |
 | Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
-| Ctrl+C (Cmd+C on macOS) | Copies the selected cells |
+| Ctrl+C or Cmd+C | Copies the selected cells; pasting into the grid comes with editing |
 | Wheel | Three rows a turn |
 
 A selection covers every merged area it touches whole. Selected cells but the active one are
