@@ -1,4 +1,7 @@
 #nullable enable
+override SharpCell.Grid.Wpf.SpreadsheetView.ArrangeOverride(System.Windows.Size finalSize) -> System.Windows.Size
+override SharpCell.Grid.Wpf.SpreadsheetView.GetVisualChild(int index) -> System.Windows.Media.Visual!
+override SharpCell.Grid.Wpf.SpreadsheetView.MeasureOverride(System.Windows.Size availableSize) -> System.Windows.Size
 override SharpCell.Grid.Wpf.SpreadsheetView.OnKeyDown(System.Windows.Input.KeyEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnLostMouseCapture(System.Windows.Input.MouseEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs! e) -> void
@@ -6,21 +9,45 @@ override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseLeftButtonUp(System.Windows.I
 override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseMove(System.Windows.Input.MouseEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseWheel(System.Windows.Input.MouseWheelEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnRender(System.Windows.Media.DrawingContext! drawingContext) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnTextInput(System.Windows.Input.TextCompositionEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.VisualChildrenCount.get -> int
+SharpCell.Grid.Wpf.FormulaBar
+SharpCell.Grid.Wpf.FormulaBar.FormulaBar() -> void
+SharpCell.Grid.Wpf.FormulaBar.View.get -> SharpCell.Grid.Wpf.SpreadsheetView?
+SharpCell.Grid.Wpf.FormulaBar.View.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView
 SharpCell.Grid.Wpf.SpreadsheetView.ActiveCell.get -> SharpCell.Grid.CellPosition?
 SharpCell.Grid.Wpf.SpreadsheetView.ActiveCell.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.BeginEdit(string? text = null) -> bool
+SharpCell.Grid.Wpf.SpreadsheetView.CancelEdit() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ClearSelection() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.CommitEdit() -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.Copy() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
+SharpCell.Grid.Wpf.SpreadsheetView.Editor.get -> SharpCell.Grid.GridEditor?
+SharpCell.Grid.Wpf.SpreadsheetView.EditText.get -> string?
+SharpCell.Grid.Wpf.SpreadsheetView.EditText.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.IsEditing.get -> bool
+SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnly.get -> bool
+SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnly.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Offset.get -> System.Windows.Vector
 SharpCell.Grid.Wpf.SpreadsheetView.Offset.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Painter.get -> SharpCell.Grid.GridPainter!
+SharpCell.Grid.Wpf.SpreadsheetView.Paste() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Redo() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.ReloadLayout() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Selection.get -> SharpCell.Grid.GridSelection?
 SharpCell.Grid.Wpf.SpreadsheetView.Selection.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView.SpreadsheetView() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Undo() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Viewport.get -> SharpCell.Grid.GridViewport
 SharpCell.Grid.Wpf.SpreadsheetView.Worksheet.get -> SharpCell.Worksheet?
 SharpCell.Grid.Wpf.SpreadsheetView.Worksheet.set -> void
+static readonly SharpCell.Grid.Wpf.FormulaBar.ViewProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.ActiveCellProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.EditTextProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.IsEditingProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnlyProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.OffsetProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.SelectionProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.WorksheetProperty -> System.Windows.DependencyProperty!
