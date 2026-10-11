@@ -338,6 +338,7 @@ public sealed partial class GridEditor
     private GridEdit Change(Worksheet sheet, CellArea area, List<(int Row, int Column)> cells, Action change)
     {
         var before = cells.Select(c => Content.Of(sheet[c.Row, c.Column])).ToList();
+        var rulesBefore = Rules.Of(sheet);
         try
         {
             change();
@@ -346,11 +347,24 @@ public sealed partial class GridEditor
         {
             // All or nothing: the cells changed before the failing one get their content back.
             Restore(sheet, before);
+            rulesBefore.Restore(sheet);
             throw;
         }
 
         var after = cells.Select(c => Content.Of(sheet[c.Row, c.Column])).ToList();
-        return Push(new Step(sheet, area, () => Restore(sheet, before), () => Restore(sheet, after), Layout: false));
+        var rulesAfter = Rules.Of(sheet);
+        return Push(new Step(sheet, area,
+            () =>
+            {
+                Restore(sheet, before);
+                rulesBefore.Restore(sheet);
+            },
+            () =>
+            {
+                Restore(sheet, after);
+                rulesAfter.Restore(sheet);
+            },
+            Layout: false));
     }
 
     private GridEdit Push(Step step)
@@ -402,16 +416,16 @@ public sealed partial class GridEditor
     // One change to undo and redo; Layout when it changed sizes, hidden rows and columns or where cells are.
     private sealed record Step(Worksheet Sheet, CellArea Area, Action Undo, Action Redo, bool Layout);
 
-    // What undoing gives a cell back: its formula or value, number format and style. A cell another
-    // cell's formula spills into holds nothing of its own: it is given back empty, for the spill to fill.
-    private readonly record struct Content(int Row, int Column, string? Formula, CellValue Value, string NumberFormat, CellStyle? Style)
+    // What undoing gives a cell back: its formula or value, number format, style and hyperlink. A cell
+    // another cell's formula spills into holds nothing of its own: it is given back empty, for the spill to fill.
+    private readonly record struct Content(int Row, int Column, string? Formula, CellValue Value, string NumberFormat, CellStyle? Style, Hyperlink? Link)
     {
         public static Content Of(Cell cell)
         {
             var spilled = cell.Formula is null && cell.Value.Kind != CellValueKind.Empty && cell.Precedents.Count > 0;
             var style = cell.Style;
             return new(cell.Row, cell.Column, cell.Formula, spilled ? CellValue.Empty : cell.Value, cell.NumberFormat,
-                ReferenceEquals(style, cell.Worksheet.Workbook.DefaultStyle) ? null : style);
+                ReferenceEquals(style, cell.Worksheet.Workbook.DefaultStyle) ? null : style, cell.Hyperlink);
         }
 
         public void Restore(Worksheet sheet) => RestoreTo(sheet[Row, Column]);
@@ -433,6 +447,50 @@ public sealed partial class GridEditor
             var style = cell.Style;
             if (Style is null ? !ReferenceEquals(style, cell.Worksheet.Workbook.DefaultStyle) : !ReferenceEquals(style, Style))
                 cell.Style = Style;
+            if (!Equals(cell.Hyperlink, Link))
+                cell.Hyperlink = Link;
+        }
+    }
+
+    // A sheet's data validation rules, to give back: each rule with its ranges as Excel writes them.
+    private sealed class Rules
+    {
+        private readonly List<(string Ranges, DataValidation Validation)> _rules;
+
+        private Rules(List<(string Ranges, DataValidation Validation)> rules) => _rules = rules;
+
+        // Ranges of one rule come one after another, with the same validation.
+        public static Rules Of(Worksheet sheet)
+        {
+            var rules = new List<(string Ranges, DataValidation Validation)>();
+            foreach (var (range, validation) in sheet.Validations)
+            {
+                if (rules.Count > 0 && ReferenceEquals(rules[^1].Validation, validation))
+                    rules[^1] = (rules[^1].Ranges + " " + range.Address, validation);
+                else
+                    rules.Add((range.Address, validation));
+            }
+
+            return new Rules(rules);
+        }
+
+        public void Restore(Worksheet sheet)
+        {
+            var now = Of(sheet)._rules;
+            if (now.Count == _rules.Count && now.Zip(_rules).All(p => p.First.Ranges == p.Second.Ranges && ReferenceEquals(p.First.Validation, p.Second.Validation)))
+                return;
+            sheet.ClearValidation("A1:XFD1048576");
+            foreach (var (ranges, validation) in _rules)
+            {
+                try
+                {
+                    sheet.AddValidation(ranges, validation);
+                }
+                catch (FormulaParseException)
+                {
+                    // A rule read from a file with a formula SharpCell cannot read cannot be added again.
+                }
+            }
         }
     }
 }

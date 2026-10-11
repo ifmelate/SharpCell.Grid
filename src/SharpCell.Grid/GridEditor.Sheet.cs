@@ -272,7 +272,8 @@ public sealed partial class GridEditor
     }
 
     // Everything deleting rows or columns changes, kept to give it back: the deleted cells, their
-    // sizes, every formula and name of the workbook as written before, merged areas and tables.
+    // sizes, every formula, name and data validation rule of the workbook as written before, merged
+    // areas and tables.
     private sealed class Deleted
     {
         private readonly Worksheet _sheet;
@@ -287,6 +288,7 @@ public sealed partial class GridEditor
         private readonly List<DefinedName> _names;
         private readonly List<string> _merges;
         private readonly List<(string Name, string Range, bool Header, bool Totals)> _tables;
+        private readonly List<(Worksheet Sheet, Rules Rules)> _rules;
 
         private Deleted(Worksheet sheet, bool rows, int at, int count, CellArea area, CellRange cells)
         {
@@ -311,6 +313,7 @@ public sealed partial class GridEditor
             _names = [.. sheet.Workbook.DefinedNames];
             _merges = sheet.MergedAreas.Select(m => m.Address).ToList();
             _tables = sheet.Workbook.Tables.Where(t => t.Worksheet == sheet).Select(t => (t.Name, t.Range, t.HasHeaderRow, t.HasTotalsRow)).ToList();
+            _rules = sheet.Workbook.Sheets.Select(s => (s, Rules.Of(s))).ToList();
         }
 
         public static Deleted? Keep(Worksheet sheet, bool rows, int at, int count, CellArea area)
@@ -380,6 +383,10 @@ public sealed partial class GridEditor
                 if (!_sheet.Workbook.TryGetTable(name, out _))
                     _sheet.AddTable(name, range, header, totals);
             }
+
+            // Data validation as it was, on this sheet and on sheets whose rules read it.
+            foreach (var (sheet, rules) in _rules)
+                rules.Restore(sheet);
         }
     }
 }

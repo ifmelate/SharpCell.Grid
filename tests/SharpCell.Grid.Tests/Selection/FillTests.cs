@@ -204,4 +204,25 @@ public class FillTests
     {
         Assert.Equal(Area(first, last), GridEditor.FillArea(Area("B2", "C3"), Cells.Parse(pointer)));
     }
+
+    [Fact]
+    public void A_drop_down_list_and_a_link_go_down_with_the_fill_and_undo_takes_them_back()
+    {
+        var (sheet, editor) = Sheet();
+        sheet["A1"].Input = "Yes";
+        sheet.AddValidation("A1", DataValidation.List("Yes", "No"));
+        sheet["B1"].Input = "Site";
+        sheet["B1"].Hyperlink = new Hyperlink("https://example.com");
+
+        editor.Fill(sheet, Area("A1", "B1"), Area("A1", "B3"));
+
+        Assert.Equal(DataValidation.List("Yes", "No"), sheet["A3"].Validation);
+        Assert.Equal("https://example.com", sheet["B3"].Hyperlink?.Target);
+        editor.Undo();
+        Assert.Null(sheet["A3"].Validation);
+        Assert.Null(sheet["B3"].Hyperlink);
+        Assert.Equal(["A1"], sheet.Validations.Select(v => v.Range.Address));
+        editor.Redo();
+        Assert.NotNull(sheet["A2"].Validation);
+    }
 }

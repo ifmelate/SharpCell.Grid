@@ -173,4 +173,21 @@ public class SheetEditTests
         Assert.True(saved.IsRowHidden(5));
         Assert.Equal("=SUM(B3:B6)", saved["B7"].Formula);
     }
+
+    [Fact]
+    public void Undoing_a_delete_gives_back_validation_and_links_of_the_deleted_rows()
+    {
+        var (sheet, editor) = Budget();
+        sheet.AddValidation("B2:B5", DataValidation.Custom("=B2>0"));
+        sheet["A3"].Hyperlink = new Hyperlink("#Other!A1");
+
+        editor.DeleteRows(sheet, 2, 2);
+        Assert.Equal(["B2:B3"], sheet.Validations.Select(v => v.Range.Address));
+        editor.Undo();
+
+        var (range, rule) = Assert.Single(sheet.Validations);
+        Assert.Equal("B2:B5", range.Address);
+        Assert.Equal("=B2>0", rule.Formula1);
+        Assert.Equal("#Other!A1", sheet["A3"].Hyperlink?.Target);
+    }
 }

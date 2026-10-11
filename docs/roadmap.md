@@ -44,7 +44,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 |---|---|---|
 | Done | Columns and rows resized by dragging the edges of their headers, fitted by double-clicking them, hidden by dragging them to nothing | — |
 | Done | Rows and columns inserted and deleted, formulas following, with Ctrl+Plus, Ctrl+Minus and the headers' menu; undo gives deleted ones back whole | `Worksheet.InsertRows` and friends (0.7.0) |
-| Done | The fill handle for series and copied formulas; Ctrl+D and Ctrl+R; cells copied in the grid paste with their formulas | `CellRange.CopyTo` (0.9.0) |
+| Done | The fill handle for series and copied formulas; Ctrl+D and Ctrl+R; cells copied in the grid paste with their formulas | `CellRange.CopyTo` (0.10.0) |
 | Done | Hiding and unhiding rows and columns, Ctrl+9 and Ctrl+0 | — |
 | Done | Zoom from 10% to 400%, Ctrl or Cmd with the wheel | — |
 | Done | Widths, heights and hidden rows and columns set in the grid are the worksheet's own, so `XlsxWriter` saves them | `XlsxWriter` (0.7.0) |

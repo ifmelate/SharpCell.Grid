@@ -238,7 +238,7 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
 | Ctrl+C or Cmd+C | Copies the selected cells |
 | Ctrl+X or Cmd+X | Cuts the selected cells: the next paste moves them, formulas and formats with them; Escape forgets the cut |
-| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell; after a cut, moves the cut cells there; cells copied in the grid are copied with their formulas, number formats and styles, repeated over a selection that is a multiple of them |
+| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell; after a cut, moves the cut cells there; cells copied in the grid are copied with their formulas, number formats, styles, hyperlinks and data validation, repeated over a selection that is a multiple of them |
 | Escape | Forgets what was copied or cut, and its dashed border |
 | Wheel | Three rows a turn |
 | Ctrl+wheel or Cmd+wheel | Zooms in or out by 10%, from 10% to 400%; the cell at the top left stays there |
@@ -295,7 +295,9 @@ repeated; two or more continue the straight line through them, as Excel's trend.
 day, a time an hour; dates a month or a year apart keep their day, falling back to the end of
 shorter months. Text ending in a number counts on with its zeros kept (`A007`, `A008`), and day and
 month names in the workbook's culture or in English go on in their form and case. Anything else,
-formulas among it, repeats with its number format and style. Filling up or left goes backwards.
+formulas among it, repeats. Every filled cell takes the number format, style, hyperlink and data
+validation of the cell it continues, so a drop-down list goes down with it. Filling up or left
+goes backwards.
 
 Inserted rows take the styles and number formats of the row above, and inserted columns those of
 the column on their left, as in Excel. Formulas follow inserted and deleted rows and columns
@@ -457,7 +459,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 |---|---|---|
 | Done | Columns and rows resized by dragging the edges of their headers, fitted by double-clicking them, hidden by dragging them to nothing | — |
 | Done | Rows and columns inserted and deleted, formulas following, with Ctrl+Plus, Ctrl+Minus and the headers' menu; undo gives deleted ones back whole | `Worksheet.InsertRows` and friends (0.7.0) |
-| Done | The fill handle for series and copied formulas; Ctrl+D and Ctrl+R; cells copied in the grid paste with their formulas | `CellRange.CopyTo` (0.9.0) |
+| Done | The fill handle for series and copied formulas; Ctrl+D and Ctrl+R; cells copied in the grid paste with their formulas | `CellRange.CopyTo` (0.10.0) |
 | Done | Hiding and unhiding rows and columns, Ctrl+9 and Ctrl+0 | — |
 | Done | Zoom from 10% to 400%, Ctrl or Cmd with the wheel | — |
 | Done | Widths, heights and hidden rows and columns set in the grid are the worksheet's own, so `XlsxWriter` saves them | `XlsxWriter` (0.7.0) |
