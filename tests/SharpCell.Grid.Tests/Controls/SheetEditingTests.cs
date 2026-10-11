@@ -201,4 +201,45 @@ public class SheetEditingTests(HeadlessSession session)
         Assert.True(sheet.IsColumnHidden(1));
         Assert.Equal(0, view.Painter.Layout.ColumnWidth(1));
     });
+
+    [Fact]
+    public Task A_touchpad_zooms_once_its_small_turns_make_a_whole_one() => session.Run(() =>
+    {
+        var (window, view) = Show(Sheet());
+
+        for (var i = 0; i < 4; i++)
+            window.MouseWheel(CenterOf(view, "B2"), new Vector(0, 0.2), RawInputModifiers.Meta);
+        Assert.Equal(1, view.Zoom);
+        window.MouseWheel(CenterOf(view, "B2"), new Vector(0, 0.2), RawInputModifiers.Meta);
+        Assert.Equal(1.1, view.Zoom, 9);
+    });
+
+    [Fact]
+    public Task A_right_click_on_a_column_header_selects_the_column_for_its_menu() => session.Run(() =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+        var c = Bounds(view, "C1");
+
+        window.MouseDown(new Point(c.X + c.Width / 2, 10), MouseButton.Right);
+        window.MouseUp(new Point(c.X + c.Width / 2, 10), MouseButton.Right);
+
+        Assert.True(view.Selection!.IsEntireColumns);
+        Assert.Equal(3, view.Selection.Area.FirstColumn);
+    });
+
+    [Fact]
+    public Task Pasting_over_the_whole_sheet_copies_once() => session.Run(async () =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+        view.ActiveCell = Cells.Parse("B1");
+        await view.CopyAsync();
+
+        Press(window, Key.A, RawInputModifiers.Control);
+        await view.PasteAsync();
+
+        Assert.Equal("=A1*10", sheet["B1"].Formula);
+        Assert.Null(sheet["B2"].Formula);
+    });
 }

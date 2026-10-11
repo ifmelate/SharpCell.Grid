@@ -19,6 +19,9 @@ public partial class SpreadsheetView
 
     private Drag _drag;
 
+    // Wheel notches towards a zoom step: a touchpad sends many small turns.
+    private double _zoomTurn;
+
     // The column or row being resized, its size and where the mouse took it, and whether it has been dragged.
     private int _resized;
     private double _resizeSize;
@@ -112,13 +115,19 @@ public partial class SpreadsheetView
         Wheel(e.Delta, Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
     }
 
-    // A turn of the wheel scrolls; with Ctrl it zooms in steps of 10%, as in Excel.
+    // A turn of the wheel scrolls; with Ctrl it zooms in steps of 10% a notch, as in Excel.
     internal void Wheel(double delta, bool control)
     {
         if (control)
         {
-            if (delta != 0)
-                Zoom = Math.Round(Zoom * 10 + Math.Sign(delta)) / 10;
+            _zoomTurn += delta / WheelNotch;
+            var steps = (int)Math.Truncate(_zoomTurn);
+            if (steps != 0)
+            {
+                _zoomTurn -= steps;
+                Zoom = Math.Round(Zoom * 10 + steps) / 10;
+            }
+
             return;
         }
 

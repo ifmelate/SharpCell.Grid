@@ -12,6 +12,9 @@ namespace SharpCell.Grid;
 /// </summary>
 public sealed partial class GridEditor
 {
+    // The most cells a copy is repeated over; every one of them is kept to undo.
+    private const long MaxRepeatedCells = 1 << 20;
+
     private readonly Stack<Step> _undo = new();
     private readonly Stack<Step> _redo = new();
 
@@ -174,7 +177,8 @@ public sealed partial class GridEditor
     /// and styles, with the formulas' relative references following the cells (see
     /// <see cref="CellRange.CopyTo"/>). An area that is a whole number of times as tall and as wide
     /// as the cells copied is filled by repeating them; any other gets one copy at its top-left cell.
-    /// What lies beyond the sheet's edge is left out.
+    /// What lies beyond the sheet's edge is left out, and an area of more than a million cells, such
+    /// as the whole sheet, gets one copy.
     /// </summary>
     /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
     /// <exception cref="NotSupportedException">The cells copied hold part of an array formula, or a formula SharpCell
@@ -184,7 +188,7 @@ public sealed partial class GridEditor
         ArgumentNullException.ThrowIfNull(sheet);
         var (rows, columns) = (from.LastRow - from.FirstRow + 1, from.LastColumn - from.FirstColumn + 1);
         var (toRows, toColumns) = (to.LastRow - to.FirstRow + 1, to.LastColumn - to.FirstColumn + 1);
-        var repeat = toRows % rows == 0 && toColumns % columns == 0;
+        var repeat = toRows % rows == 0 && toColumns % columns == 0 && (long)toRows * toColumns <= MaxRepeatedCells;
         var area = new CellArea(
             to.FirstRow,
             to.FirstColumn,

@@ -17,11 +17,15 @@ public partial class SpreadsheetView
         Fill,
     }
 
-    private static readonly Cursor ColumnCursor = new(StandardCursorType.SizeWestEast);
-    private static readonly Cursor RowCursor = new(StandardCursorType.SizeNorthSouth);
-    private static readonly Cursor FillCursor = new(StandardCursorType.Cross);
+    // Made when first shown: a cursor needs the platform, which a view's type does not.
+    private static Cursor? s_columnCursor;
+    private static Cursor? s_rowCursor;
+    private static Cursor? s_fillCursor;
 
     private Drag _drag;
+
+    // Wheel turns towards a zoom step: a touchpad sends many small ones.
+    private double _zoomTurn;
 
     // The column or row being resized, its size and where the mouse took it, and whether it has been dragged.
     private int _resized;
@@ -216,11 +220,17 @@ public partial class SpreadsheetView
         base.OnPointerWheelChanged(e);
         e.Handled = true;
 
-        // Ctrl or Cmd with the wheel zooms in steps of 10%, as in Excel.
+        // Ctrl or Cmd with the wheel zooms in steps of 10% a turn, as in Excel.
         if (CommandKeys.IsCommand(e.KeyModifiers))
         {
-            if (e.Delta.Y != 0)
-                Zoom = Math.Round(Zoom * 10 + Math.Sign(e.Delta.Y)) / 10;
+            _zoomTurn += e.Delta.Y;
+            var steps = (int)Math.Truncate(_zoomTurn);
+            if (steps != 0)
+            {
+                _zoomTurn -= steps;
+                Zoom = Math.Round(Zoom * 10 + steps) / 10;
+            }
+
             return;
         }
 
@@ -235,10 +245,10 @@ public partial class SpreadsheetView
             return null;
         var viewport = Viewport;
         if (Painter.ColumnEdgeAt(viewport, point.X, point.Y) is not null)
-            return ColumnCursor;
+            return s_columnCursor ??= new Cursor(StandardCursorType.SizeWestEast);
         if (Painter.RowEdgeAt(viewport, point.X, point.Y) is not null)
-            return RowCursor;
-        return Painter.IsOnFillHandle(viewport, point.X, point.Y, Selection, Worksheet) ? FillCursor : null;
+            return s_rowCursor ??= new Cursor(StandardCursorType.SizeNorthSouth);
+        return Painter.IsOnFillHandle(viewport, point.X, point.Y, Selection, Worksheet) ? s_fillCursor ??= new Cursor(StandardCursorType.Cross) : null;
     }
 
     // A column or row dragged to a size: with whole columns or rows selected and it among them,

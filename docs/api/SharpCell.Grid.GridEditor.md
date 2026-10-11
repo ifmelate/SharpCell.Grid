@@ -81,7 +81,7 @@ Forgets every change, so that none can be undone, as after a workbook is replace
 public GridEdit Copy(Worksheet sheet, CellArea from, CellArea to)
 ```
 
-Copies cells, as copying and pasting them in Excel does: values, formulas, number formats and styles, with the formulas' relative references following the cells (see `CellRange.CopyTo`). An area that is a whole number of times as tall and as wide as the cells copied is filled by repeating them; any other gets one copy at its top-left cell. What lies beyond the sheet's edge is left out.
+Copies cells, as copying and pasting them in Excel does: values, formulas, number formats and styles, with the formulas' relative references following the cells (see `CellRange.CopyTo`). An area that is a whole number of times as tall and as wide as the cells copied is filled by repeating them; any other gets one copy at its top-left cell. What lies beyond the sheet's edge is left out, and an area of more than a million cells, such as the whole sheet, gets one copy.
 
 **Exceptions**
 
