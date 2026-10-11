@@ -81,6 +81,28 @@ public class GuideExamples(HeadlessSession session)
     });
 
     [Fact]
+    public Task Rows_columns_and_zoom() => session.Run(() =>
+    {
+        var sheet = new Workbook().AddSheet("Sheet1");
+        sheet["A1"].Value = 1;
+        sheet["A2"].Value = 2;
+        var view = new SpreadsheetView { Worksheet = sheet };
+        var window = new Window { Content = view };
+        window.Show();
+        view.ActiveCell = new CellPosition(2, 1);
+
+        // snippet: sheet-commands
+        view.Zoom = 1.5;          // 150%, as Ctrl or Cmd with the wheel
+        view.Editor!.Fill(sheet, new CellArea(1, 1, 2, 1), new CellArea(1, 1, 5, 1));   // as the fill handle: 1 to 5
+        view.InsertRows();        // a row before the selected one, A2, as Ctrl+Plus
+        view.FillDown();          // the row above copied into it, as Ctrl+D
+        // end-snippet
+
+        Assert.Equal(1.5, view.Painter.Zoom);
+        Assert.Equal([1.0, 1.0, 2.0, 3.0, 4.0, 5.0], Enumerable.Range(1, 6).Select(r => sheet[r, 1].Value.AsNumber()));
+    });
+
+    [Fact]
     public Task Selection_copying_and_scrolling() => session.Run(async () =>
     {
         var sheet = new Workbook().AddSheet("Sheet1");

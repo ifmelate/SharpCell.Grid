@@ -20,19 +20,49 @@ public sealed class HeadlessSession
     private readonly HeadlessUnitTestSession session = HeadlessUnitTestSession.StartNew(typeof(TestApp));
 
     // A frame still to render when the test ends would render after the application is gone, without
-    // its fonts; it is rendered while the test still runs.
+    // its fonts; it is rendered while the test still runs. A test that fails keeps its own failure.
     public Task Run(Action body) => session.Dispatch(() =>
     {
-        body();
+        try
+        {
+            body();
+        }
+        catch
+        {
+            SettleAfterFailure();
+            throw;
+        }
+
         Settle();
     }, TestContext.Current.CancellationToken);
 
     public Task Run(Func<Task> body) => session.Dispatch(async () =>
     {
-        await body();
+        try
+        {
+            await body();
+        }
+        catch
+        {
+            SettleAfterFailure();
+            throw;
+        }
+
         Settle();
         return true;
     }, TestContext.Current.CancellationToken);
+
+    private static void SettleAfterFailure()
+    {
+        try
+        {
+            Settle();
+        }
+        catch (Exception)
+        {
+            // The test's own failure is the one to report.
+        }
+    }
 
     // Runs what is queued and renders the frame it asks for; what that queues in turn, once more.
     private static void Settle()

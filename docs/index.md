@@ -29,7 +29,8 @@ an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value 
 format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
 Excel.
 
-Status: 0.x, viewing, selecting, copying and editing, in Avalonia and WPF; see the
+Status: 0.x, viewing, selecting, copying, editing, the fill handle, rows and columns resized,
+inserted and deleted, and zoom, in Avalonia and WPF; see the
 [roadmap](roadmap.md). The API may change between minor versions until 1.0.
 
 - [Getting started](getting-started.md)

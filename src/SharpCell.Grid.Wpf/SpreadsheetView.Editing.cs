@@ -11,7 +11,7 @@ public partial class SpreadsheetView
     /// <summary>Whether cells cannot be changed: no typing, Delete, pasting, undo or redo.</summary>
     public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(
         nameof(IsReadOnly), typeof(bool), typeof(SpreadsheetView),
-        new FrameworkPropertyMetadata(false, (d, _) => ((SpreadsheetView)d).Changed?.Invoke(d, EventArgs.Empty)));
+        new FrameworkPropertyMetadata(false, (d, _) => ((SpreadsheetView)d).OnReadOnlyChanged()));
 
     private static readonly DependencyPropertyKey IsEditingKey = DependencyProperty.RegisterReadOnly(
         nameof(IsEditing), typeof(bool), typeof(SpreadsheetView), new FrameworkPropertyMetadata(false));
@@ -111,18 +111,25 @@ public partial class SpreadsheetView
         var text = Clipboard.GetText();
         var at = new CellPosition(selection.Area.FirstRow, selection.Area.FirstColumn);
 
-        // Cut cells move once, while the clipboard still holds what was cut from them.
+        // Cut cells move once, while the clipboard still holds what was cut from them; cells copied
+        // here are copied with their formulas, as often as they are pasted.
         if (_cut is { } cut && cut.Sheet == sheet && cut.Text == text)
         {
-            _cut = null;
-            _moving = true;
+            ForgetClip();
+            Show(Try(() => editor.Move(sheet, cut.Area, at)));
+            return;
+        }
+
+        if (_copied is { } copied && copied.Sheet == sheet && copied.Text == text)
+        {
+            _pasting = true;
             try
             {
-                Show(Try(() => editor.Move(sheet, cut.Area, at)));
+                Show(Try(() => editor.Copy(sheet, copied.Area, selection.Area)));
             }
             finally
             {
-                _moving = false;
+                _pasting = false;
             }
 
             return;
@@ -141,14 +148,34 @@ public partial class SpreadsheetView
         if (IsReadOnly || Worksheet is not { } sheet || Selection is not { } selection)
             return;
         Copy();
-        _cut = new CutCells(sheet, selection.Area, GridClipboard.Text(sheet, selection.Area));
+        _cut = _copied;
+        _copied = null;
     }
 
-    // Cells cut and waiting for a paste, with the text the clipboard got for them.
-    private sealed record CutCells(Worksheet Sheet, CellArea Area, string Text);
+    // Cells cut or copied and waiting for a paste, with the text the clipboard got for them.
+    private sealed record Clipped(Worksheet Sheet, CellArea Area, string Text);
 
-    private CutCells? _cut;
-    private bool _moving;
+    private Clipped? _cut;
+    private Clipped? _copied;
+    private bool _pasting;
+
+    private void ForgetClip()
+    {
+        _cut = null;
+        _copied = null;
+        if (Painter.CopiedArea is not null)
+        {
+            Painter.CopiedArea = null;
+            InvalidateVisual();
+        }
+    }
+
+    private void OnReadOnlyChanged()
+    {
+        Painter.ShowsFillHandle = !IsReadOnly;
+        InvalidateVisual();
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <inheritdoc />
     protected override Visual GetVisualChild(int index) =>
@@ -184,11 +211,17 @@ public partial class SpreadsheetView
     // The keys that change cells when nothing is being edited; paste, undo and redo are commands.
     private bool EditingKey(Key key, ModifierKeys modifiers)
     {
-        if (IsReadOnly || modifiers != ModifierKeys.None)
+        if (key == Key.Escape && modifiers == ModifierKeys.None && (_cut ?? _copied) is not null)
+        {
+            ForgetClip();
+            return true;
+        }
+
+        if (IsReadOnly)
             return false;
-        if (key == Key.Escape && _cut is not null)
-            _cut = null;
-        else if (key == Key.F2)
+        if (modifiers != ModifierKeys.None)
+            return SheetKey(key, modifiers);
+        if (key == Key.F2)
             BeginEdit();
         else if (key == Key.Delete)
             ClearSelection();
@@ -356,9 +389,11 @@ public partial class SpreadsheetView
 
     private void OnEdited(object? sender, GridEdit edit)
     {
-        // Any other change, typing or undo, ends the cut, as in Excel.
-        if (!_moving)
-            _cut = null;
+        // Any other change, typing or undo, ends the cut or copy, as in Excel.
+        if (!_pasting)
+            ForgetClip();
+        if (edit.ChangesLayout)
+            ReloadLayout();
         InvalidateVisual();
         Edited?.Invoke(this, edit);
         Changed?.Invoke(this, EventArgs.Empty);
@@ -393,15 +428,15 @@ public partial class SpreadsheetView
         Go(GridSelection.Cell(new CellPosition(area.FirstRow, area.FirstColumn), Worksheet).ExtendTo(new CellPosition(area.LastRow, area.LastColumn), Worksheet), extent: false);
     }
 
-    private static GridEdit? Try(Func<GridEdit> change)
+    private static GridEdit? Try(Func<GridEdit?> change)
     {
         try
         {
             return change();
         }
-        catch (InvalidOperationException)
+        catch (Exception error) when (error is InvalidOperationException or NotSupportedException or ArgumentException)
         {
-            // Part of an array formula: Excel refuses the change, and so does the view.
+            // Part of an array formula, content pushed off the sheet: Excel refuses the change, and so does the view.
             return null;
         }
     }
@@ -438,13 +473,13 @@ public partial class SpreadsheetView
         return _box;
     }
 
-    // The cell's font, colour and fill, at its alignment.
-    private static void StyleLike(TextBox box, Cell cell)
+    // The cell's font at the zoom, colour and fill, at its alignment.
+    private void StyleLike(TextBox box, Cell cell)
     {
         var style = cell.Style;
         var font = GridPainter.FontOf(style.Font);
         box.FontFamily = new FontFamily(font.Family);
-        box.FontSize = font.Size;
+        box.FontSize = font.Size * Painter.Zoom;
         box.FontWeight = font.Bold ? FontWeights.Bold : FontWeights.Normal;
         box.FontStyle = font.Italic ? FontStyles.Italic : FontStyles.Normal;
         box.Foreground = style.Font.Color is { } color ? new SolidColorBrush(Color.FromRgb(color.R, color.G, color.B)) : Brushes.Black;

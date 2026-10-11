@@ -14,7 +14,7 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 | [GridColor](SharpCell.Grid.GridColor.md) | An opaque or translucent sRGB colour. |
 | [GridDash](SharpCell.Grid.GridDash.md) | The dash pattern of a line, after Excel's border styles. |
 | [GridEdit](SharpCell.Grid.GridEdit.md) | A change made through a [GridEditor](SharpCell.Grid.GridEditor.md). |
-| [GridEditor](SharpCell.Grid.GridEditor.md) | Changes a workbook's cells as people change them in Excel: typing into cells, Delete, pasting text copied from Excel. |
+| [GridEditor](SharpCell.Grid.GridEditor.md) | Changes a workbook as people change it in Excel: typing into cells, Delete, pasting text copied from Excel, copying and moving cells, the fill handle, inserting and deleting rows and columns, column widths and row heights. |
 | [GridFont](SharpCell.Grid.GridFont.md) | A font to draw text with; the size is in pixels, not points. |
 | [GridHit](SharpCell.Grid.GridHit.md) | What is under a point of the grid. |
 | [GridNavigation](SharpCell.Grid.GridNavigation.md) | How the active cell moves on a sheet, as in Excel: a merged area counts as one cell. |

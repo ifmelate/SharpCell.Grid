@@ -1,4 +1,5 @@
 using System.Globalization;
+using SharpCell.Xlsx;
 
 namespace SharpCell.Grid.Tests.Selection;
 
@@ -153,5 +154,23 @@ public class SheetEditTests
 
         Assert.Equal(Area("A1048576"), edit.Area);
         Assert.Equal("Line 2", sheet["A1048576"].Text);
+    }
+
+    [Fact]
+    public void Sizes_hidden_rows_and_inserted_rows_set_in_the_grid_are_saved()
+    {
+        var (sheet, editor) = Budget();
+        editor.SetColumnWidth(sheet, 1, 1, 20);
+        editor.SetRowHidden(sheet, 4, 4, true);
+        editor.InsertRows(sheet, 2, 1);
+
+        using var stream = new MemoryStream();
+        XlsxWriter.Save(sheet.Workbook, stream);
+        stream.Position = 0;
+        var saved = XlsxReader.Load(stream)["S"];
+
+        Assert.Equal(20, saved.ColumnWidth(1));
+        Assert.True(saved.IsRowHidden(5));
+        Assert.Equal("=SUM(B3:B6)", saved["B7"].Formula);
     }
 }

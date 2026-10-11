@@ -33,3 +33,6 @@ SharpCell.Grid.GridTheme.FillOutline.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.FillOutline.init -> void
 SharpCell.Grid.GridEditor.FitColumnWidth(SharpCell.Worksheet! sheet, int firstColumn, int lastColumn, SharpCell.Grid.GridPainter! painter) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.FitRowHeight(SharpCell.Worksheet! sheet, int firstRow, int lastRow, SharpCell.Grid.GridPainter! painter) -> SharpCell.Grid.GridEdit!
+static SharpCell.Grid.GridEditor.FillArea(SharpCell.Grid.CellArea from, SharpCell.Grid.CellPosition cell) -> SharpCell.Grid.CellArea
+SharpCell.Grid.GridEditor.FillDown(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> SharpCell.Grid.GridEdit?
+SharpCell.Grid.GridEditor.FillRight(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> SharpCell.Grid.GridEdit?

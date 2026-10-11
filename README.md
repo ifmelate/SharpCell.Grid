@@ -9,11 +9,14 @@ Excel does: column and row headers, gridlines, each cell's value in its number f
 style (font, fill, borders, alignment, wrapping), the file's column widths and row heights,
 merged cells, frozen panes and text running on over empty neighbours. Cells are selected, typed
 into, deleted, pasted and undone with the mouse and keyboard as in Excel, the workbook recalculated
-after each change, and copied with their styles, ready to paste into Excel. Only the visible cells are read, so a sheet of a million rows scrolls like an empty one.
+after each change, and copied with their styles, ready to paste into Excel. Columns and rows are
+resized, fitted, inserted, deleted and hidden, the fill handle continues series and copies
+formulas, and the view zooms. Only the visible cells are read, so a sheet of a million rows scrolls like an empty one.
 
 **[Try it in your browser](https://ifmelate.github.io/SharpCell.Grid/demo/)**: open your own .xlsx file; it is read on your computer and never uploaded.
 
-Status: 0.x, viewing, selecting, copying to Excel and editing. See the [roadmap](docs/roadmap.md).
+Status: 0.x, viewing, selecting, copying to Excel, editing, the fill handle, rows and columns
+resized, inserted and deleted, and zoom. See the [roadmap](docs/roadmap.md).
 The API may change between minor versions until 1.0.
 
 | Package | What it does |

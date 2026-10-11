@@ -238,6 +238,78 @@ public sealed partial class GridEditor
         });
     }
 
+    /// <summary>
+    /// Copies the top row of an area into the rows below it, formulas following, as Ctrl+D does in
+    /// Excel; an area of one row takes the row above it. Whole columns are filled down to the last
+    /// row the sheet uses. Null, with nothing changed, for one row at the top of the sheet.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
+    /// <exception cref="NotSupportedException">The row copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.</exception>
+    public GridEdit? FillDown(Worksheet sheet, CellArea area)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        if (area.FirstRow == 1 && area.LastRow == SheetLayout.MaxRow)
+            area = new CellArea(1, area.FirstColumn, Math.Max(1, sheet.UsedRange?.LastRow ?? 1), area.LastColumn);
+        if (area.FirstRow == area.LastRow)
+        {
+            return area.FirstRow == 1 ? null
+                : Copy(sheet, new CellArea(area.FirstRow - 1, area.FirstColumn, area.FirstRow - 1, area.LastColumn), area);
+        }
+
+        return Copy(sheet, new CellArea(area.FirstRow, area.FirstColumn, area.FirstRow, area.LastColumn),
+            new CellArea(area.FirstRow + 1, area.FirstColumn, area.LastRow, area.LastColumn));
+    }
+
+    /// <summary>Copies the left column of an area into the columns right of it, as Ctrl+R does; see <see cref="FillDown"/>.</summary>
+    /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
+    /// <exception cref="NotSupportedException">The column copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.</exception>
+    public GridEdit? FillRight(Worksheet sheet, CellArea area)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        if (area.FirstColumn == 1 && area.LastColumn == SheetLayout.MaxColumn)
+            area = new CellArea(area.FirstRow, 1, area.LastRow, Math.Max(1, sheet.UsedRange?.LastColumn ?? 1));
+        if (area.FirstColumn == area.LastColumn)
+        {
+            return area.FirstColumn == 1 ? null
+                : Copy(sheet, new CellArea(area.FirstRow, area.FirstColumn - 1, area.LastRow, area.FirstColumn - 1), area);
+        }
+
+        return Copy(sheet, new CellArea(area.FirstRow, area.FirstColumn, area.LastRow, area.FirstColumn),
+            new CellArea(area.FirstRow, area.FirstColumn + 1, area.LastRow, area.LastColumn));
+    }
+
+    /// <summary>
+    /// The cells that dragging the fill handle of <paramref name="from"/> to a cell fills, as Excel
+    /// picks them: past <paramref name="from"/>, whole rows or columns of it up to the cell, on the
+    /// side the cell is furthest beyond; back inside it, the cells up to the cell, the rest to be
+    /// cleared. <see cref="Fill"/> takes the result.
+    /// </summary>
+    public static CellArea FillArea(CellArea from, CellPosition cell)
+    {
+        var rows = cell.Row > from.LastRow ? cell.Row - from.LastRow : cell.Row < from.FirstRow ? cell.Row - from.FirstRow : 0;
+        var columns = cell.Column > from.LastColumn ? cell.Column - from.LastColumn : cell.Column < from.FirstColumn ? cell.Column - from.FirstColumn : 0;
+        if (rows == 0 && columns == 0)
+        {
+            var (rowsBack, columnsBack) = (from.LastRow - cell.Row, from.LastColumn - cell.Column);
+            if (rowsBack == 0 && columnsBack == 0)
+                return from;
+            return rowsBack >= columnsBack
+                ? new CellArea(from.FirstRow, from.FirstColumn, cell.Row, from.LastColumn)
+                : new CellArea(from.FirstRow, from.FirstColumn, from.LastRow, cell.Column);
+        }
+
+        if (Math.Abs(rows) >= Math.Abs(columns))
+        {
+            return rows > 0
+                ? new CellArea(from.FirstRow, from.FirstColumn, cell.Row, from.LastColumn)
+                : new CellArea(cell.Row, from.FirstColumn, from.LastRow, from.LastColumn);
+        }
+
+        return columns > 0
+            ? new CellArea(from.FirstRow, from.FirstColumn, from.LastRow, cell.Column)
+            : new CellArea(from.FirstRow, cell.Column, from.LastRow, from.LastColumn);
+    }
+
     /// <summary>Undoes the last change; null when there is none.</summary>
     public GridEdit? Undo() => Replay(_undo, _redo, s => s.Undo);
 

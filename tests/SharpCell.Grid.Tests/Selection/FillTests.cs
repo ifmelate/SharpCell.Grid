@@ -191,4 +191,17 @@ public class FillTests
         Assert.Throws<ArgumentException>(() => editor.Fill(sheet, Area("A1", "B2"), Area("A2", "B3")));
         Assert.False(editor.CanUndo);
     }
+
+    [Theory]
+    [InlineData("B5", "B2", "C5")]
+    [InlineData("D3", "B2", "D3")]
+    [InlineData("A1", "B1", "C3")]
+    [InlineData("F4", "B2", "F3")]
+    [InlineData("B2", "B2", "C2")]
+    [InlineData("C2", "B2", "C2")]
+    [InlineData("B3", "B2", "B3")]
+    public void Dragging_the_handle_picks_the_side_the_pointer_is_furthest_beyond(string pointer, string first, string last)
+    {
+        Assert.Equal(Area(first, last), GridEditor.FillArea(Area("B2", "C3"), Cells.Parse(pointer)));
+    }
 }

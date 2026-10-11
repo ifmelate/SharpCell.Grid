@@ -8,7 +8,7 @@ public class SpreadsheetView : FrameworkElement
 
 Namespace `SharpCell.Grid.Wpf` · package `SharpCell.Grid.Wpf`
 
-Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls, and Ctrl+C puts the selected cells on the clipboard as Excel pastes them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `UIElement.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Wpf.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Wpf.SpreadsheetView.md#reloadlayout).
+Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls and with Ctrl zooms, and Ctrl+C puts the selected cells on the clipboard as Excel pastes them. Columns and rows are resized by dragging the edges of their headers, and fitted by double-clicking them; the fill handle fills cells, and the headers have Excel's menu to insert, delete and hide them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `UIElement.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Wpf.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Wpf.SpreadsheetView.md#reloadlayout).
 
 ## Constructors
 
@@ -113,6 +113,15 @@ public Worksheet? Worksheet { get; set; }
 
 The sheet shown; null shows an empty grid.
 
+<a id="zoom"></a>
+### Zoom
+
+```csharp
+public double Zoom { get; set; }
+```
+
+How large the cells are shown, 1 for Excel's 100%, from 0.1 to 4; Ctrl with the wheel changes it in steps of 10%. The cell at the top left stays there.
+
 ## Methods
 
 <a id="beginedit-string"></a>
@@ -169,6 +178,78 @@ public void Cut()
 
 Cuts the selected cells, as Ctrl+X and `ApplicationCommands.Cut` do in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecolumns"></a>
+### DeleteColumns()
+
+```csharp
+public void DeleteColumns()
+```
+
+Deletes the selection's columns.
+
+<a id="deleterows"></a>
+### DeleteRows()
+
+```csharp
+public void DeleteRows()
+```
+
+Deletes the selection's rows, as Ctrl+Minus does with rows selected.
+
+<a id="filldown"></a>
+### FillDown()
+
+```csharp
+public void FillDown()
+```
+
+Copies the selection's top row into the rows below it, formulas following, as Ctrl+D does; with one row selected, the row above it into it (see [GridEditor.FillDown](SharpCell.Grid.GridEditor.md#filldown-worksheet-cellarea)).
+
+<a id="fillright"></a>
+### FillRight()
+
+```csharp
+public void FillRight()
+```
+
+Copies the selection's left column into the columns right of it, as Ctrl+R does; see [SpreadsheetView.FillDown](SharpCell.Grid.Wpf.SpreadsheetView.md#filldown).
+
+<a id="hidecolumns"></a>
+### HideColumns()
+
+```csharp
+public void HideColumns()
+```
+
+Hides the selection's columns, as Ctrl+0 does.
+
+<a id="hiderows"></a>
+### HideRows()
+
+```csharp
+public void HideRows()
+```
+
+Hides the selection's rows, as Ctrl+9 does.
+
+<a id="insertcolumns"></a>
+### InsertColumns()
+
+```csharp
+public void InsertColumns()
+```
+
+Inserts as many columns as are selected before the selection's first column.
+
+<a id="insertrows"></a>
+### InsertRows()
+
+```csharp
+public void InsertRows()
+```
+
+Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
 <a id="paste"></a>
 ### Paste()
 
@@ -204,3 +285,21 @@ public void Undo()
 ```
 
 Undoes the last change to the cells and selects them, as Ctrl+Z does.
+
+<a id="unhidecolumns"></a>
+### UnhideColumns()
+
+```csharp
+public void UnhideColumns()
+```
+
+Shows the hidden columns among the selection's, as Ctrl+Shift+0 does.
+
+<a id="unhiderows"></a>
+### UnhideRows()
+
+```csharp
+public void UnhideRows()
+```
+
+Shows the hidden rows among the selection's, as Ctrl+Shift+9 does.

@@ -39,7 +39,25 @@ A painter over the given sizes of rows and columns.
 public double ColumnHeaderHeight { get; set; }
 ```
 
-The height of the column headers at the top.
+The height of the column headers at the top at 100% zoom; [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) scales it.
+
+<a id="copiedarea"></a>
+### CopiedArea
+
+```csharp
+public CellArea? CopiedArea { get; set; }
+```
+
+The cells copied or cut, painted with a dashed border as Excel shows them until they are pasted; null for none.
+
+<a id="fillarea"></a>
+### FillArea
+
+```csharp
+public CellArea? FillArea { get; set; }
+```
+
+The cells a fill handle is being dragged over, painted with a dashed grey border; null for none.
 
 <a id="frozencolumns"></a>
 ### FrozenColumns
@@ -92,7 +110,16 @@ The width in pixels of a line of text in a font. Without it, text is never fitte
 public double RowHeaderWidth { get; set; }
 ```
 
-The width of the row headers on the left; with [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext), the least width, widened to fit the number of the last visible row.
+The width of the row headers on the left at 100% zoom; with [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext), the least width, widened to fit the number of the last visible row. [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) scales it.
+
+<a id="showsfillhandle"></a>
+### ShowsFillHandle
+
+```csharp
+public bool ShowsFillHandle { get; set; }
+```
+
+Whether the selection's bottom-right corner has Excel's fill handle, the square dragged to fill cells. False by default; a view that changes cells turns it on.
 
 <a id="theme"></a>
 ### Theme
@@ -102,6 +129,19 @@ public GridTheme Theme { get; set; }
 ```
 
 The colours of everything but the cells' own styles.
+
+<a id="zoom"></a>
+### Zoom
+
+```csharp
+public double Zoom { get; set; }
+```
+
+How large cells and headers are painted, 1 for Excel's 100%: fonts, headers and the space around text grow with it, lines stay one pixel. [GridPainter.Layout](SharpCell.Grid.GridPainter.md#layout) is not scaled: give it the sheet's sizes at the zoom, as [SheetLayout.FromWorksheet](SharpCell.Grid.SheetLayout.md#fromworksheet-worksheet-double-double) with [GridPainter.MaxDigitWidth](SharpCell.Grid.GridPainter.md#maxdigitwidth-worksheet) does.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The zoom is outside Excel's 10% to 400%.
 
 ## Methods
 
@@ -141,6 +181,33 @@ public GridViewport Clamp(GridViewport viewport)
 
 The viewport with its offsets kept between the start and the end of the sheet.
 
+<a id="columnedgeat-gridviewport-double-double"></a>
+### ColumnEdgeAt(GridViewport, double, double)
+
+```csharp
+public int? ColumnEdgeAt(GridViewport viewport, double x, double y)
+```
+
+The column whose right edge is under a point of the column headers, as Excel lets it be dragged to resize the column; null elsewhere. Hidden columns are never found.
+
+<a id="fitcolumnwidth-worksheet-int"></a>
+### FitColumnWidth(Worksheet, int)
+
+```csharp
+public double? FitColumnWidth(Worksheet sheet, int column)
+```
+
+The width in pixels at [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) that fits the widest text of a column, as Excel's AutoFit Column Width does; merged cells are left out. Null when the column holds nothing to fit or without [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext).
+
+<a id="fitrowheight-worksheet-int"></a>
+### FitRowHeight(Worksheet, int)
+
+```csharp
+public double? FitRowHeight(Worksheet sheet, int row)
+```
+
+The height in pixels at [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) that fits the tallest text of a row, as Excel's AutoFit Row Height does: a line of each cell's font, and as many lines as wrapped text or line breaks take. Null when the row holds nothing, for the sheet's default height.
+
 <a id="fontof-cellfont"></a>
 ### FontOf(CellFont)
 
@@ -168,6 +235,15 @@ public CellPosition? HitTest(GridViewport viewport, double x, double y, Workshee
 
 The cell under a point of the grid; null on the headers or outside the grid. Inside a merged area of the sheet, its top-left cell.
 
+<a id="isonfillhandle-gridviewport-double-double-gridselection-worksheet"></a>
+### IsOnFillHandle(GridViewport, double, double, GridSelection, Worksheet)
+
+```csharp
+public bool IsOnFillHandle(GridViewport viewport, double x, double y, GridSelection? selection, Worksheet? sheet)
+```
+
+Whether a point is on the fill handle of the selection, when [GridPainter.ShowsFillHandle](SharpCell.Grid.GridPainter.md#showsfillhandle) shows one.
+
 <a id="maxdigitwidth-worksheet"></a>
 ### MaxDigitWidth(Worksheet)
 
@@ -175,7 +251,7 @@ The cell under a point of the grid; null on the headers or outside the grid. Ins
 public double MaxDigitWidth(Worksheet? sheet)
 ```
 
-The width in pixels of the widest digit of a sheet's default font, which Excel bases column widths on; 7, Calibri 11's, without [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext).
+The width in pixels of the widest digit of a sheet's default font at [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom), which Excel bases column widths on; 7, Calibri 11's at 100%, without [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext).
 
 <a id="paint-igridcanvas-worksheet-gridviewport-cellposition"></a>
 ### Paint(IGridCanvas, Worksheet, GridViewport, CellPosition?)
@@ -194,6 +270,15 @@ public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, G
 ```
 
 Paints the part of the sheet in the viewport and the selection over it, as Excel does: the selected cells but the active one shaded, a border around them, their headers highlighted. Without a sheet, an empty grid; without a selection, none.
+
+<a id="rowedgeat-gridviewport-double-double"></a>
+### RowEdgeAt(GridViewport, double, double)
+
+```csharp
+public int? RowEdgeAt(GridViewport viewport, double x, double y)
+```
+
+The row whose bottom edge is under a point of the row headers; null elsewhere. See [GridPainter.ColumnEdgeAt](SharpCell.Grid.GridPainter.md#columnedgeat-gridviewport-double-double).
 
 <a id="scrollintoview-gridviewport-cellposition"></a>
 ### ScrollIntoView(GridViewport, CellPosition)

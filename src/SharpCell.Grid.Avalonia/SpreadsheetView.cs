@@ -82,14 +82,17 @@ public partial class SpreadsheetView : Control
     /// <summary>Creates an empty view; set <see cref="Worksheet"/> to show a sheet.</summary>
     public SpreadsheetView()
     {
-        Painter = new GridPainter { MeasureText = Measure };
+        Painter = new GridPainter { MeasureText = Measure, ShowsFillHandle = true };
     }
 
     /// <summary>Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.</summary>
     public void ReloadLayout()
     {
         var sheet = Worksheet;
-        Painter.Layout = sheet is not null ? SheetLayout.FromWorksheet(sheet, Painter.MaxDigitWidth(sheet)) : new SheetLayout();
+        var zoom = Painter.Zoom;
+        Painter.Layout = sheet is not null
+            ? SheetLayout.FromWorksheet(sheet, Painter.MaxDigitWidth(sheet), zoom)
+            : new SheetLayout(Math.Round(SheetLayout.ExcelColumnWidth * zoom), Math.Round(SheetLayout.ExcelRowHeight * zoom));
         Painter.FrozenRows = sheet?.FrozenRows ?? 0;
         Painter.FrozenColumns = sheet?.FrozenColumns ?? 0;
         InvalidateVisual();
@@ -109,6 +112,15 @@ public partial class SpreadsheetView : Control
         else if (change.Property == OffsetProperty || change.Property == BoundsProperty)
         {
             InvalidateArrange();
+        }
+        else if (change.Property == ZoomProperty)
+        {
+            OnZoomChanged();
+        }
+        else if (change.Property == IsReadOnlyProperty)
+        {
+            Painter.ShowsFillHandle = !IsReadOnly;
+            InvalidateVisual();
         }
         else if (change.Property == SelectionProperty && ActiveCell != Selection?.ActiveCell)
         {
@@ -151,79 +163,12 @@ public partial class SpreadsheetView : Control
         var data = new DataTransfer();
         data.Add(item);
         await clipboard.SetDataAsync(data);
-    }
 
-    private bool _dragging;
-
-    /// <inheritdoc />
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        base.OnPointerPressed(e);
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || IsInEditor(e.Source))
-            return;
-
-        // A click elsewhere enters what is being typed first; a formula that does not parse stays open.
-        if (IsEditing && !CommitEdit())
-            return;
-        Focus();
-        e.Handled = true;
-        var point = e.GetPosition(this);
-        if (Painter.Hit(Viewport, point.X, point.Y, Worksheet) is not { } hit)
-            return;
-        if (e.ClickCount == 2 && hit.Part == GridPart.Cell)
-        {
-            BeginEdit();
-            return;
-        }
-
-        Selection = e.KeyModifiers.HasFlag(KeyModifiers.Shift) && Selection is { } selection
-            ? selection.ExtendTo(hit, Worksheet)
-            : GridSelection.At(hit, Worksheet);
-        _dragging = true;
-        e.Pointer.Capture(this);
-    }
-
-    /// <inheritdoc />
-    protected override void OnPointerMoved(PointerEventArgs e)
-    {
-        base.OnPointerMoved(e);
-        if (!_dragging || Selection is not { } selection)
-            return;
-
-        // Past an edge the nearest cell is the next one out of view, and scrolling to it follows the mouse.
-        var point = e.GetPosition(this);
-        var cell = Painter.CellNearest(Viewport, point.X, point.Y);
-        Selection = selection.ExtendTo(cell, Worksheet);
-        ScrollTo(Painter.ScrollIntoView(Viewport, cell));
-        e.Handled = true;
-    }
-
-    /// <inheritdoc />
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
-    {
-        base.OnPointerReleased(e);
-        if (!_dragging)
-            return;
-        _dragging = false;
-        e.Pointer.Capture(null);
-        e.Handled = true;
-    }
-
-    /// <inheritdoc />
-    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
-    {
-        base.OnPointerCaptureLost(e);
-        _dragging = false;
-    }
-
-    /// <inheritdoc />
-    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
-    {
-        base.OnPointerWheelChanged(e);
-        var layout = Painter.Layout;
-        var step = new Vector(e.Delta.X * WheelRows * layout.DefaultColumnWidth, e.Delta.Y * WheelRows * layout.DefaultRowHeight);
-        ScrollTo(Viewport with { OffsetX = Viewport.OffsetX - step.X, OffsetY = Viewport.OffsetY - step.Y });
-        e.Handled = true;
+        // Pasted here again, the cells are copied with their formulas, as in Excel.
+        _copied = new Clipped(sheet, selection.Area, GridClipboard.Text(sheet, selection.Area));
+        _cut = null;
+        Painter.CopiedArea = selection.Area;
+        InvalidateVisual();
     }
 
     /// <inheritdoc />
@@ -245,9 +190,9 @@ public partial class SpreadsheetView : Control
             return;
         }
 
-        if (e.Key == Key.Escape && _cut is not null)
+        if (e.Key == Key.Escape && (_cut ?? _copied) is not null)
         {
-            _cut = null;
+            ForgetClip();
             e.Handled = true;
             return;
         }

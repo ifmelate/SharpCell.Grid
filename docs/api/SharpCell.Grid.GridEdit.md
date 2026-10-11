@@ -38,6 +38,15 @@ public CellArea Area { get; init; }
 
 The cells changed: typed into, cleared or pasted over.
 
+<a id="changeslayout"></a>
+### ChangesLayout
+
+```csharp
+public bool ChangesLayout { get; init; }
+```
+
+Whether column widths, row heights or hidden rows and columns changed, or cells moved to other rows or columns: a view takes the sheet's layout again.
+
 <a id="recalculation"></a>
 ### Recalculation
 

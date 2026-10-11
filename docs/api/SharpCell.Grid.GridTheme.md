@@ -68,6 +68,15 @@ public static GridTheme Excel { get; }
 
 Colours close to Excel's light theme.
 
+<a id="filloutline"></a>
+### FillOutline
+
+```csharp
+public GridColor FillOutline { get; init; }
+```
+
+The dashed border around the cells a fill handle is dragged over.
+
 <a id="frozenline"></a>
 ### FrozenLine
 

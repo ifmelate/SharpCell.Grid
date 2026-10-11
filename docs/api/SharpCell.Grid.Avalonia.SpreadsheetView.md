@@ -113,6 +113,15 @@ public Worksheet? Worksheet { get; set; }
 
 The sheet shown; null shows an empty grid.
 
+<a id="zoom"></a>
+### Zoom
+
+```csharp
+public double Zoom { get; set; }
+```
+
+How large the cells are shown, 1 for Excel's 100%, from 0.1 to 4; Ctrl or Cmd with the wheel changes it in steps of 10%. The cell at the top left stays there.
+
 ## Methods
 
 <a id="beginedit-string"></a>
@@ -169,6 +178,78 @@ public Task CutAsync()
 
 Cuts the selected cells, as Ctrl+X does in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecolumns"></a>
+### DeleteColumns()
+
+```csharp
+public void DeleteColumns()
+```
+
+Deletes the selection's columns.
+
+<a id="deleterows"></a>
+### DeleteRows()
+
+```csharp
+public void DeleteRows()
+```
+
+Deletes the selection's rows, as Ctrl+Minus does with rows selected.
+
+<a id="filldown"></a>
+### FillDown()
+
+```csharp
+public void FillDown()
+```
+
+Copies the selection's top row into the rows below it, formulas following, as Ctrl+D does; with one row selected, the row above it into it. Whole columns are filled down to the last used row.
+
+<a id="fillright"></a>
+### FillRight()
+
+```csharp
+public void FillRight()
+```
+
+Copies the selection's left column into the columns right of it, as Ctrl+R does; see [SpreadsheetView.FillDown](SharpCell.Grid.Avalonia.SpreadsheetView.md#filldown).
+
+<a id="hidecolumns"></a>
+### HideColumns()
+
+```csharp
+public void HideColumns()
+```
+
+Hides the selection's columns, as Ctrl+0 does.
+
+<a id="hiderows"></a>
+### HideRows()
+
+```csharp
+public void HideRows()
+```
+
+Hides the selection's rows, as Ctrl+9 does.
+
+<a id="insertcolumns"></a>
+### InsertColumns()
+
+```csharp
+public void InsertColumns()
+```
+
+Inserts as many columns as are selected before the selection's first column.
+
+<a id="insertrows"></a>
+### InsertRows()
+
+```csharp
+public void InsertRows()
+```
+
+Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
 <a id="pasteasync"></a>
 ### PasteAsync()
 
@@ -217,3 +298,21 @@ public void Undo()
 ```
 
 Undoes the last change to the cells and selects them, as Ctrl+Z does.
+
+<a id="unhidecolumns"></a>
+### UnhideColumns()
+
+```csharp
+public void UnhideColumns()
+```
+
+Shows the hidden columns among the selection's, as Ctrl+Shift+0 does.
+
+<a id="unhiderows"></a>
+### UnhideRows()
+
+```csharp
+public void UnhideRows()
+```
+
+Shows the hidden rows among the selection's, as Ctrl+Shift+9 does.
