@@ -1,1 +1,35 @@
 #nullable enable
+SharpCell.Grid.GridEdit.ChangesLayout.get -> bool
+SharpCell.Grid.GridEdit.ChangesLayout.init -> void
+SharpCell.Grid.GridEditor.Copy(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea from, SharpCell.Grid.CellArea to) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.Fill(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea from, SharpCell.Grid.CellArea to) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.DeleteColumns(SharpCell.Worksheet! sheet, int column, int count) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.DeleteRows(SharpCell.Worksheet! sheet, int row, int count) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.InsertColumns(SharpCell.Worksheet! sheet, int column, int count) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.InsertRows(SharpCell.Worksheet! sheet, int row, int count) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetColumnHidden(SharpCell.Worksheet! sheet, int firstColumn, int lastColumn, bool hidden) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetColumnWidth(SharpCell.Worksheet! sheet, int firstColumn, int lastColumn, double? width) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetRowHeight(SharpCell.Worksheet! sheet, int firstRow, int lastRow, double? height) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetRowHidden(SharpCell.Worksheet! sheet, int firstRow, int lastRow, bool hidden) -> SharpCell.Grid.GridEdit!
+const SharpCell.Grid.GridPainter.MaxZoom = 4 -> double
+const SharpCell.Grid.GridPainter.MinZoom = 0.1 -> double
+SharpCell.Grid.GridPainter.Zoom.get -> double
+SharpCell.Grid.GridPainter.Zoom.set -> void
+static SharpCell.Grid.SheetLayout.ColumnWidthFromPixels(double pixels, double maxDigitWidth) -> double
+static SharpCell.Grid.SheetLayout.FromWorksheet(SharpCell.Worksheet! sheet, double maxDigitWidth, double zoom) -> SharpCell.Grid.SheetLayout!
+static SharpCell.Grid.SheetLayout.RowHeightFromPixels(double pixels, double zoom) -> double
+SharpCell.Grid.GridPainter.ColumnEdgeAt(SharpCell.Grid.GridViewport viewport, double x, double y) -> int?
+SharpCell.Grid.GridPainter.CopiedArea.get -> SharpCell.Grid.CellArea?
+SharpCell.Grid.GridPainter.CopiedArea.set -> void
+SharpCell.Grid.GridPainter.FillArea.get -> SharpCell.Grid.CellArea?
+SharpCell.Grid.GridPainter.FillArea.set -> void
+SharpCell.Grid.GridPainter.FitColumnWidth(SharpCell.Worksheet! sheet, int column) -> double?
+SharpCell.Grid.GridPainter.FitRowHeight(SharpCell.Worksheet! sheet, int row) -> double?
+SharpCell.Grid.GridPainter.IsOnFillHandle(SharpCell.Grid.GridViewport viewport, double x, double y, SharpCell.Grid.GridSelection? selection, SharpCell.Worksheet? sheet) -> bool
+SharpCell.Grid.GridPainter.RowEdgeAt(SharpCell.Grid.GridViewport viewport, double x, double y) -> int?
+SharpCell.Grid.GridPainter.ShowsFillHandle.get -> bool
+SharpCell.Grid.GridPainter.ShowsFillHandle.set -> void
+SharpCell.Grid.GridTheme.FillOutline.get -> SharpCell.Grid.GridColor
+SharpCell.Grid.GridTheme.FillOutline.init -> void
+SharpCell.Grid.GridEditor.FitColumnWidth(SharpCell.Worksheet! sheet, int firstColumn, int lastColumn, SharpCell.Grid.GridPainter! painter) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.FitRowHeight(SharpCell.Worksheet! sheet, int firstRow, int lastRow, SharpCell.Grid.GridPainter! painter) -> SharpCell.Grid.GridEdit!
