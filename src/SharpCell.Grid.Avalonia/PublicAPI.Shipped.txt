@@ -24,10 +24,18 @@ SharpCell.Grid.Avalonia.SpreadsheetView.ClearSelection() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.CommitEdit() -> bool
 SharpCell.Grid.Avalonia.SpreadsheetView.CopyAsync() -> System.Threading.Tasks.Task!
 SharpCell.Grid.Avalonia.SpreadsheetView.CutAsync() -> System.Threading.Tasks.Task!
+SharpCell.Grid.Avalonia.SpreadsheetView.DeleteColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.DeleteRows() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
 SharpCell.Grid.Avalonia.SpreadsheetView.Editor.get -> SharpCell.Grid.GridEditor?
 SharpCell.Grid.Avalonia.SpreadsheetView.EditText.get -> string?
 SharpCell.Grid.Avalonia.SpreadsheetView.EditText.set -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.FillDown() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.FillRight() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.HideColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.HideRows() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.InsertColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.InsertRows() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.IsEditing.get -> bool
 SharpCell.Grid.Avalonia.SpreadsheetView.IsReadOnly.get -> bool
 SharpCell.Grid.Avalonia.SpreadsheetView.IsReadOnly.set -> void
@@ -41,9 +49,13 @@ SharpCell.Grid.Avalonia.SpreadsheetView.Selection.get -> SharpCell.Grid.GridSele
 SharpCell.Grid.Avalonia.SpreadsheetView.Selection.set -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.SpreadsheetView() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.Undo() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.UnhideColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.UnhideRows() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.Viewport.get -> SharpCell.Grid.GridViewport
 SharpCell.Grid.Avalonia.SpreadsheetView.Worksheet.get -> SharpCell.Worksheet?
 SharpCell.Grid.Avalonia.SpreadsheetView.Worksheet.set -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.Zoom.get -> double
+SharpCell.Grid.Avalonia.SpreadsheetView.Zoom.set -> void
 static readonly SharpCell.Grid.Avalonia.FormulaBar.ViewProperty -> Avalonia.StyledProperty<SharpCell.Grid.Avalonia.SpreadsheetView?>!
 static readonly SharpCell.Grid.Avalonia.SpreadsheetView.ActiveCellProperty -> Avalonia.StyledProperty<SharpCell.Grid.CellPosition?>!
 static readonly SharpCell.Grid.Avalonia.SpreadsheetView.EditTextProperty -> Avalonia.DirectProperty<SharpCell.Grid.Avalonia.SpreadsheetView!, string?>!
@@ -52,3 +64,4 @@ static readonly SharpCell.Grid.Avalonia.SpreadsheetView.IsReadOnlyProperty -> Av
 static readonly SharpCell.Grid.Avalonia.SpreadsheetView.OffsetProperty -> Avalonia.StyledProperty<Avalonia.Vector>!
 static readonly SharpCell.Grid.Avalonia.SpreadsheetView.SelectionProperty -> Avalonia.StyledProperty<SharpCell.Grid.GridSelection?>!
 static readonly SharpCell.Grid.Avalonia.SpreadsheetView.WorksheetProperty -> Avalonia.StyledProperty<SharpCell.Worksheet?>!
+static readonly SharpCell.Grid.Avalonia.SpreadsheetView.ZoomProperty -> Avalonia.StyledProperty<double>!

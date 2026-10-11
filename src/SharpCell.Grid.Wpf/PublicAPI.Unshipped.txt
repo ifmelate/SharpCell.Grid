@@ -1,15 +1,1 @@
 #nullable enable
-SharpCell.Grid.Wpf.SpreadsheetView.DeleteColumns() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.DeleteRows() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.FillDown() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.FillRight() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.HideColumns() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.HideRows() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.InsertColumns() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.InsertRows() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.UnhideColumns() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.UnhideRows() -> void
-SharpCell.Grid.Wpf.SpreadsheetView.Zoom.get -> double
-SharpCell.Grid.Wpf.SpreadsheetView.Zoom.set -> void
-static readonly SharpCell.Grid.Wpf.SpreadsheetView.ZoomProperty -> System.Windows.DependencyProperty!
-override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseRightButtonDown(System.Windows.Input.MouseButtonEventArgs! e) -> void

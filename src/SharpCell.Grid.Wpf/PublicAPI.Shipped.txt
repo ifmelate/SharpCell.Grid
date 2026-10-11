@@ -7,6 +7,7 @@ override SharpCell.Grid.Wpf.SpreadsheetView.OnLostMouseCapture(System.Windows.In
 override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseMove(System.Windows.Input.MouseEventArgs! e) -> void
+override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseRightButtonDown(System.Windows.Input.MouseButtonEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnMouseWheel(System.Windows.Input.MouseWheelEventArgs! e) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnRender(System.Windows.Media.DrawingContext! drawingContext) -> void
 override SharpCell.Grid.Wpf.SpreadsheetView.OnTextInput(System.Windows.Input.TextCompositionEventArgs! e) -> void
@@ -24,10 +25,18 @@ SharpCell.Grid.Wpf.SpreadsheetView.ClearSelection() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.CommitEdit() -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.Copy() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Cut() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.DeleteColumns() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.DeleteRows() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
 SharpCell.Grid.Wpf.SpreadsheetView.Editor.get -> SharpCell.Grid.GridEditor?
 SharpCell.Grid.Wpf.SpreadsheetView.EditText.get -> string?
 SharpCell.Grid.Wpf.SpreadsheetView.EditText.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.FillDown() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.FillRight() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.HideColumns() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.HideRows() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.InsertColumns() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.InsertRows() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.IsEditing.get -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnly.get -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnly.set -> void
@@ -41,9 +50,13 @@ SharpCell.Grid.Wpf.SpreadsheetView.Selection.get -> SharpCell.Grid.GridSelection
 SharpCell.Grid.Wpf.SpreadsheetView.Selection.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView.SpreadsheetView() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Undo() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.UnhideColumns() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.UnhideRows() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Viewport.get -> SharpCell.Grid.GridViewport
 SharpCell.Grid.Wpf.SpreadsheetView.Worksheet.get -> SharpCell.Worksheet?
 SharpCell.Grid.Wpf.SpreadsheetView.Worksheet.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Zoom.get -> double
+SharpCell.Grid.Wpf.SpreadsheetView.Zoom.set -> void
 static readonly SharpCell.Grid.Wpf.FormulaBar.ViewProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.ActiveCellProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.EditTextProperty -> System.Windows.DependencyProperty!
@@ -52,3 +65,4 @@ static readonly SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnlyProperty -> System.
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.OffsetProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.SelectionProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.WorksheetProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SpreadsheetView.ZoomProperty -> System.Windows.DependencyProperty!
