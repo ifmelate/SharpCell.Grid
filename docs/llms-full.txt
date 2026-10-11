@@ -39,7 +39,8 @@ an empty one. What a cell shows comes from SharpCell: `Cell.Text` for the value 
 format, `Cell.Style` for the font, fill, borders and alignment. Both are checked against Microsoft
 Excel.
 
-Status: 0.x, viewing, selecting, copying and editing, in Avalonia and WPF; see the
+Status: 0.x, viewing, selecting, copying, editing, the fill handle, rows and columns resized,
+inserted and deleted, and zoom, in Avalonia and WPF; see the
 [roadmap](roadmap.md). The API may change between minor versions until 1.0.
 
 - [Getting started](getting-started.md)
@@ -140,6 +141,22 @@ workbook's culture, and the workbook is recalculated after each change. `view.Ed
 `FormulaBar` shows and edits the active cell's formula above the grid. See
 [What the grid shows](guides/showing-workbooks.md#editing) for every key.
 
+## Rows, columns, filling and zoom
+
+```csharp snippet=sheet-commands
+view.Zoom = 1.5;          // 150%, as Ctrl or Cmd with the wheel
+view.Editor!.Fill(sheet, new CellArea(1, 1, 2, 1), new CellArea(1, 1, 5, 1));   // as the fill handle: 1 to 5
+view.InsertRows();        // a row before the selected one, A2, as Ctrl+Plus
+view.FillDown();          // the row above copied into it, as Ctrl+D
+```
+
+Columns and rows are resized by dragging the edges of their headers and fitted to their content
+by double-clicking them. The fill handle on the selection's corner continues series and copies
+formulas, right-clicking a header gives Excel's menu to insert, delete, hide and unhide, and the
+view zooms from 10% to 400%. Each change is a step to undo. Widths, heights and hidden rows and
+columns are the worksheet's own, so `XlsxWriter` saves them. See
+[What the grid shows](guides/showing-workbooks.md#rows-columns-and-filling) for every key.
+
 ## Selection, copying and scrolling
 
 ```csharp snippet=active-cell
@@ -221,8 +238,10 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
 | Ctrl+C or Cmd+C | Copies the selected cells |
 | Ctrl+X or Cmd+X | Cuts the selected cells: the next paste moves them, formulas and formats with them; Escape forgets the cut |
-| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell; after a cut, moves the cut cells there |
+| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell; after a cut, moves the cut cells there; cells copied in the grid are copied with their formulas, number formats, styles, hyperlinks and data validation, repeated over a selection that is a multiple of them |
+| Escape | Forgets what was copied or cut, and its dashed border |
 | Wheel | Three rows a turn |
+| Ctrl+wheel or Cmd+wheel | Zooms in or out by 10%, from 10% to 400%; the cell at the top left stays there |
 
 ## Editing
 
@@ -258,6 +277,35 @@ can be edited there as in the cell.
 A selection covers every merged area it touches whole. Selected cells but the active one are
 shaded, a border goes round them, and the headers of their rows and columns are highlighted.
 
+## Rows, columns and filling
+
+| Input | Result |
+|---|---|
+| Drag the edge between column or row headers | Resizes the column or row; with whole columns or rows selected and it among them, all of them. Dragged to nothing, they are hidden |
+| Double-click that edge | Fits the column to its widest text, or the row to its tallest, as Excel's AutoFit |
+| Drag the fill handle, the square on the selection's corner | Fills the cells it is dragged over: numbers and dates continue their step, text ending in a number counts on, day and month names follow each other, formulas are copied with their references following; dragged back, it clears the cells left out |
+| Ctrl+D, Ctrl+R | Copies the selection's top row down or its left column right, formulas following; one row or column takes the one before it |
+| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected |
+| Ctrl+9, Ctrl+Shift+9 | Hides the selected rows, shows the hidden ones among them |
+| Ctrl+0, Ctrl+Shift+0 | Hides the selected columns, shows the hidden ones among them |
+| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents, and on headers Insert, Delete, Hide and Unhide |
+
+The fill handle reads a column filled down, or a row filled right, as Excel does. One number is
+repeated; two or more continue the straight line through them, as Excel's trend. A date steps a
+day, a time an hour; dates a month or a year apart keep their day, falling back to the end of
+shorter months. Text ending in a number counts on with its zeros kept (`A007`, `A008`), and day and
+month names in the workbook's culture or in English go on in their form and case. Anything else,
+formulas among it, repeats. Every filled cell takes the number format, style, hyperlink and data
+validation of the cell it continues, so a drop-down list goes down with it. Filling up or left
+goes backwards.
+
+Inserted rows take the styles and number formats of the row above, and inserted columns those of
+the column on their left, as in Excel. Formulas follow inserted and deleted rows and columns
+through SharpCell's `InsertRows` and `DeleteRows`: references to deleted cells become `#REF!`.
+Undo gives back deleted rows and columns whole: their cells, styles and sizes, and every formula,
+name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
+to undo.
+
 ## Copying to Excel
 
 Copying puts the selected cells on the clipboard in two forms, both read by Excel when it pastes:
@@ -285,11 +333,17 @@ sheet's last used row or column.
 - While a formula is typed, clicking or arrowing to a cell does not put its reference in the
   formula; references are typed. Formulas get no number format from what they calculate (Excel
   gives `=TODAY()` a date format).
-- Pasting takes the text of the clipboard: values, not the formats or formulas of cells copied in Excel.
-- A cut is not outlined with moving dashes, and moving cells does not change the formulas that
-  refer to them; styles stay where they were.
-- Undo keeps values, formulas and number formats; there is no undo of styles, which cannot be
-  changed in the grid yet.
+- Pasting cells copied in Excel takes the text of the clipboard: values, not their formats or
+  formulas. Cells copied in the grid paste whole.
+- Copied and cut cells are outlined with dashes that do not move. Moving cells does not change
+  the formulas that refer to them; styles stay where they were.
+- Copying and filling do not copy merged areas.
+- Ctrl+Plus and Ctrl+Minus with cells rather than whole rows or columns selected insert or delete
+  whole rows; there is no dialog to shift cells right or down.
+- The fill handle has no options menu, Ctrl does not switch between copying and a series, and lists
+  of your own are not known. A row fitted to its text takes 1.32 times the tallest font's size per
+  line, close to Excel's line heights.
+- Zoom goes in steps of 10%; the zoom saved in a workbook is not read.
 - Copied HTML is not yet checked by pasting it into desktop Excel.
 - Not shown: conditional formats, pattern and gradient fills, rotated text, styles of whole rows
   and columns on empty cells, charts, images and comments.
@@ -380,7 +434,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | A live demo in the browser through WebAssembly, on the documentation site | — |
 | Released | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia` | SharpCell 0.6.0 |
 
-## Now: 0.2 — selection and WPF
+## Released: 0.2 — selection and WPF
 
 | Step | What | Needs from SharpCell |
 |---|---|---|
@@ -388,7 +442,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
 | Done | A WPF control over the same painter: `SharpCell.Grid.Wpf`, tested on Windows in CI | — |
 
-## Now: 0.3 — editing
+## Released: 0.3 — editing
 
 | Step | What | Needs from SharpCell |
 |---|---|---|
@@ -398,15 +452,24 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Undo and redo, Delete, paste of text copied from Excel | — |
 | Done | The formula bar as a control of its own, with the name box | — |
 | Done | Ctrl with the arrows, Home, Ctrl+Home, Ctrl+End, Page Up and Page Down | — |
-| Later | Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula | — |
 
-## Later: 0.4 — working like Excel
+## Now: 0.4 — working like Excel
 
-- Resizing columns and rows with the mouse, double-click to fit.
-- Inserting and deleting rows and columns, with formulas following (needs reference shifting in SharpCell).
-- The fill handle for series and copied formulas.
-- Zoom.
-- Saving changed styles and geometry (needs the .xlsx writer in SharpCell to write styles).
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Columns and rows resized by dragging the edges of their headers, fitted by double-clicking them, hidden by dragging them to nothing | — |
+| Done | Rows and columns inserted and deleted, formulas following, with Ctrl+Plus, Ctrl+Minus and the headers' menu; undo gives deleted ones back whole | `Worksheet.InsertRows` and friends (0.7.0) |
+| Done | The fill handle for series and copied formulas; Ctrl+D and Ctrl+R; cells copied in the grid paste with their formulas | `CellRange.CopyTo` (0.10.0) |
+| Done | Hiding and unhiding rows and columns, Ctrl+9 and Ctrl+0 | — |
+| Done | Zoom from 10% to 400%, Ctrl or Cmd with the wheel | — |
+| Done | Widths, heights and hidden rows and columns set in the grid are the worksheet's own, so `XlsxWriter` saves them | `XlsxWriter` (0.7.0) |
+
+## Later
+
+- Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula.
+- Inserting and deleting cells that shift the others right or down, with Excel's dialog.
+- Changing styles in the grid: bold, fills, borders, number formats.
+- More than one sheet in a view, with tabs.
 
 ## Quality, all along
 
@@ -798,6 +861,15 @@ public CellArea Area { get; init; }
 
 The cells changed: typed into, cleared or pasted over.
 
+<a id="changeslayout"></a>
+### ChangesLayout
+
+```csharp
+public bool ChangesLayout { get; init; }
+```
+
+Whether column widths, row heights or hidden rows and columns changed, or cells moved to other rows or columns: a view takes the sheet's layout again.
+
 <a id="recalculation"></a>
 ### Recalculation
 
@@ -828,7 +900,7 @@ public sealed class GridEditor
 
 Namespace `SharpCell.Grid` · package `SharpCell.Grid`
 
-Changes a workbook's cells as people change them in Excel: typing into cells, Delete, pasting text copied from Excel. Each change is one step to undo and redo, and the workbook is recalculated after it. What is typed is read as Excel reads it, through `Cell.Input`. Only the cells' content is kept for undoing: values, formulas and number formats, not styles.
+Changes a workbook as people change it in Excel: typing into cells, Delete, pasting text copied from Excel, copying and moving cells, the fill handle, inserting and deleting rows and columns, column widths and row heights. Each change is one step to undo and redo, and the workbook is recalculated after it. What is typed is read as Excel reads it, through `Cell.Input`.
 
 ## Constructors
 
@@ -894,6 +966,50 @@ public void ClearHistory()
 
 Forgets every change, so that none can be undone, as after a workbook is replaced.
 
+<a id="copy-worksheet-cellarea-cellarea"></a>
+### Copy(Worksheet, CellArea, CellArea)
+
+```csharp
+public GridEdit Copy(Worksheet sheet, CellArea from, CellArea to)
+```
+
+Copies cells, as copying and pasting them in Excel does: values, formulas, number formats and styles, with the formulas' relative references following the cells (see `CellRange.CopyTo`). An area that is a whole number of times as tall and as wide as the cells copied is filled by repeating them; any other gets one copy at its top-left cell. What lies beyond the sheet's edge is left out, and an area of more than a million cells, such as the whole sheet, gets one copy.
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The cells copied hold part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="deletecolumns-worksheet-int-int"></a>
+### DeleteColumns(Worksheet, int, int)
+
+```csharp
+public GridEdit DeleteColumns(Worksheet sheet, int column, int count)
+```
+
+Deletes columns; see [GridEditor.DeleteRows](SharpCell.Grid.GridEditor.md#deleterows-worksheet-int-int).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The columns are not all on the sheet.
+- `InvalidOperationException`: The columns hold part of an array formula; nothing changes.
+- `NotSupportedException`: The columns are part of a table, or a formula SharpCell cannot read would have to follow; nothing changes.
+
+<a id="deleterows-worksheet-int-int"></a>
+### DeleteRows(Worksheet, int, int)
+
+```csharp
+public GridEdit DeleteRows(Worksheet sheet, int row, int count)
+```
+
+Deletes rows, as Excel's Delete Sheet Rows does: the rows below move up, and references to the deleted cells become `#REF!` (see `Worksheet.DeleteRows`). Undoing gives back the rows with their cells, styles and heights, and every formula and name as it was.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rows are not all on the sheet.
+- `InvalidOperationException`: The rows hold part of an array formula, or part of a table that cannot go; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
+
 <a id="enter-worksheet-cellarea-string"></a>
 ### Enter(Worksheet, CellArea, string)
 
@@ -907,6 +1023,114 @@ Types the same text into every cell of an area, as Enter does for one cell and C
 
 - `FormulaParseException`: The text starts with `=` but is not a formula; no cell changes.
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+
+<a id="fill-worksheet-cellarea-cellarea"></a>
+### Fill(Worksheet, CellArea, CellArea)
+
+```csharp
+public GridEdit Fill(Worksheet sheet, CellArea from, CellArea to)
+```
+
+Fills cells from others, as dragging Excel's fill handle does: `to` holds `from` and reaches past it on one side. Formulas are copied, their relative references following; numbers, dates, times, text ending in a number and the names of days and months continue as a series; anything else repeats. Number formats and styles repeat with the cells. When `to` is smaller than `from`, sharing its top-left cell, the cells left out are cleared, as dragging the handle back over them does.
+
+**Exceptions**
+
+- `ArgumentException`: `to` neither holds `from` and reaches past it on one side, nor lies inside it from its top-left cell.
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The cells hold part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="fillarea-cellarea-cellposition"></a>
+### FillArea(CellArea, CellPosition)
+
+```csharp
+public static CellArea FillArea(CellArea from, CellPosition cell)
+```
+
+The cells that dragging the fill handle of `from` to a cell fills, as Excel picks them: past `from`, whole rows or columns of it up to the cell, on the side the cell is furthest beyond; back inside it, the cells up to the cell, the rest to be cleared. [GridEditor.Fill](SharpCell.Grid.GridEditor.md#fill-worksheet-cellarea-cellarea) takes the result.
+
+<a id="filldown-worksheet-cellarea"></a>
+### FillDown(Worksheet, CellArea)
+
+```csharp
+public GridEdit? FillDown(Worksheet sheet, CellArea area)
+```
+
+Copies the top row of an area into the rows below it, formulas following, as Ctrl+D does in Excel; an area of one row takes the row above it. Whole columns are filled down to the last row the sheet uses. Null, with nothing changed, for one row at the top of the sheet.
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The row copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="fillright-worksheet-cellarea"></a>
+### FillRight(Worksheet, CellArea)
+
+```csharp
+public GridEdit? FillRight(Worksheet sheet, CellArea area)
+```
+
+Copies the left column of an area into the columns right of it, as Ctrl+R does; see [GridEditor.FillDown](SharpCell.Grid.GridEditor.md#filldown-worksheet-cellarea).
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The column copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="fitcolumnwidth-worksheet-int-int-gridpainter"></a>
+### FitColumnWidth(Worksheet, int, int, GridPainter)
+
+```csharp
+public GridEdit FitColumnWidth(Worksheet sheet, int firstColumn, int lastColumn, GridPainter painter)
+```
+
+Fits columns to their content, as double-clicking a column header's edge does in Excel: each takes the width the painter finds for its widest text (see [GridPainter.FitColumnWidth](SharpCell.Grid.GridPainter.md#fitcolumnwidth-worksheet-int)); a column with nothing to fit keeps its width.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet.
+
+<a id="fitrowheight-worksheet-int-int-gridpainter"></a>
+### FitRowHeight(Worksheet, int, int, GridPainter)
+
+```csharp
+public GridEdit FitRowHeight(Worksheet sheet, int firstRow, int lastRow, GridPainter painter)
+```
+
+Fits rows to their content, as double-clicking a row header's edge does in Excel: each takes the height the painter finds for its tallest text (see [GridPainter.FitRowHeight](SharpCell.Grid.GridPainter.md#fitrowheight-worksheet-int)), and a row with nothing in it the sheet's default height.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet.
+
+<a id="insertcolumns-worksheet-int-int"></a>
+### InsertColumns(Worksheet, int, int)
+
+```csharp
+public GridEdit InsertColumns(Worksheet sheet, int column, int count)
+```
+
+Inserts empty columns before `column`, which take the styles of the column on their left; see [GridEditor.InsertRows](SharpCell.Grid.GridEditor.md#insertrows-worksheet-int-int).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The columns would not fit on the sheet.
+- `InvalidOperationException`: Content would be pushed past the last column, or the columns would split an array formula; nothing changes.
+- `NotSupportedException`: The columns would go inside a table, or a formula SharpCell cannot read would have to follow; nothing changes.
+
+<a id="insertrows-worksheet-int-int"></a>
+### InsertRows(Worksheet, int, int)
+
+```csharp
+public GridEdit InsertRows(Worksheet sheet, int row, int count)
+```
+
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does: the rows below move down and formulas follow them (see `Worksheet.InsertRows`). The new rows take the styles and number formats of the row above, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rows would not fit on the sheet.
+- `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
 
 <a id="move-worksheet-cellarea-cellposition"></a>
 ### Move(Worksheet, CellArea, CellPosition)
@@ -942,6 +1166,58 @@ public GridEdit? Redo()
 ```
 
 Redoes the last undone change; null when there is none.
+
+<a id="setcolumnhidden-worksheet-int-int-bool"></a>
+### SetColumnHidden(Worksheet, int, int, bool)
+
+```csharp
+public GridEdit SetColumnHidden(Worksheet sheet, int firstColumn, int lastColumn, bool hidden)
+```
+
+Hides or shows columns, as Excel's Hide and Unhide do; a hidden column keeps its width for when it shows again.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet.
+
+<a id="setcolumnwidth-worksheet-int-int-double"></a>
+### SetColumnWidth(Worksheet, int, int, double?)
+
+```csharp
+public GridEdit SetColumnWidth(Worksheet sheet, int firstColumn, int lastColumn, double? width)
+```
+
+Gives columns a width, as dragging a column header's edge does in Excel: in the units of `Worksheet.SetColumnWidth`, or null for the sheet's default.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or the width is outside 0 to 255.
+
+<a id="setrowheight-worksheet-int-int-double"></a>
+### SetRowHeight(Worksheet, int, int, double?)
+
+```csharp
+public GridEdit SetRowHeight(Worksheet sheet, int firstRow, int lastRow, double? height)
+```
+
+Gives rows a height in points, or null for the sheet's default; see [GridEditor.SetColumnWidth](SharpCell.Grid.GridEditor.md#setcolumnwidth-worksheet-int-int-double).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or the height is outside 0 to 409.
+
+<a id="setrowhidden-worksheet-int-int-bool"></a>
+### SetRowHidden(Worksheet, int, int, bool)
+
+```csharp
+public GridEdit SetRowHidden(Worksheet sheet, int firstRow, int lastRow, bool hidden)
+```
+
+Hides or shows rows; see [GridEditor.SetColumnHidden](SharpCell.Grid.GridEditor.md#setcolumnhidden-worksheet-int-int-bool).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet.
 
 <a id="undo"></a>
 ### Undo()
@@ -1176,7 +1452,25 @@ A painter over the given sizes of rows and columns.
 public double ColumnHeaderHeight { get; set; }
 ```
 
-The height of the column headers at the top.
+The height of the column headers at the top at 100% zoom; [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) scales it.
+
+<a id="copiedarea"></a>
+### CopiedArea
+
+```csharp
+public CellArea? CopiedArea { get; set; }
+```
+
+The cells copied or cut, painted with a dashed border as Excel shows them until they are pasted; null for none.
+
+<a id="fillarea"></a>
+### FillArea
+
+```csharp
+public CellArea? FillArea { get; set; }
+```
+
+The cells a fill handle is being dragged over, painted with a dashed grey border; null for none.
 
 <a id="frozencolumns"></a>
 ### FrozenColumns
@@ -1229,7 +1523,16 @@ The width in pixels of a line of text in a font. Without it, text is never fitte
 public double RowHeaderWidth { get; set; }
 ```
 
-The width of the row headers on the left; with [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext), the least width, widened to fit the number of the last visible row.
+The width of the row headers on the left at 100% zoom; with [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext), the least width, widened to fit the number of the last visible row. [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) scales it.
+
+<a id="showsfillhandle"></a>
+### ShowsFillHandle
+
+```csharp
+public bool ShowsFillHandle { get; set; }
+```
+
+Whether the selection's bottom-right corner has Excel's fill handle, the square dragged to fill cells. False by default; a view that changes cells turns it on.
 
 <a id="theme"></a>
 ### Theme
@@ -1239,6 +1542,19 @@ public GridTheme Theme { get; set; }
 ```
 
 The colours of everything but the cells' own styles.
+
+<a id="zoom"></a>
+### Zoom
+
+```csharp
+public double Zoom { get; set; }
+```
+
+How large cells and headers are painted, 1 for Excel's 100%: fonts, headers and the space around text grow with it, lines stay one pixel. [GridPainter.Layout](SharpCell.Grid.GridPainter.md#layout) is not scaled: give it the sheet's sizes at the zoom, as [SheetLayout.FromWorksheet](SharpCell.Grid.SheetLayout.md#fromworksheet-worksheet-double-double) with [GridPainter.MaxDigitWidth](SharpCell.Grid.GridPainter.md#maxdigitwidth-worksheet) does.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The zoom is outside Excel's 10% to 400%.
 
 ## Methods
 
@@ -1278,6 +1594,33 @@ public GridViewport Clamp(GridViewport viewport)
 
 The viewport with its offsets kept between the start and the end of the sheet.
 
+<a id="columnedgeat-gridviewport-double-double"></a>
+### ColumnEdgeAt(GridViewport, double, double)
+
+```csharp
+public int? ColumnEdgeAt(GridViewport viewport, double x, double y)
+```
+
+The column whose right edge is under a point of the column headers, as Excel lets it be dragged to resize the column; null elsewhere. Hidden columns are never found.
+
+<a id="fitcolumnwidth-worksheet-int"></a>
+### FitColumnWidth(Worksheet, int)
+
+```csharp
+public double? FitColumnWidth(Worksheet sheet, int column)
+```
+
+The width in pixels at [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) that fits the widest text of a column, as Excel's AutoFit Column Width does; merged cells are left out. Null when the column holds nothing to fit or without [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext).
+
+<a id="fitrowheight-worksheet-int"></a>
+### FitRowHeight(Worksheet, int)
+
+```csharp
+public double? FitRowHeight(Worksheet sheet, int row)
+```
+
+The height in pixels at [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom) that fits the tallest text of a row, as Excel's AutoFit Row Height does: a line of each cell's font, and as many lines as wrapped text or line breaks take. Null when the row holds nothing, for the sheet's default height.
+
 <a id="fontof-cellfont"></a>
 ### FontOf(CellFont)
 
@@ -1305,6 +1648,15 @@ public CellPosition? HitTest(GridViewport viewport, double x, double y, Workshee
 
 The cell under a point of the grid; null on the headers or outside the grid. Inside a merged area of the sheet, its top-left cell.
 
+<a id="isonfillhandle-gridviewport-double-double-gridselection-worksheet"></a>
+### IsOnFillHandle(GridViewport, double, double, GridSelection, Worksheet)
+
+```csharp
+public bool IsOnFillHandle(GridViewport viewport, double x, double y, GridSelection? selection, Worksheet? sheet)
+```
+
+Whether a point is on the fill handle of the selection, when [GridPainter.ShowsFillHandle](SharpCell.Grid.GridPainter.md#showsfillhandle) shows one.
+
 <a id="maxdigitwidth-worksheet"></a>
 ### MaxDigitWidth(Worksheet)
 
@@ -1312,7 +1664,7 @@ The cell under a point of the grid; null on the headers or outside the grid. Ins
 public double MaxDigitWidth(Worksheet? sheet)
 ```
 
-The width in pixels of the widest digit of a sheet's default font, which Excel bases column widths on; 7, Calibri 11's, without [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext).
+The width in pixels of the widest digit of a sheet's default font at [GridPainter.Zoom](SharpCell.Grid.GridPainter.md#zoom), which Excel bases column widths on; 7, Calibri 11's at 100%, without [GridPainter.MeasureText](SharpCell.Grid.GridPainter.md#measuretext).
 
 <a id="paint-igridcanvas-worksheet-gridviewport-cellposition"></a>
 ### Paint(IGridCanvas, Worksheet, GridViewport, CellPosition?)
@@ -1331,6 +1683,15 @@ public void Paint(IGridCanvas canvas, Worksheet? sheet, GridViewport viewport, G
 ```
 
 Paints the part of the sheet in the viewport and the selection over it, as Excel does: the selected cells but the active one shaded, a border around them, their headers highlighted. Without a sheet, an empty grid; without a selection, none.
+
+<a id="rowedgeat-gridviewport-double-double"></a>
+### RowEdgeAt(GridViewport, double, double)
+
+```csharp
+public int? RowEdgeAt(GridViewport viewport, double x, double y)
+```
+
+The row whose bottom edge is under a point of the row headers; null elsewhere. See [GridPainter.ColumnEdgeAt](SharpCell.Grid.GridPainter.md#columnedgeat-gridviewport-double-double).
 
 <a id="scrollintoview-gridviewport-cellposition"></a>
 ### ScrollIntoView(GridViewport, CellPosition)
@@ -1812,6 +2173,15 @@ public static GridTheme Excel { get; }
 
 Colours close to Excel's light theme.
 
+<a id="filloutline"></a>
+### FillOutline
+
+```csharp
+public GridColor FillOutline { get; init; }
+```
+
+The dashed border around the cells a fill handle is dragged over.
+
 <a id="frozenline"></a>
 ### FrozenLine
 
@@ -2149,6 +2519,24 @@ The width of a column.
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
 
+<a id="columnwidthfrompixels-double-double"></a>
+### ColumnWidthFromPixels(double, double)
+
+```csharp
+public static double ColumnWidthFromPixels(double pixels, double maxDigitWidth)
+```
+
+The column width, in the units of `Worksheet.SetColumnWidth`, that Excel gives a column dragged to a width in pixels: `Truncate((c * d + 5) / d * 256) / 256` for `c = Truncate((pixels - 5) / d * 100 + 0.5) / 100` characters, as Excel shows it while dragging. Narrower than a digit and its padding, the smallest width that shows the pixels.
+
+**Parameters**
+
+- `pixels`: The width in pixels.
+- `maxDigitWidth`: The width in pixels of the widest digit of the default font, at the zoom the pixels are at.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The digit width is not positive, or the pixels are negative.
+
 <a id="fromworksheet-worksheet-double"></a>
 ### FromWorksheet(Worksheet, double)
 
@@ -2166,6 +2554,25 @@ A layout with a worksheet's column widths, row heights and hidden rows and colum
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The digit width is not positive.
+
+<a id="fromworksheet-worksheet-double-double"></a>
+### FromWorksheet(Worksheet, double, double)
+
+```csharp
+public static SheetLayout FromWorksheet(Worksheet sheet, double maxDigitWidth, double zoom)
+```
+
+A layout with a worksheet's sizes at a zoom, as Excel shows them: column widths from the digit width of the default font at that zoom, row heights in points times the zoom.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `maxDigitWidth`: The width in pixels of the widest digit of the default font at the zoom.
+- `zoom`: The zoom, 1 for 100%.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The digit width or the zoom is not positive.
 
 <a id="rowat-double"></a>
 ### RowAt(double)
@@ -2188,6 +2595,24 @@ The height of a row.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="rowheightfrompixels-double-double"></a>
+### RowHeightFromPixels(double, double)
+
+```csharp
+public static double RowHeightFromPixels(double pixels, double zoom)
+```
+
+The row height in points, as Excel stores it, of a row shown that many pixels high at a zoom.
+
+**Parameters**
+
+- `pixels`: The height in pixels.
+- `zoom`: The zoom the pixels are at, 1 for 100%.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The zoom is not positive, or the pixels are negative.
 
 <a id="rowtop-int"></a>
 ### RowTop(int)
@@ -2394,6 +2819,15 @@ public Worksheet? Worksheet { get; set; }
 
 The sheet shown; null shows an empty grid.
 
+<a id="zoom"></a>
+### Zoom
+
+```csharp
+public double Zoom { get; set; }
+```
+
+How large the cells are shown, 1 for Excel's 100%, from 0.1 to 4; Ctrl or Cmd with the wheel changes it in steps of 10%. The cell at the top left stays there.
+
 ## Methods
 
 <a id="beginedit-string"></a>
@@ -2450,6 +2884,78 @@ public Task CutAsync()
 
 Cuts the selected cells, as Ctrl+X does in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecolumns"></a>
+### DeleteColumns()
+
+```csharp
+public void DeleteColumns()
+```
+
+Deletes the selection's columns.
+
+<a id="deleterows"></a>
+### DeleteRows()
+
+```csharp
+public void DeleteRows()
+```
+
+Deletes the selection's rows, as Ctrl+Minus does with rows selected.
+
+<a id="filldown"></a>
+### FillDown()
+
+```csharp
+public void FillDown()
+```
+
+Copies the selection's top row into the rows below it, formulas following, as Ctrl+D does; with one row selected, the row above it into it. Whole columns are filled down to the last used row.
+
+<a id="fillright"></a>
+### FillRight()
+
+```csharp
+public void FillRight()
+```
+
+Copies the selection's left column into the columns right of it, as Ctrl+R does; see [SpreadsheetView.FillDown](SharpCell.Grid.Avalonia.SpreadsheetView.md#filldown).
+
+<a id="hidecolumns"></a>
+### HideColumns()
+
+```csharp
+public void HideColumns()
+```
+
+Hides the selection's columns, as Ctrl+0 does.
+
+<a id="hiderows"></a>
+### HideRows()
+
+```csharp
+public void HideRows()
+```
+
+Hides the selection's rows, as Ctrl+9 does.
+
+<a id="insertcolumns"></a>
+### InsertColumns()
+
+```csharp
+public void InsertColumns()
+```
+
+Inserts as many columns as are selected before the selection's first column.
+
+<a id="insertrows"></a>
+### InsertRows()
+
+```csharp
+public void InsertRows()
+```
+
+Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
 <a id="pasteasync"></a>
 ### PasteAsync()
 
@@ -2499,6 +3005,24 @@ public void Undo()
 
 Undoes the last change to the cells and selects them, as Ctrl+Z does.
 
+<a id="unhidecolumns"></a>
+### UnhideColumns()
+
+```csharp
+public void UnhideColumns()
+```
+
+Shows the hidden columns among the selection's, as Ctrl+Shift+0 does.
+
+<a id="unhiderows"></a>
+### UnhideRows()
+
+```csharp
+public void UnhideRows()
+```
+
+Shows the hidden rows among the selection's, as Ctrl+Shift+9 does.
+
 ---
 
 <!-- page: api/SharpCell.Grid.Wpf.FormulaBar.md -->
@@ -2547,7 +3071,7 @@ public class SpreadsheetView : FrameworkElement
 
 Namespace `SharpCell.Grid.Wpf` · package `SharpCell.Grid.Wpf`
 
-Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls, and Ctrl+C puts the selected cells on the clipboard as Excel pastes them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `UIElement.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Wpf.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Wpf.SpreadsheetView.md#reloadlayout).
+Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel scrolls and with Ctrl zooms, and Ctrl+C puts the selected cells on the clipboard as Excel pastes them. Columns and rows are resized by dragging the edges of their headers, and fitted by double-clicking them; the fill handle fills cells, and the headers have Excel's menu to insert, delete and hide them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after changing cells or recalculating, call `UIElement.InvalidateVisual`. Sizes and frozen panes are taken when [SpreadsheetView.Worksheet](SharpCell.Grid.Wpf.SpreadsheetView.md#worksheet) is set; after changing them, call [SpreadsheetView.ReloadLayout](SharpCell.Grid.Wpf.SpreadsheetView.md#reloadlayout).
 
 ## Constructors
 
@@ -2652,6 +3176,15 @@ public Worksheet? Worksheet { get; set; }
 
 The sheet shown; null shows an empty grid.
 
+<a id="zoom"></a>
+### Zoom
+
+```csharp
+public double Zoom { get; set; }
+```
+
+How large the cells are shown, 1 for Excel's 100%, from 0.1 to 4; Ctrl with the wheel changes it in steps of 10%. The cell at the top left stays there.
+
 ## Methods
 
 <a id="beginedit-string"></a>
@@ -2708,6 +3241,78 @@ public void Cut()
 
 Cuts the selected cells, as Ctrl+X and `ApplicationCommands.Cut` do in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecolumns"></a>
+### DeleteColumns()
+
+```csharp
+public void DeleteColumns()
+```
+
+Deletes the selection's columns.
+
+<a id="deleterows"></a>
+### DeleteRows()
+
+```csharp
+public void DeleteRows()
+```
+
+Deletes the selection's rows, as Ctrl+Minus does with rows selected.
+
+<a id="filldown"></a>
+### FillDown()
+
+```csharp
+public void FillDown()
+```
+
+Copies the selection's top row into the rows below it, formulas following, as Ctrl+D does; with one row selected, the row above it into it (see [GridEditor.FillDown](SharpCell.Grid.GridEditor.md#filldown-worksheet-cellarea)).
+
+<a id="fillright"></a>
+### FillRight()
+
+```csharp
+public void FillRight()
+```
+
+Copies the selection's left column into the columns right of it, as Ctrl+R does; see [SpreadsheetView.FillDown](SharpCell.Grid.Wpf.SpreadsheetView.md#filldown).
+
+<a id="hidecolumns"></a>
+### HideColumns()
+
+```csharp
+public void HideColumns()
+```
+
+Hides the selection's columns, as Ctrl+0 does.
+
+<a id="hiderows"></a>
+### HideRows()
+
+```csharp
+public void HideRows()
+```
+
+Hides the selection's rows, as Ctrl+9 does.
+
+<a id="insertcolumns"></a>
+### InsertColumns()
+
+```csharp
+public void InsertColumns()
+```
+
+Inserts as many columns as are selected before the selection's first column.
+
+<a id="insertrows"></a>
+### InsertRows()
+
+```csharp
+public void InsertRows()
+```
+
+Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
 <a id="paste"></a>
 ### Paste()
 
@@ -2743,3 +3348,21 @@ public void Undo()
 ```
 
 Undoes the last change to the cells and selects them, as Ctrl+Z does.
+
+<a id="unhidecolumns"></a>
+### UnhideColumns()
+
+```csharp
+public void UnhideColumns()
+```
+
+Shows the hidden columns among the selection's, as Ctrl+Shift+0 does.
+
+<a id="unhiderows"></a>
+### UnhideRows()
+
+```csharp
+public void UnhideRows()
+```
+
+Shows the hidden rows among the selection's, as Ctrl+Shift+9 does.

@@ -75,4 +75,38 @@ public class SheetLayoutFromWorksheetTests
         // 8 digits and 5 pixels of padding, rounded up to a multiple of 8 as Excel does.
         Assert.Equal(72, SheetLayout.FromWorksheet(Sheet(), maxDigitWidth: 8).ColumnWidth(1));
     }
+
+    [Fact]
+    public void At_a_zoom_rows_grow_with_it_and_columns_with_the_digit_width()
+    {
+        var sheet = new Workbook().AddSheet("S");
+        sheet.SetColumnWidth(2, 9.140625);
+        sheet.SetRowHeight(2, 30);
+
+        var layout = SheetLayout.FromWorksheet(sheet, 14, 2);
+
+        Assert.Equal(128, layout.ColumnWidth(2));
+        Assert.Equal(80, layout.RowHeight(2));
+        Assert.Equal(40, layout.RowHeight(1));
+    }
+
+    [Theory]
+    [InlineData(64, 7, 9.140625)]
+    [InlineData(100, 7, 14.28125)]
+    [InlineData(3, 7, 0.359375)]
+    public void Pixels_dragged_to_give_Excel_widths_that_show_them(double pixels, double digit, double width)
+    {
+        Assert.Equal(width, SheetLayout.ColumnWidthFromPixels(pixels, digit));
+        var sheet = new Workbook().AddSheet("S");
+        sheet.SetColumnWidth(1, width);
+        Assert.Equal(pixels, SheetLayout.FromWorksheet(sheet, digit).ColumnWidth(1));
+    }
+
+    [Fact]
+    public void Pixels_dragged_give_row_heights_in_points()
+    {
+        Assert.Equal(15, SheetLayout.RowHeightFromPixels(20, 1));
+        Assert.Equal(15, SheetLayout.RowHeightFromPixels(40, 2));
+        Assert.Equal(409, SheetLayout.RowHeightFromPixels(2000, 1));
+    }
 }

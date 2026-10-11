@@ -1,1 +1,14 @@
 #nullable enable
+SharpCell.Grid.Avalonia.SpreadsheetView.DeleteColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.DeleteRows() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.FillDown() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.FillRight() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.HideColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.HideRows() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.InsertColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.InsertRows() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.UnhideColumns() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.UnhideRows() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.Zoom.get -> double
+SharpCell.Grid.Avalonia.SpreadsheetView.Zoom.set -> void
+static readonly SharpCell.Grid.Avalonia.SpreadsheetView.ZoomProperty -> Avalonia.StyledProperty<double>!

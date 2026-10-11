@@ -19,7 +19,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | A live demo in the browser through WebAssembly, on the documentation site | — |
 | Released | 0.1.0 on NuGet: `SharpCell.Grid`, `SharpCell.Grid.Avalonia` | SharpCell 0.6.0 |
 
-## Now: 0.2 — selection and WPF
+## Released: 0.2 — selection and WPF
 
 | Step | What | Needs from SharpCell |
 |---|---|---|
@@ -27,7 +27,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Copy as tab-separated text and as HTML with styles, values as shown | — |
 | Done | A WPF control over the same painter: `SharpCell.Grid.Wpf`, tested on Windows in CI | — |
 
-## Now: 0.3 — editing
+## Released: 0.3 — editing
 
 | Step | What | Needs from SharpCell |
 |---|---|---|
@@ -37,15 +37,24 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Undo and redo, Delete, paste of text copied from Excel | — |
 | Done | The formula bar as a control of its own, with the name box | — |
 | Done | Ctrl with the arrows, Home, Ctrl+Home, Ctrl+End, Page Up and Page Down | — |
-| Later | Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula | — |
 
-## Later: 0.4 — working like Excel
+## Now: 0.4 — working like Excel
 
-- Resizing columns and rows with the mouse, double-click to fit.
-- Inserting and deleting rows and columns, with formulas following (needs reference shifting in SharpCell).
-- The fill handle for series and copied formulas.
-- Zoom.
-- Saving changed styles and geometry (needs the .xlsx writer in SharpCell to write styles).
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Columns and rows resized by dragging the edges of their headers, fitted by double-clicking them, hidden by dragging them to nothing | — |
+| Done | Rows and columns inserted and deleted, formulas following, with Ctrl+Plus, Ctrl+Minus and the headers' menu; undo gives deleted ones back whole | `Worksheet.InsertRows` and friends (0.7.0) |
+| Done | The fill handle for series and copied formulas; Ctrl+D and Ctrl+R; cells copied in the grid paste with their formulas | `CellRange.CopyTo` (0.10.0) |
+| Done | Hiding and unhiding rows and columns, Ctrl+9 and Ctrl+0 | — |
+| Done | Zoom from 10% to 400%, Ctrl or Cmd with the wheel | — |
+| Done | Widths, heights and hidden rows and columns set in the grid are the worksheet's own, so `XlsxWriter` saves them | `XlsxWriter` (0.7.0) |
+
+## Later
+
+- Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula.
+- Inserting and deleting cells that shift the others right or down, with Excel's dialog.
+- Changing styles in the grid: bold, fills, borders, number formats.
+- More than one sheet in a view, with tabs.
 
 ## Quality, all along
 

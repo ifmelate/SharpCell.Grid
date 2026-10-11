@@ -13,8 +13,10 @@ namespace SharpCell.Grid.Wpf;
 /// gridlines. Cells are selected as in Excel: by clicking and dragging, by Shift with a click or
 /// the arrows, whole columns and rows from their headers or with Ctrl+Space and Shift+Space, the
 /// whole sheet from the corner or with Ctrl+A. Enter and Tab move inside a selection, the wheel
-/// scrolls, and Ctrl+C puts the selected cells on the clipboard as Excel pastes them. Only the
-/// visible cells are read, so any sheet size works. The view reads cells when it paints; after
+/// scrolls and with Ctrl zooms, and Ctrl+C puts the selected cells on the clipboard as Excel pastes
+/// them. Columns and rows are resized by dragging the edges of their headers, and fitted by
+/// double-clicking them; the fill handle fills cells, and the headers have Excel's menu to insert,
+/// delete and hide them. Only the visible cells are read, so any sheet size works. The view reads cells when it paints; after
 /// changing cells or recalculating, call <see cref="UIElement.InvalidateVisual"/>. Sizes and frozen
 /// panes are taken when <see cref="Worksheet"/> is set; after changing them, call <see cref="ReloadLayout"/>.
 /// </summary>
@@ -44,8 +46,6 @@ public partial class SpreadsheetView : FrameworkElement
     private const int WheelRows = 3;
     private const double WheelNotch = 120;
 
-    private bool _dragging;
-
     static SpreadsheetView()
     {
         FocusableProperty.OverrideMetadata(typeof(SpreadsheetView), new FrameworkPropertyMetadata(true));
@@ -55,7 +55,7 @@ public partial class SpreadsheetView : FrameworkElement
     /// <summary>Creates an empty view; set <see cref="Worksheet"/> to show a sheet.</summary>
     public SpreadsheetView()
     {
-        Painter = new GridPainter { MeasureText = Measure };
+        Painter = new GridPainter { MeasureText = Measure, ShowsFillHandle = true };
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Copy, (_, e) => { Copy(); e.Handled = true; }, (_, e) => e.CanExecute = Worksheet is not null && Selection is not null));
         CommandBindings.Add(new CommandBinding(ApplicationCommands.SelectAll, (_, e) => { SelectAll(); e.Handled = true; }));
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, (_, e) => { Paste(); e.Handled = true; }, CanChange));
@@ -105,7 +105,10 @@ public partial class SpreadsheetView : FrameworkElement
     public void ReloadLayout()
     {
         var sheet = Worksheet;
-        Painter.Layout = sheet is not null ? SheetLayout.FromWorksheet(sheet, Painter.MaxDigitWidth(sheet)) : new SheetLayout();
+        var zoom = Painter.Zoom;
+        Painter.Layout = sheet is not null
+            ? SheetLayout.FromWorksheet(sheet, Painter.MaxDigitWidth(sheet), zoom)
+            : new SheetLayout(Math.Round(SheetLayout.ExcelColumnWidth * zoom), Math.Round(SheetLayout.ExcelRowHeight * zoom));
         Painter.FrozenRows = sheet?.FrozenRows ?? 0;
         Painter.FrozenColumns = sheet?.FrozenColumns ?? 0;
         InvalidateVisual();
@@ -124,6 +127,12 @@ public partial class SpreadsheetView : FrameworkElement
         var html = GridClipboard.WindowsHtml(GridClipboard.Html(sheet, selection.Area));
         data.SetData(DataFormats.Html, new MemoryStream(Encoding.UTF8.GetBytes(html)));
         Clipboard.SetDataObject(data, copy: true);
+
+        // Pasted here again, the cells are copied with their formulas, as in Excel.
+        _copied = new Clipped(sheet, selection.Area, GridClipboard.Text(sheet, selection.Area));
+        _cut = null;
+        Painter.CopiedArea = selection.Area;
+        InvalidateVisual();
     }
 
     /// <summary>Paints the visible part of the sheet through <see cref="Painter"/>.</summary>
@@ -135,92 +144,12 @@ public partial class SpreadsheetView : FrameworkElement
     }
 
     /// <inheritdoc />
-    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-    {
-        ArgumentNullException.ThrowIfNull(e);
-        base.OnMouseLeftButtonDown(e);
-        if (IsInEditor(e.OriginalSource))
-            return;
-
-        // A click elsewhere enters what is being typed first; a formula that does not parse stays open.
-        if (IsEditing && !CommitEdit())
-            return;
-        Focus();
-        e.Handled = true;
-        if (e.ClickCount == 2 && Painter.Hit(Viewport, e.GetPosition(this).X, e.GetPosition(this).Y, Worksheet) is { Part: GridPart.Cell })
-            BeginEdit();
-        else if (Press(e.GetPosition(this), Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)))
-            CaptureMouse();
-    }
-
-    /// <inheritdoc />
-    protected override void OnMouseMove(MouseEventArgs e)
-    {
-        ArgumentNullException.ThrowIfNull(e);
-        base.OnMouseMove(e);
-        if (_dragging && IsMouseCaptured)
-        {
-            DragTo(e.GetPosition(this));
-            e.Handled = true;
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
-    {
-        ArgumentNullException.ThrowIfNull(e);
-        base.OnMouseLeftButtonUp(e);
-        if (!_dragging)
-            return;
-        _dragging = false;
-        ReleaseMouseCapture();
-        e.Handled = true;
-    }
-
-    /// <inheritdoc />
-    protected override void OnLostMouseCapture(MouseEventArgs e)
-    {
-        base.OnLostMouseCapture(e);
-        _dragging = false;
-    }
-
-    /// <inheritdoc />
-    protected override void OnMouseWheel(MouseWheelEventArgs e)
-    {
-        ArgumentNullException.ThrowIfNull(e);
-        base.OnMouseWheel(e);
-        var rows = e.Delta / WheelNotch * WheelRows;
-        ScrollTo(Viewport with { OffsetY = Viewport.OffsetY - rows * Painter.Layout.DefaultRowHeight });
-        e.Handled = true;
-    }
-
-    /// <inheritdoc />
     protected override void OnKeyDown(KeyEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
         base.OnKeyDown(e);
         if (!e.Handled && !IsEditing && PressKey(e.Key, Keyboard.Modifiers))
             e.Handled = true;
-    }
-
-    // What a press of the left button selects; whether it began a drag.
-    internal bool Press(Point point, bool shift)
-    {
-        if (Painter.Hit(Viewport, point.X, point.Y, Worksheet) is not { } hit)
-            return false;
-        Selection = shift && Selection is { } selection ? selection.ExtendTo(hit, Worksheet) : GridSelection.At(hit, Worksheet);
-        _dragging = true;
-        return true;
-    }
-
-    // Past an edge the nearest cell is the next one out of view, and scrolling to it follows the mouse.
-    internal void DragTo(Point point)
-    {
-        if (Selection is not { } selection)
-            return;
-        var cell = Painter.CellNearest(Viewport, point.X, point.Y);
-        Selection = selection.ExtendTo(cell, Worksheet);
-        ScrollTo(Painter.ScrollIntoView(Viewport, cell));
     }
 
     // What a key does, as in Excel; whether it did anything.

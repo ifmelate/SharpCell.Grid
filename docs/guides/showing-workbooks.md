@@ -61,8 +61,10 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
 | Ctrl+C or Cmd+C | Copies the selected cells |
 | Ctrl+X or Cmd+X | Cuts the selected cells: the next paste moves them, formulas and formats with them; Escape forgets the cut |
-| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell; after a cut, moves the cut cells there |
+| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell; after a cut, moves the cut cells there; cells copied in the grid are copied with their formulas, number formats, styles, hyperlinks and data validation, repeated over a selection that is a multiple of them |
+| Escape | Forgets what was copied or cut, and its dashed border |
 | Wheel | Three rows a turn |
+| Ctrl+wheel or Cmd+wheel | Zooms in or out by 10%, from 10% to 400%; the cell at the top left stays there |
 
 ## Editing
 
@@ -98,6 +100,35 @@ can be edited there as in the cell.
 A selection covers every merged area it touches whole. Selected cells but the active one are
 shaded, a border goes round them, and the headers of their rows and columns are highlighted.
 
+## Rows, columns and filling
+
+| Input | Result |
+|---|---|
+| Drag the edge between column or row headers | Resizes the column or row; with whole columns or rows selected and it among them, all of them. Dragged to nothing, they are hidden |
+| Double-click that edge | Fits the column to its widest text, or the row to its tallest, as Excel's AutoFit |
+| Drag the fill handle, the square on the selection's corner | Fills the cells it is dragged over: numbers and dates continue their step, text ending in a number counts on, day and month names follow each other, formulas are copied with their references following; dragged back, it clears the cells left out |
+| Ctrl+D, Ctrl+R | Copies the selection's top row down or its left column right, formulas following; one row or column takes the one before it |
+| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected |
+| Ctrl+9, Ctrl+Shift+9 | Hides the selected rows, shows the hidden ones among them |
+| Ctrl+0, Ctrl+Shift+0 | Hides the selected columns, shows the hidden ones among them |
+| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents, and on headers Insert, Delete, Hide and Unhide |
+
+The fill handle reads a column filled down, or a row filled right, as Excel does. One number is
+repeated; two or more continue the straight line through them, as Excel's trend. A date steps a
+day, a time an hour; dates a month or a year apart keep their day, falling back to the end of
+shorter months. Text ending in a number counts on with its zeros kept (`A007`, `A008`), and day and
+month names in the workbook's culture or in English go on in their form and case. Anything else,
+formulas among it, repeats. Every filled cell takes the number format, style, hyperlink and data
+validation of the cell it continues, so a drop-down list goes down with it. Filling up or left
+goes backwards.
+
+Inserted rows take the styles and number formats of the row above, and inserted columns those of
+the column on their left, as in Excel. Formulas follow inserted and deleted rows and columns
+through SharpCell's `InsertRows` and `DeleteRows`: references to deleted cells become `#REF!`.
+Undo gives back deleted rows and columns whole: their cells, styles and sizes, and every formula,
+name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
+to undo.
+
 ## Copying to Excel
 
 Copying puts the selected cells on the clipboard in two forms, both read by Excel when it pastes:
@@ -125,11 +156,17 @@ sheet's last used row or column.
 - While a formula is typed, clicking or arrowing to a cell does not put its reference in the
   formula; references are typed. Formulas get no number format from what they calculate (Excel
   gives `=TODAY()` a date format).
-- Pasting takes the text of the clipboard: values, not the formats or formulas of cells copied in Excel.
-- A cut is not outlined with moving dashes, and moving cells does not change the formulas that
-  refer to them; styles stay where they were.
-- Undo keeps values, formulas and number formats; there is no undo of styles, which cannot be
-  changed in the grid yet.
+- Pasting cells copied in Excel takes the text of the clipboard: values, not their formats or
+  formulas. Cells copied in the grid paste whole.
+- Copied and cut cells are outlined with dashes that do not move. Moving cells does not change
+  the formulas that refer to them; styles stay where they were.
+- Copying and filling do not copy merged areas.
+- Ctrl+Plus and Ctrl+Minus with cells rather than whole rows or columns selected insert or delete
+  whole rows; there is no dialog to shift cells right or down.
+- The fill handle has no options menu, Ctrl does not switch between copying and a series, and lists
+  of your own are not known. A row fitted to its text takes 1.32 times the tallest font's size per
+  line, close to Excel's line heights.
+- Zoom goes in steps of 10%; the zoom saved in a workbook is not read.
 - Copied HTML is not yet checked by pasting it into desktop Excel.
 - Not shown: conditional formats, pattern and gradient fills, rotated text, styles of whole rows
   and columns on empty cells, charts, images and comments.

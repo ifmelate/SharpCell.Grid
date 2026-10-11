@@ -87,6 +87,22 @@ workbook's culture, and the workbook is recalculated after each change. `view.Ed
 `FormulaBar` shows and edits the active cell's formula above the grid. See
 [What the grid shows](guides/showing-workbooks.md#editing) for every key.
 
+## Rows, columns, filling and zoom
+
+```csharp snippet=sheet-commands
+view.Zoom = 1.5;          // 150%, as Ctrl or Cmd with the wheel
+view.Editor!.Fill(sheet, new CellArea(1, 1, 2, 1), new CellArea(1, 1, 5, 1));   // as the fill handle: 1 to 5
+view.InsertRows();        // a row before the selected one, A2, as Ctrl+Plus
+view.FillDown();          // the row above copied into it, as Ctrl+D
+```
+
+Columns and rows are resized by dragging the edges of their headers and fitted to their content
+by double-clicking them. The fill handle on the selection's corner continues series and copies
+formulas, right-clicking a header gives Excel's menu to insert, delete, hide and unhide, and the
+view zooms from 10% to 400%. Each change is a step to undo. Widths, heights and hidden rows and
+columns are the worksheet's own, so `XlsxWriter` saves them. See
+[What the grid shows](guides/showing-workbooks.md#rows-columns-and-filling) for every key.
+
 ## Selection, copying and scrolling
 
 ```csharp snippet=active-cell

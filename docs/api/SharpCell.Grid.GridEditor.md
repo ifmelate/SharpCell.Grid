@@ -8,7 +8,7 @@ public sealed class GridEditor
 
 Namespace `SharpCell.Grid` · package `SharpCell.Grid`
 
-Changes a workbook's cells as people change them in Excel: typing into cells, Delete, pasting text copied from Excel. Each change is one step to undo and redo, and the workbook is recalculated after it. What is typed is read as Excel reads it, through `Cell.Input`. Only the cells' content is kept for undoing: values, formulas and number formats, not styles.
+Changes a workbook as people change it in Excel: typing into cells, Delete, pasting text copied from Excel, copying and moving cells, the fill handle, inserting and deleting rows and columns, column widths and row heights. Each change is one step to undo and redo, and the workbook is recalculated after it. What is typed is read as Excel reads it, through `Cell.Input`.
 
 ## Constructors
 
@@ -74,6 +74,50 @@ public void ClearHistory()
 
 Forgets every change, so that none can be undone, as after a workbook is replaced.
 
+<a id="copy-worksheet-cellarea-cellarea"></a>
+### Copy(Worksheet, CellArea, CellArea)
+
+```csharp
+public GridEdit Copy(Worksheet sheet, CellArea from, CellArea to)
+```
+
+Copies cells, as copying and pasting them in Excel does: values, formulas, number formats and styles, with the formulas' relative references following the cells (see `CellRange.CopyTo`). An area that is a whole number of times as tall and as wide as the cells copied is filled by repeating them; any other gets one copy at its top-left cell. What lies beyond the sheet's edge is left out, and an area of more than a million cells, such as the whole sheet, gets one copy.
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The cells copied hold part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="deletecolumns-worksheet-int-int"></a>
+### DeleteColumns(Worksheet, int, int)
+
+```csharp
+public GridEdit DeleteColumns(Worksheet sheet, int column, int count)
+```
+
+Deletes columns; see [GridEditor.DeleteRows](SharpCell.Grid.GridEditor.md#deleterows-worksheet-int-int).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The columns are not all on the sheet.
+- `InvalidOperationException`: The columns hold part of an array formula; nothing changes.
+- `NotSupportedException`: The columns are part of a table, or a formula SharpCell cannot read would have to follow; nothing changes.
+
+<a id="deleterows-worksheet-int-int"></a>
+### DeleteRows(Worksheet, int, int)
+
+```csharp
+public GridEdit DeleteRows(Worksheet sheet, int row, int count)
+```
+
+Deletes rows, as Excel's Delete Sheet Rows does: the rows below move up, and references to the deleted cells become `#REF!` (see `Worksheet.DeleteRows`). Undoing gives back the rows with their cells, styles and heights, and every formula and name as it was.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rows are not all on the sheet.
+- `InvalidOperationException`: The rows hold part of an array formula, or part of a table that cannot go; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
+
 <a id="enter-worksheet-cellarea-string"></a>
 ### Enter(Worksheet, CellArea, string)
 
@@ -87,6 +131,114 @@ Types the same text into every cell of an area, as Enter does for one cell and C
 
 - `FormulaParseException`: The text starts with `=` but is not a formula; no cell changes.
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+
+<a id="fill-worksheet-cellarea-cellarea"></a>
+### Fill(Worksheet, CellArea, CellArea)
+
+```csharp
+public GridEdit Fill(Worksheet sheet, CellArea from, CellArea to)
+```
+
+Fills cells from others, as dragging Excel's fill handle does: `to` holds `from` and reaches past it on one side. Formulas are copied, their relative references following; numbers, dates, times, text ending in a number and the names of days and months continue as a series; anything else repeats. Number formats and styles repeat with the cells. When `to` is smaller than `from`, sharing its top-left cell, the cells left out are cleared, as dragging the handle back over them does.
+
+**Exceptions**
+
+- `ArgumentException`: `to` neither holds `from` and reaches past it on one side, nor lies inside it from its top-left cell.
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The cells hold part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="fillarea-cellarea-cellposition"></a>
+### FillArea(CellArea, CellPosition)
+
+```csharp
+public static CellArea FillArea(CellArea from, CellPosition cell)
+```
+
+The cells that dragging the fill handle of `from` to a cell fills, as Excel picks them: past `from`, whole rows or columns of it up to the cell, on the side the cell is furthest beyond; back inside it, the cells up to the cell, the rest to be cleared. [GridEditor.Fill](SharpCell.Grid.GridEditor.md#fill-worksheet-cellarea-cellarea) takes the result.
+
+<a id="filldown-worksheet-cellarea"></a>
+### FillDown(Worksheet, CellArea)
+
+```csharp
+public GridEdit? FillDown(Worksheet sheet, CellArea area)
+```
+
+Copies the top row of an area into the rows below it, formulas following, as Ctrl+D does in Excel; an area of one row takes the row above it. Whole columns are filled down to the last row the sheet uses. Null, with nothing changed, for one row at the top of the sheet.
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The row copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="fillright-worksheet-cellarea"></a>
+### FillRight(Worksheet, CellArea)
+
+```csharp
+public GridEdit? FillRight(Worksheet sheet, CellArea area)
+```
+
+Copies the left column of an area into the columns right of it, as Ctrl+R does; see [GridEditor.FillDown](SharpCell.Grid.GridEditor.md#filldown-worksheet-cellarea).
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+- `NotSupportedException`: The column copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.
+
+<a id="fitcolumnwidth-worksheet-int-int-gridpainter"></a>
+### FitColumnWidth(Worksheet, int, int, GridPainter)
+
+```csharp
+public GridEdit FitColumnWidth(Worksheet sheet, int firstColumn, int lastColumn, GridPainter painter)
+```
+
+Fits columns to their content, as double-clicking a column header's edge does in Excel: each takes the width the painter finds for its widest text (see [GridPainter.FitColumnWidth](SharpCell.Grid.GridPainter.md#fitcolumnwidth-worksheet-int)); a column with nothing to fit keeps its width.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet.
+
+<a id="fitrowheight-worksheet-int-int-gridpainter"></a>
+### FitRowHeight(Worksheet, int, int, GridPainter)
+
+```csharp
+public GridEdit FitRowHeight(Worksheet sheet, int firstRow, int lastRow, GridPainter painter)
+```
+
+Fits rows to their content, as double-clicking a row header's edge does in Excel: each takes the height the painter finds for its tallest text (see [GridPainter.FitRowHeight](SharpCell.Grid.GridPainter.md#fitrowheight-worksheet-int)), and a row with nothing in it the sheet's default height.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet.
+
+<a id="insertcolumns-worksheet-int-int"></a>
+### InsertColumns(Worksheet, int, int)
+
+```csharp
+public GridEdit InsertColumns(Worksheet sheet, int column, int count)
+```
+
+Inserts empty columns before `column`, which take the styles of the column on their left; see [GridEditor.InsertRows](SharpCell.Grid.GridEditor.md#insertrows-worksheet-int-int).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The columns would not fit on the sheet.
+- `InvalidOperationException`: Content would be pushed past the last column, or the columns would split an array formula; nothing changes.
+- `NotSupportedException`: The columns would go inside a table, or a formula SharpCell cannot read would have to follow; nothing changes.
+
+<a id="insertrows-worksheet-int-int"></a>
+### InsertRows(Worksheet, int, int)
+
+```csharp
+public GridEdit InsertRows(Worksheet sheet, int row, int count)
+```
+
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does: the rows below move down and formulas follow them (see `Worksheet.InsertRows`). The new rows take the styles and number formats of the row above, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rows would not fit on the sheet.
+- `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
 
 <a id="move-worksheet-cellarea-cellposition"></a>
 ### Move(Worksheet, CellArea, CellPosition)
@@ -122,6 +274,58 @@ public GridEdit? Redo()
 ```
 
 Redoes the last undone change; null when there is none.
+
+<a id="setcolumnhidden-worksheet-int-int-bool"></a>
+### SetColumnHidden(Worksheet, int, int, bool)
+
+```csharp
+public GridEdit SetColumnHidden(Worksheet sheet, int firstColumn, int lastColumn, bool hidden)
+```
+
+Hides or shows columns, as Excel's Hide and Unhide do; a hidden column keeps its width for when it shows again.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet.
+
+<a id="setcolumnwidth-worksheet-int-int-double"></a>
+### SetColumnWidth(Worksheet, int, int, double?)
+
+```csharp
+public GridEdit SetColumnWidth(Worksheet sheet, int firstColumn, int lastColumn, double? width)
+```
+
+Gives columns a width, as dragging a column header's edge does in Excel: in the units of `Worksheet.SetColumnWidth`, or null for the sheet's default.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or the width is outside 0 to 255.
+
+<a id="setrowheight-worksheet-int-int-double"></a>
+### SetRowHeight(Worksheet, int, int, double?)
+
+```csharp
+public GridEdit SetRowHeight(Worksheet sheet, int firstRow, int lastRow, double? height)
+```
+
+Gives rows a height in points, or null for the sheet's default; see [GridEditor.SetColumnWidth](SharpCell.Grid.GridEditor.md#setcolumnwidth-worksheet-int-int-double).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or the height is outside 0 to 409.
+
+<a id="setrowhidden-worksheet-int-int-bool"></a>
+### SetRowHidden(Worksheet, int, int, bool)
+
+```csharp
+public GridEdit SetRowHidden(Worksheet sheet, int firstRow, int lastRow, bool hidden)
+```
+
+Hides or shows rows; see [GridEditor.SetColumnHidden](SharpCell.Grid.GridEditor.md#setcolumnhidden-worksheet-int-int-bool).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet.
 
 <a id="undo"></a>
 ### Undo()

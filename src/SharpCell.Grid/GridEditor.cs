@@ -5,13 +5,16 @@ using System.Linq;
 namespace SharpCell.Grid;
 
 /// <summary>
-/// Changes a workbook's cells as people change them in Excel: typing into cells, Delete, pasting
-/// text copied from Excel. Each change is one step to undo and redo, and the workbook is
+/// Changes a workbook as people change it in Excel: typing into cells, Delete, pasting text copied
+/// from Excel, copying and moving cells, the fill handle, inserting and deleting rows and columns,
+/// column widths and row heights. Each change is one step to undo and redo, and the workbook is
 /// recalculated after it. What is typed is read as Excel reads it, through <see cref="Cell.Input"/>.
-/// Only the cells' content is kept for undoing: values, formulas and number formats, not styles.
 /// </summary>
-public sealed class GridEditor
+public sealed partial class GridEditor
 {
+    // The most cells a copy is repeated over; every one of them is kept to undo.
+    private const long MaxRepeatedCells = 1 << 20;
+
     private readonly Stack<Step> _undo = new();
     private readonly Stack<Step> _redo = new();
 
@@ -169,11 +172,153 @@ public sealed class GridEditor
         });
     }
 
+    /// <summary>
+    /// Copies cells, as copying and pasting them in Excel does: values, formulas, number formats
+    /// and styles, with the formulas' relative references following the cells (see
+    /// <see cref="CellRange.CopyTo"/>). An area that is a whole number of times as tall and as wide
+    /// as the cells copied is filled by repeating them; any other gets one copy at its top-left cell.
+    /// What lies beyond the sheet's edge is left out, and an area of more than a million cells, such
+    /// as the whole sheet, gets one copy.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
+    /// <exception cref="NotSupportedException">The cells copied hold part of an array formula, or a formula SharpCell
+    /// cannot read; no cell changes.</exception>
+    public GridEdit Copy(Worksheet sheet, CellArea from, CellArea to)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        var (rows, columns) = (from.LastRow - from.FirstRow + 1, from.LastColumn - from.FirstColumn + 1);
+        var (toRows, toColumns) = (to.LastRow - to.FirstRow + 1, to.LastColumn - to.FirstColumn + 1);
+        var repeat = toRows % rows == 0 && toColumns % columns == 0 && (long)toRows * toColumns <= MaxRepeatedCells;
+        var area = new CellArea(
+            to.FirstRow,
+            to.FirstColumn,
+            Math.Min(SheetLayout.MaxRow, repeat ? to.LastRow : to.FirstRow + rows - 1),
+            Math.Min(SheetLayout.MaxColumn, repeat ? to.LastColumn : to.FirstColumn + columns - 1));
+
+        // The cells copied are cut to what fits: CopyTo refuses a copy past the edge.
+        var source = new CellArea(from.FirstRow, from.FirstColumn,
+            from.FirstRow + Math.Min(rows, area.LastRow - area.FirstRow + 1) - 1,
+            from.FirstColumn + Math.Min(columns, area.LastColumn - area.FirstColumn + 1) - 1);
+        var target = repeat ? area : new CellArea(area.FirstRow, area.FirstColumn, area.FirstRow, area.FirstColumn);
+        return Change(sheet, area, Every(area), () => RangeOf(sheet, source).CopyTo(RangeOf(sheet, target)));
+    }
+
+    /// <summary>
+    /// Fills cells from others, as dragging Excel's fill handle does: <paramref name="to"/> holds
+    /// <paramref name="from"/> and reaches past it on one side. Formulas are copied, their relative
+    /// references following; numbers, dates, times, text ending in a number and the names of days and
+    /// months continue as a series; anything else repeats. Number formats and styles repeat with the
+    /// cells. When <paramref name="to"/> is smaller than <paramref name="from"/>, sharing its top-left
+    /// cell, the cells left out are cleared, as dragging the handle back over them does.
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="to"/> neither holds <paramref name="from"/> and reaches
+    /// past it on one side, nor lies inside it from its top-left cell.</exception>
+    /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
+    /// <exception cref="NotSupportedException">The cells hold part of an array formula, or a formula SharpCell cannot
+    /// read; no cell changes.</exception>
+    public GridEdit Fill(Worksheet sheet, CellArea from, CellArea to)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        if (to.FirstRow == from.FirstRow && to.FirstColumn == from.FirstColumn && to.LastRow <= from.LastRow && to.LastColumn <= from.LastColumn
+            && (to.LastRow < from.LastRow || to.LastColumn < from.LastColumn))
+        {
+            // Dragged back: the cells given up are cleared, in the column or row it went back along.
+            var cleared = to.LastRow < from.LastRow
+                ? new CellArea(to.LastRow + 1, from.FirstColumn, from.LastRow, from.LastColumn)
+                : new CellArea(from.FirstRow, to.LastColumn + 1, from.LastRow, from.LastColumn);
+            return Clear(sheet, cleared);
+        }
+
+        var plan = FillSeries.Plan(sheet, from, to);
+        return Change(sheet, to, Every(to), () =>
+        {
+            foreach (var cell in plan)
+            {
+                RangeOf(sheet, new CellArea(cell.From.Row, cell.From.Column, cell.From.Row, cell.From.Column))
+                    .CopyTo(RangeOf(sheet, new CellArea(cell.To.Row, cell.To.Column, cell.To.Row, cell.To.Column)));
+                if (cell.Value is { } value)
+                    sheet[cell.To.Row, cell.To.Column].Value = value;
+            }
+        });
+    }
+
+    /// <summary>
+    /// Copies the top row of an area into the rows below it, formulas following, as Ctrl+D does in
+    /// Excel; an area of one row takes the row above it. Whole columns are filled down to the last
+    /// row the sheet uses. Null, with nothing changed, for one row at the top of the sheet.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
+    /// <exception cref="NotSupportedException">The row copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.</exception>
+    public GridEdit? FillDown(Worksheet sheet, CellArea area)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        if (area.FirstRow == 1 && area.LastRow == SheetLayout.MaxRow)
+            area = new CellArea(1, area.FirstColumn, Math.Max(1, sheet.UsedRange?.LastRow ?? 1), area.LastColumn);
+        if (area.FirstRow == area.LastRow)
+        {
+            return area.FirstRow == 1 ? null
+                : Copy(sheet, new CellArea(area.FirstRow - 1, area.FirstColumn, area.FirstRow - 1, area.LastColumn), area);
+        }
+
+        return Copy(sheet, new CellArea(area.FirstRow, area.FirstColumn, area.FirstRow, area.LastColumn),
+            new CellArea(area.FirstRow + 1, area.FirstColumn, area.LastRow, area.LastColumn));
+    }
+
+    /// <summary>Copies the left column of an area into the columns right of it, as Ctrl+R does; see <see cref="FillDown"/>.</summary>
+    /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
+    /// <exception cref="NotSupportedException">The column copied holds part of an array formula, or a formula SharpCell cannot read; no cell changes.</exception>
+    public GridEdit? FillRight(Worksheet sheet, CellArea area)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        if (area.FirstColumn == 1 && area.LastColumn == SheetLayout.MaxColumn)
+            area = new CellArea(area.FirstRow, 1, area.LastRow, Math.Max(1, sheet.UsedRange?.LastColumn ?? 1));
+        if (area.FirstColumn == area.LastColumn)
+        {
+            return area.FirstColumn == 1 ? null
+                : Copy(sheet, new CellArea(area.FirstRow, area.FirstColumn - 1, area.LastRow, area.FirstColumn - 1), area);
+        }
+
+        return Copy(sheet, new CellArea(area.FirstRow, area.FirstColumn, area.LastRow, area.FirstColumn),
+            new CellArea(area.FirstRow, area.FirstColumn + 1, area.LastRow, area.LastColumn));
+    }
+
+    /// <summary>
+    /// The cells that dragging the fill handle of <paramref name="from"/> to a cell fills, as Excel
+    /// picks them: past <paramref name="from"/>, whole rows or columns of it up to the cell, on the
+    /// side the cell is furthest beyond; back inside it, the cells up to the cell, the rest to be
+    /// cleared. <see cref="Fill"/> takes the result.
+    /// </summary>
+    public static CellArea FillArea(CellArea from, CellPosition cell)
+    {
+        var rows = cell.Row > from.LastRow ? cell.Row - from.LastRow : cell.Row < from.FirstRow ? cell.Row - from.FirstRow : 0;
+        var columns = cell.Column > from.LastColumn ? cell.Column - from.LastColumn : cell.Column < from.FirstColumn ? cell.Column - from.FirstColumn : 0;
+        if (rows == 0 && columns == 0)
+        {
+            var (rowsBack, columnsBack) = (from.LastRow - cell.Row, from.LastColumn - cell.Column);
+            if (rowsBack == 0 && columnsBack == 0)
+                return from;
+            return rowsBack >= columnsBack
+                ? new CellArea(from.FirstRow, from.FirstColumn, cell.Row, from.LastColumn)
+                : new CellArea(from.FirstRow, from.FirstColumn, from.LastRow, cell.Column);
+        }
+
+        if (Math.Abs(rows) >= Math.Abs(columns))
+        {
+            return rows > 0
+                ? new CellArea(from.FirstRow, from.FirstColumn, cell.Row, from.LastColumn)
+                : new CellArea(cell.Row, from.FirstColumn, from.LastRow, from.LastColumn);
+        }
+
+        return columns > 0
+            ? new CellArea(from.FirstRow, from.FirstColumn, from.LastRow, cell.Column)
+            : new CellArea(from.FirstRow, cell.Column, from.LastRow, from.LastColumn);
+    }
+
     /// <summary>Undoes the last change; null when there is none.</summary>
-    public GridEdit? Undo() => Replay(_undo, _redo, s => s.Before);
+    public GridEdit? Undo() => Replay(_undo, _redo, s => s.Undo);
 
     /// <summary>Redoes the last undone change; null when there is none.</summary>
-    public GridEdit? Redo() => Replay(_redo, _undo, s => s.After);
+    public GridEdit? Redo() => Replay(_redo, _undo, s => s.Redo);
 
     /// <summary>Forgets every change, so that none can be undone, as after a workbook is replaced.</summary>
     public void ClearHistory()
@@ -182,40 +327,66 @@ public sealed class GridEditor
         _redo.Clear();
     }
 
-    private GridEdit Change(Worksheet sheet, CellArea area, List<(int Row, int Column)> cells, Action<Cell> change)
-    {
-        var before = cells.Select(c => Content.Of(sheet[c.Row, c.Column])).ToList();
-        try
+    private GridEdit Change(Worksheet sheet, CellArea area, List<(int Row, int Column)> cells, Action<Cell> change) =>
+        Change(sheet, area, cells, () =>
         {
             foreach (var (row, column) in cells)
                 change(sheet[row, column]);
+        });
+
+    // A change of the content of some cells, undone by giving them back what they held.
+    private GridEdit Change(Worksheet sheet, CellArea area, List<(int Row, int Column)> cells, Action change)
+    {
+        var before = cells.Select(c => Content.Of(sheet[c.Row, c.Column])).ToList();
+        var rulesBefore = Rules.Of(sheet);
+        try
+        {
+            change();
         }
         catch
         {
             // All or nothing: the cells changed before the failing one get their content back.
             Restore(sheet, before);
+            rulesBefore.Restore(sheet);
             throw;
         }
 
         var after = cells.Select(c => Content.Of(sheet[c.Row, c.Column])).ToList();
-        _undo.Push(new Step(sheet, area, before, after));
-        _redo.Clear();
-        return Done(sheet, area);
+        var rulesAfter = Rules.Of(sheet);
+        return Push(new Step(sheet, area,
+            () =>
+            {
+                Restore(sheet, before);
+                rulesBefore.Restore(sheet);
+            },
+            () =>
+            {
+                Restore(sheet, after);
+                rulesAfter.Restore(sheet);
+            },
+            Layout: false));
     }
 
-    private GridEdit? Replay(Stack<Step> from, Stack<Step> to, Func<Step, List<Content>> contents)
+    private GridEdit Push(Step step)
+    {
+        _undo.Push(step);
+        _redo.Clear();
+        return Done(step);
+    }
+
+    private GridEdit? Replay(Stack<Step> from, Stack<Step> to, Func<Step, Action> action)
     {
         if (from.Count == 0)
             return null;
         var step = from.Pop();
-        Restore(step.Sheet, contents(step));
+        action(step)();
         to.Push(step);
-        return Done(step.Sheet, step.Area);
+        return Done(step);
     }
 
-    private GridEdit Done(Worksheet sheet, CellArea area)
+    private GridEdit Done(Step step)
     {
-        var edit = new GridEdit(sheet, area, Workbook.Recalculate());
+        var edit = new GridEdit(step.Sheet, step.Area, Workbook.Recalculate()) { ChangesLayout = step.Layout };
         Edited?.Invoke(this, edit);
         return edit;
     }
@@ -226,16 +397,35 @@ public sealed class GridEditor
             content.Restore(sheet);
     }
 
-    private sealed record Step(Worksheet Sheet, CellArea Area, List<Content> Before, List<Content> After);
+    // Every cell of an area, row by row.
+    private static List<(int Row, int Column)> Every(CellArea area)
+    {
+        var cells = new List<(int Row, int Column)>();
+        for (var row = area.FirstRow; row <= area.LastRow; row++)
+        {
+            for (var column = area.FirstColumn; column <= area.LastColumn; column++)
+                cells.Add((row, column));
+        }
 
-    // What undoing gives a cell back: its formula or value, and its number format. A cell another
-    // cell's formula spills into holds nothing of its own: it is given back empty, for the spill to fill.
-    private readonly record struct Content(int Row, int Column, string? Formula, CellValue Value, string NumberFormat)
+        return cells;
+    }
+
+    internal static CellRange RangeOf(Worksheet sheet, CellArea area) =>
+        sheet.Range($"{ColumnNames.Of(area.FirstColumn)}{area.FirstRow}:{ColumnNames.Of(area.LastColumn)}{area.LastRow}");
+
+    // One change to undo and redo; Layout when it changed sizes, hidden rows and columns or where cells are.
+    private sealed record Step(Worksheet Sheet, CellArea Area, Action Undo, Action Redo, bool Layout);
+
+    // What undoing gives a cell back: its formula or value, number format, style and hyperlink. A cell
+    // another cell's formula spills into holds nothing of its own: it is given back empty, for the spill to fill.
+    private readonly record struct Content(int Row, int Column, string? Formula, CellValue Value, string NumberFormat, CellStyle? Style, Hyperlink? Link)
     {
         public static Content Of(Cell cell)
         {
             var spilled = cell.Formula is null && cell.Value.Kind != CellValueKind.Empty && cell.Precedents.Count > 0;
-            return new(cell.Row, cell.Column, cell.Formula, spilled ? CellValue.Empty : cell.Value, cell.NumberFormat);
+            var style = cell.Style;
+            return new(cell.Row, cell.Column, cell.Formula, spilled ? CellValue.Empty : cell.Value, cell.NumberFormat,
+                ReferenceEquals(style, cell.Worksheet.Workbook.DefaultStyle) ? null : style, cell.Hyperlink);
         }
 
         public void Restore(Worksheet sheet) => RestoreTo(sheet[Row, Column]);
@@ -243,10 +433,64 @@ public sealed class GridEditor
         public void RestoreTo(Cell cell)
         {
             if (Formula is not null)
-                cell.Formula = Formula;
-            else
+            {
+                if (cell.Formula != Formula)
+                    cell.Formula = Formula;
+            }
+            else if (cell.Formula is not null || !cell.Value.Equals(Value))
+            {
                 cell.Value = Value;
-            cell.NumberFormat = NumberFormat;
+            }
+
+            if (cell.NumberFormat != NumberFormat)
+                cell.NumberFormat = NumberFormat;
+            var style = cell.Style;
+            if (Style is null ? !ReferenceEquals(style, cell.Worksheet.Workbook.DefaultStyle) : !ReferenceEquals(style, Style))
+                cell.Style = Style;
+            if (!Equals(cell.Hyperlink, Link))
+                cell.Hyperlink = Link;
+        }
+    }
+
+    // A sheet's data validation rules, to give back: each rule with its ranges as Excel writes them.
+    private sealed class Rules
+    {
+        private readonly List<(string Ranges, DataValidation Validation)> _rules;
+
+        private Rules(List<(string Ranges, DataValidation Validation)> rules) => _rules = rules;
+
+        // Ranges of one rule come one after another, with the same validation.
+        public static Rules Of(Worksheet sheet)
+        {
+            var rules = new List<(string Ranges, DataValidation Validation)>();
+            foreach (var (range, validation) in sheet.Validations)
+            {
+                if (rules.Count > 0 && ReferenceEquals(rules[^1].Validation, validation))
+                    rules[^1] = (rules[^1].Ranges + " " + range.Address, validation);
+                else
+                    rules.Add((range.Address, validation));
+            }
+
+            return new Rules(rules);
+        }
+
+        public void Restore(Worksheet sheet)
+        {
+            var now = Of(sheet)._rules;
+            if (now.Count == _rules.Count && now.Zip(_rules).All(p => p.First.Ranges == p.Second.Ranges && ReferenceEquals(p.First.Validation, p.Second.Validation)))
+                return;
+            sheet.ClearValidation("A1:XFD1048576");
+            foreach (var (ranges, validation) in _rules)
+            {
+                try
+                {
+                    sheet.AddValidation(ranges, validation);
+                }
+                catch (FormulaParseException)
+                {
+                    // A rule read from a file with a formula SharpCell cannot read cannot be added again.
+                }
+            }
         }
     }
 }
@@ -255,4 +499,11 @@ public sealed class GridEditor
 /// <param name="Sheet">The sheet of the cells changed.</param>
 /// <param name="Area">The cells changed: typed into, cleared or pasted over.</param>
 /// <param name="Recalculation">What recalculating the workbook after the change changed, other cells included.</param>
-public sealed record GridEdit(Worksheet Sheet, CellArea Area, RecalculationResult Recalculation);
+public sealed record GridEdit(Worksheet Sheet, CellArea Area, RecalculationResult Recalculation)
+{
+    /// <summary>
+    /// Whether column widths, row heights or hidden rows and columns changed, or cells moved to
+    /// other rows or columns: a view takes the sheet's layout again.
+    /// </summary>
+    public bool ChangesLayout { get; init; }
+}

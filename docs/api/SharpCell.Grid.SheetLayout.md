@@ -117,6 +117,24 @@ The width of a column.
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
 
+<a id="columnwidthfrompixels-double-double"></a>
+### ColumnWidthFromPixels(double, double)
+
+```csharp
+public static double ColumnWidthFromPixels(double pixels, double maxDigitWidth)
+```
+
+The column width, in the units of `Worksheet.SetColumnWidth`, that Excel gives a column dragged to a width in pixels: `Truncate((c * d + 5) / d * 256) / 256` for `c = Truncate((pixels - 5) / d * 100 + 0.5) / 100` characters, as Excel shows it while dragging. Narrower than a digit and its padding, the smallest width that shows the pixels.
+
+**Parameters**
+
+- `pixels`: The width in pixels.
+- `maxDigitWidth`: The width in pixels of the widest digit of the default font, at the zoom the pixels are at.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The digit width is not positive, or the pixels are negative.
+
 <a id="fromworksheet-worksheet-double"></a>
 ### FromWorksheet(Worksheet, double)
 
@@ -134,6 +152,25 @@ A layout with a worksheet's column widths, row heights and hidden rows and colum
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The digit width is not positive.
+
+<a id="fromworksheet-worksheet-double-double"></a>
+### FromWorksheet(Worksheet, double, double)
+
+```csharp
+public static SheetLayout FromWorksheet(Worksheet sheet, double maxDigitWidth, double zoom)
+```
+
+A layout with a worksheet's sizes at a zoom, as Excel shows them: column widths from the digit width of the default font at that zoom, row heights in points times the zoom.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `maxDigitWidth`: The width in pixels of the widest digit of the default font at the zoom.
+- `zoom`: The zoom, 1 for 100%.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The digit width or the zoom is not positive.
 
 <a id="rowat-double"></a>
 ### RowAt(double)
@@ -156,6 +193,24 @@ The height of a row.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="rowheightfrompixels-double-double"></a>
+### RowHeightFromPixels(double, double)
+
+```csharp
+public static double RowHeightFromPixels(double pixels, double zoom)
+```
+
+The row height in points, as Excel stores it, of a row shown that many pixels high at a zoom.
+
+**Parameters**
+
+- `pixels`: The height in pixels.
+- `zoom`: The zoom the pixels are at, 1 for 100%.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The zoom is not positive, or the pixels are negative.
 
 <a id="rowtop-int"></a>
 ### RowTop(int)
