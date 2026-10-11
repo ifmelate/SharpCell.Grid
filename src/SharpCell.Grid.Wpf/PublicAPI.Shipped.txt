@@ -23,6 +23,7 @@ SharpCell.Grid.Wpf.SpreadsheetView.CancelEdit() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.ClearSelection() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.CommitEdit() -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.Copy() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Cut() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
 SharpCell.Grid.Wpf.SpreadsheetView.Editor.get -> SharpCell.Grid.GridEditor?
 SharpCell.Grid.Wpf.SpreadsheetView.EditText.get -> string?

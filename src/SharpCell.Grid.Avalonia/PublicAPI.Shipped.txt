@@ -23,6 +23,7 @@ SharpCell.Grid.Avalonia.SpreadsheetView.CancelEdit() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.ClearSelection() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.CommitEdit() -> bool
 SharpCell.Grid.Avalonia.SpreadsheetView.CopyAsync() -> System.Threading.Tasks.Task!
+SharpCell.Grid.Avalonia.SpreadsheetView.CutAsync() -> System.Threading.Tasks.Task!
 SharpCell.Grid.Avalonia.SpreadsheetView.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
 SharpCell.Grid.Avalonia.SpreadsheetView.Editor.get -> SharpCell.Grid.GridEditor?
 SharpCell.Grid.Avalonia.SpreadsheetView.EditText.get -> string?

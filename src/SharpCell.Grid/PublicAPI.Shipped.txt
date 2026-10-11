@@ -80,6 +80,7 @@ SharpCell.Grid.GridEditor.ClearHistory() -> void
 SharpCell.Grid.GridEditor.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
 SharpCell.Grid.GridEditor.Enter(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, string! input) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.GridEditor(SharpCell.Workbook! workbook) -> void
+SharpCell.Grid.GridEditor.Move(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea from, SharpCell.Grid.CellPosition to) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.Paste(SharpCell.Worksheet! sheet, SharpCell.Grid.CellPosition at, string! text) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.Redo() -> SharpCell.Grid.GridEdit?
 SharpCell.Grid.GridEditor.Undo() -> SharpCell.Grid.GridEdit?

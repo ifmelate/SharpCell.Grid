@@ -1,2 +1,1 @@
 #nullable enable
-SharpCell.Grid.Avalonia.SpreadsheetView.CutAsync() -> System.Threading.Tasks.Task!
