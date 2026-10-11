@@ -15,6 +15,8 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- The live demo's workbook, opened in a test: the demo builds for the browser only. -->
+    <Compile Include="../../samples/SharpCell.Grid.Demo/Showcase.cs" Link="Controls/Showcase.cs" />
     <ProjectReference Include="../../src/SharpCell.Grid/SharpCell.Grid.csproj" />
     <ProjectReference Include="../../src/SharpCell.Grid.Avalonia/SharpCell.Grid.Avalonia.csproj" />
     <ProjectReference Include="../../tools/SharpCell.Grid.Docs/SharpCell.Grid.Docs.csproj" />
