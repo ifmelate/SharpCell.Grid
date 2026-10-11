@@ -160,6 +160,15 @@ public void Copy()
 
 Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C and `ApplicationCommands.Copy` do it too.
 
+<a id="cut"></a>
+### Cut()
+
+```csharp
+public void Cut()
+```
+
+Cuts the selected cells, as Ctrl+X and `ApplicationCommands.Cut` do in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
+
 <a id="paste"></a>
 ### Paste()
 
@@ -167,7 +176,7 @@ Puts the selected cells on the clipboard as Excel pastes them: as text with tabs
 public void Paste()
 ```
 
-Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V and `ApplicationCommands.Paste` do: text copied from Excel goes in cell by cell, each read as typed. The pasted cells are selected.
+Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V and `ApplicationCommands.Paste` do: text copied from Excel goes in cell by cell, each read as typed. After [SpreadsheetView.Cut](SharpCell.Grid.Wpf.SpreadsheetView.md#cut), the cut cells move there instead, formulas and formats with them. The pasted cells are selected.
 
 <a id="redo"></a>
 ### Redo()

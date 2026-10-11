@@ -191,4 +191,42 @@ public class GridEditorTests
         Assert.Equal(["Two\nlines", "tab\there"], rows[0]);
         Assert.Equal(["say \"hi\"", ""], rows[1]);
     }
+
+    [Fact]
+    public void Moving_takes_values_formulas_and_formats_and_clears_what_is_left()
+    {
+        var (sheet, editor) = Sheet();
+        sheet["A1"].NumberFormat = "0.00";
+        sheet["D5"].Value = "overwritten";
+
+        var edit = editor.Move(sheet, Area("A1", "B1"), Cells.Parse("C5"));
+
+        Assert.Equal(Area("C5", "D5"), edit.Area);
+        Assert.Equal(2.0, sheet["C5"].Value.AsNumber());
+        Assert.Equal("0.00", sheet["C5"].NumberFormat);
+        Assert.Equal("=A1*10", sheet["D5"].Formula);   // written as it was, as Excel moves it
+        Assert.Equal(CellValue.Empty, sheet["A1"].Value);
+        Assert.Equal("General", sheet["A1"].NumberFormat);
+        Assert.Null(sheet["B1"].Formula);
+
+        editor.Undo();
+
+        Assert.Equal(2.0, sheet["A1"].Value.AsNumber());
+        Assert.Equal("=A1*10", sheet["B1"].Formula);
+        Assert.Equal(CellValue.Text("overwritten"), sheet["D5"].Value);
+        Assert.Equal(CellValue.Empty, sheet["C5"].Value);
+    }
+
+    [Fact]
+    public void Moving_onto_itself_by_one_cell_keeps_every_value()
+    {
+        var (sheet, editor) = Sheet();
+        sheet["A2"].Value = 3;
+
+        editor.Move(sheet, Area("A1", "A2"), Cells.Parse("A2"));
+
+        Assert.Equal(CellValue.Empty, sheet["A1"].Value);
+        Assert.Equal(2.0, sheet["A2"].Value.AsNumber());
+        Assert.Equal(3.0, sheet["A3"].Value.AsNumber());
+    }
 }

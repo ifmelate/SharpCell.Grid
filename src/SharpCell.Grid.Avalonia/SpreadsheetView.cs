@@ -233,13 +233,21 @@ public partial class SpreadsheetView : Control
         if (IsEditing || e.Handled || Selection is not { } selection)
             return;
         var sheet = Worksheet;
-        // The platform's gestures, and both Ctrl and Cmd with the letter: in a browser on macOS the
-        // platform is the browser, whose gestures use Ctrl, while people press Cmd.
+
+        // The platform's gestures, and Ctrl and Cmd alike for every shortcut (see CommandKeys).
         var hotkeys = Application.Current?.PlatformSettings?.HotkeyConfiguration;
-        var command = e.KeyModifiers is KeyModifiers.Control or KeyModifiers.Meta;
+        var command = CommandKeys.IsCommand(e.KeyModifiers);
+        _commandKey = command;
         if (hotkeys?.Copy.Exists(g => g.Matches(e)) == true || (command && e.Key is Key.C or Key.Insert))
         {
             _ = CopyAsync();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape && _cut is not null)
+        {
+            _cut = null;
             e.Handled = true;
             return;
         }
@@ -251,12 +259,11 @@ public partial class SpreadsheetView : Control
         }
 
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-        var control = e.KeyModifiers.HasFlag(KeyModifiers.Control);
-        var jump = control || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
+        var jump = command;
         GridSelection? next = null;
-        if (hotkeys?.SelectAll.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.A))
+        if (hotkeys?.SelectAll.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.A) || (command && shift && e.Key == Key.Space))
             next = GridSelection.All(selection.ActiveCell);
-        else if (e.Key == Key.Space && control)
+        else if (e.Key == Key.Space && command)
             next = selection.EntireColumns(sheet);
         else if (e.Key == Key.Space && shift)
             next = selection.EntireRows(sheet);

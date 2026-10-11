@@ -115,6 +115,60 @@ public sealed class GridEditor
         });
     }
 
+    /// <summary>
+    /// Moves cells, as cutting and pasting them in Excel does: their values or formulas and number
+    /// formats go to the area with its top-left cell at <paramref name="to"/>, and the cells left
+    /// behind are cleared. Formulas move as they are written; what lies beyond the sheet's edge is
+    /// left out. Styles stay where they were.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A cell is part of an array formula other than its top-left cell; no cell changes.</exception>
+    public GridEdit Move(Worksheet sheet, CellArea from, CellPosition to)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        var (rows, columns) = (to.Row - from.FirstRow, to.Column - from.FirstColumn);
+        var area = new CellArea(
+            to.Row,
+            to.Column,
+            Math.Min(SheetLayout.MaxRow, from.LastRow + rows),
+            Math.Min(SheetLayout.MaxColumn, from.LastColumn + columns));
+
+        // Only cells with content take part: those moved, and those overwritten where the moved ones land.
+        var moved = new Dictionary<(int, int), Content>();
+        var cells = new HashSet<(int Row, int Column)>();
+        foreach (var cell in sheet.Cells.ToList())
+        {
+            if (cell.Formula is null && cell.Value.Kind == CellValueKind.Empty)
+                continue;
+            if (from.Contains(cell.Row, cell.Column))
+            {
+                cells.Add((cell.Row, cell.Column));
+                var target = (cell.Row + rows, cell.Column + columns);
+                if (area.Contains(target.Item1, target.Item2))
+                {
+                    moved[target] = Content.Of(cell);
+                    cells.Add(target);
+                }
+            }
+
+            if (area.Contains(cell.Row, cell.Column))
+                cells.Add((cell.Row, cell.Column));
+        }
+
+        var order = cells.OrderBy(c => c.Row).ThenBy(c => c.Column).ToList();
+        return Change(sheet, area, order, cell =>
+        {
+            if (moved.TryGetValue((cell.Row, cell.Column), out var content))
+            {
+                content.RestoreTo(cell);
+            }
+            else
+            {
+                cell.Value = CellValue.Empty;
+                cell.NumberFormat = "General";
+            }
+        });
+    }
+
     /// <summary>Undoes the last change; null when there is none.</summary>
     public GridEdit? Undo() => Replay(_undo, _redo, s => s.Before);
 
@@ -184,9 +238,10 @@ public sealed class GridEditor
             return new(cell.Row, cell.Column, cell.Formula, spilled ? CellValue.Empty : cell.Value, cell.NumberFormat);
         }
 
-        public void Restore(Worksheet sheet)
+        public void Restore(Worksheet sheet) => RestoreTo(sheet[Row, Column]);
+
+        public void RestoreTo(Cell cell)
         {
-            var cell = sheet[Row, Column];
             if (Formula is not null)
                 cell.Formula = Formula;
             else

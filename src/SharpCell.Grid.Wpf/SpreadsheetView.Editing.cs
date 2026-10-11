@@ -101,7 +101,8 @@ public partial class SpreadsheetView
     /// <summary>
     /// Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V and
     /// <see cref="ApplicationCommands.Paste"/> do: text copied from Excel goes in cell by cell, each
-    /// read as typed. The pasted cells are selected.
+    /// read as typed. After <see cref="Cut"/>, the cut cells move there instead, formulas and formats
+    /// with them. The pasted cells are selected.
     /// </summary>
     public void Paste()
     {
@@ -109,8 +110,45 @@ public partial class SpreadsheetView
             return;
         var text = Clipboard.GetText();
         var at = new CellPosition(selection.Area.FirstRow, selection.Area.FirstColumn);
+
+        // Cut cells move once, while the clipboard still holds what was cut from them.
+        if (_cut is { } cut && cut.Sheet == sheet && cut.Text == text)
+        {
+            _cut = null;
+            _moving = true;
+            try
+            {
+                Show(Try(() => editor.Move(sheet, cut.Area, at)));
+            }
+            finally
+            {
+                _moving = false;
+            }
+
+            return;
+        }
+
         Show(Try(() => editor.Paste(sheet, at, text)));
     }
+
+    /// <summary>
+    /// Cuts the selected cells, as Ctrl+X and <see cref="ApplicationCommands.Cut"/> do in Excel: they
+    /// are copied, and the next paste moves them, formulas and formats with them; until then they
+    /// stay. Escape or another change forgets the cut.
+    /// </summary>
+    public void Cut()
+    {
+        if (IsReadOnly || Worksheet is not { } sheet || Selection is not { } selection)
+            return;
+        Copy();
+        _cut = new CutCells(sheet, selection.Area, GridClipboard.Text(sheet, selection.Area));
+    }
+
+    // Cells cut and waiting for a paste, with the text the clipboard got for them.
+    private sealed record CutCells(Worksheet Sheet, CellArea Area, string Text);
+
+    private CutCells? _cut;
+    private bool _moving;
 
     /// <inheritdoc />
     protected override Visual GetVisualChild(int index) =>
@@ -148,7 +186,9 @@ public partial class SpreadsheetView
     {
         if (IsReadOnly || modifiers != ModifierKeys.None)
             return false;
-        if (key == Key.F2)
+        if (key == Key.Escape && _cut is not null)
+            _cut = null;
+        else if (key == Key.F2)
             BeginEdit();
         else if (key == Key.Delete)
             ClearSelection();
@@ -316,6 +356,9 @@ public partial class SpreadsheetView
 
     private void OnEdited(object? sender, GridEdit edit)
     {
+        // Any other change, typing or undo, ends the cut, as in Excel.
+        if (!_moving)
+            _cut = null;
         InvalidateVisual();
         Edited?.Invoke(this, edit);
         Changed?.Invoke(this, EventArgs.Empty);

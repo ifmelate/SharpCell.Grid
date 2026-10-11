@@ -110,7 +110,8 @@ public partial class SpreadsheetView
 
     /// <summary>
     /// Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V does: text
-    /// copied from Excel goes in cell by cell, each read as typed. The pasted cells are selected.
+    /// copied from Excel goes in cell by cell, each read as typed. After <see cref="CutAsync"/>, the
+    /// cut cells move there instead, formulas and formats with them. The pasted cells are selected.
     /// </summary>
     public async Task PasteAsync()
     {
@@ -119,8 +120,46 @@ public partial class SpreadsheetView
         if (await clipboard.TryGetTextAsync() is not { } text || Worksheet is not { } sheet || Selection is not { } selection || Editor is not { } editor)
             return;
         var at = new CellPosition(selection.Area.FirstRow, selection.Area.FirstColumn);
+
+        // Cut cells move once, while the clipboard still holds what was cut from them.
+        if (_cut is { } cut && cut.Sheet == sheet && cut.Text == text)
+        {
+            _cut = null;
+            _moving = true;
+            try
+            {
+                Show(Try(() => editor.Move(sheet, cut.Area, at)));
+            }
+            finally
+            {
+                _moving = false;
+            }
+
+            return;
+        }
+
         Show(Try(() => editor.Paste(sheet, at, text)));
     }
+
+    /// <summary>
+    /// Cuts the selected cells, as Ctrl+X does in Excel: they are copied, and the next paste moves
+    /// them, formulas and formats with them; until then they stay. Escape or another change forgets
+    /// the cut.
+    /// </summary>
+    public async Task CutAsync()
+    {
+        if (IsReadOnly || Worksheet is not { } sheet || Selection is not { } selection)
+            return;
+        await CopyAsync();
+        _cut = new Cut(sheet, selection.Area, GridClipboard.Text(sheet, selection.Area));
+    }
+
+    // Cells cut and waiting for a paste, with the text the clipboard got for them.
+    private sealed record Cut(Worksheet Sheet, CellArea Area, string Text);
+
+    private Cut? _cut;
+    private bool _moving;
+    private bool _commandKey;
 
     /// <inheritdoc />
     protected override Size MeasureOverride(Size availableSize)
@@ -143,8 +182,11 @@ public partial class SpreadsheetView
     {
         base.OnTextInput(e);
 
-        // Typing into the grid starts editing the active cell with what was typed, replacing its content.
-        if (e.Handled || _editing || string.IsNullOrEmpty(e.Text) || char.IsControl(e.Text[0]))
+        // Typing into the grid starts editing the active cell with what was typed, replacing its
+        // content; a letter typed with Ctrl or Cmd was a shortcut, not text.
+        var shortcut = _commandKey;
+        _commandKey = false;
+        if (e.Handled || _editing || shortcut || string.IsNullOrEmpty(e.Text) || char.IsControl(e.Text[0]))
             return;
         if (BeginEdit(e.Text, enterMode: true, focus: true))
             e.Handled = true;
@@ -158,6 +200,8 @@ public partial class SpreadsheetView
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         if (hotkeys?.Paste.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.V))
             _ = PasteAsync();
+        else if (hotkeys?.Cut.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.X))
+            _ = CutAsync();
         else if (hotkeys?.Redo.Exists(g => g.Matches(e)) == true || (command && (e.Key == Key.Y || (e.Key == Key.Z && shift))))
             Redo();
         else if (hotkeys?.Undo.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.Z))
@@ -295,7 +339,9 @@ public partial class SpreadsheetView
                 CommitAndMove(selection => selection.Move(rows, columns, Worksheet));
                 break;
             default:
-                return;
+                if (!CommandKeys.TextBoxKey(_box!, e))
+                    return;
+                break;
         }
 
         e.Handled = true;
@@ -332,6 +378,9 @@ public partial class SpreadsheetView
 
     private void OnEdited(object? sender, GridEdit edit)
     {
+        // Any other change, typing or undo, ends the cut, as in Excel.
+        if (!_moving)
+            _cut = null;
         InvalidateVisual();
         Edited?.Invoke(this, edit);
     }

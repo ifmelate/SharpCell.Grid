@@ -60,7 +60,8 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Enter, Shift+Enter | Down, up; inside a selection, to the next selected cell, column by column |
 | Tab, Shift+Tab | Right, left; inside a selection, to the next selected cell, row by row |
 | Ctrl+C or Cmd+C | Copies the selected cells |
-| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell |
+| Ctrl+X or Cmd+X | Cuts the selected cells: the next paste moves them, formulas and formats with them; Escape forgets the cut |
+| Ctrl+V or Cmd+V | Pastes text, such as cells copied from Excel, at the selection's top-left cell; after a cut, moves the cut cells there |
 | Wheel | Three rows a turn |
 
 ## Editing
@@ -77,7 +78,11 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Click on another cell | Enters the text and selects that cell |
 | Delete | Clears the selected cells' content; formats and styles stay |
 | Backspace | Starts editing the active cell empty |
-| Ctrl+Z, Ctrl+Y (Cmd+Z, Cmd+Shift+Z on macOS) | Undo, redo, and select the cells changed |
+| Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z | Undo, redo, and select the cells changed |
+
+Every shortcut with Ctrl works with Cmd as well, on every platform and in the browser, and in the
+cell's editor and the formula bar too: Cmd+A, Cmd+C, Cmd+X, Cmd+V, Cmd+Z and Cmd+Shift+Z do in the
+text what they do in any text box.
 
 What is typed is read as Excel reads it, through SharpCell's `Cell.Input`: `=` starts a formula,
 `'` keeps the rest as text, numbers, percentages, currency, dates and times are read in the
@@ -121,6 +126,8 @@ sheet's last used row or column.
   formula; references are typed. Formulas get no number format from what they calculate (Excel
   gives `=TODAY()` a date format).
 - Pasting takes the text of the clipboard: values, not the formats or formulas of cells copied in Excel.
+- A cut is not outlined with moving dashes, and moving cells does not change the formulas that
+  refer to them; styles stay where they were.
 - Undo keeps values, formulas and number formats; there is no undo of styles, which cannot be
   changed in the grid yet.
 - Copied HTML is not yet checked by pasting it into desktop Excel.

@@ -160,6 +160,15 @@ public Task CopyAsync()
 
 Puts the selected cells on the clipboard as Excel pastes them: as text with tabs between cells, and as an HTML table with their styles. Ctrl+C or Cmd+C does it too, also in a browser.
 
+<a id="cutasync"></a>
+### CutAsync()
+
+```csharp
+public Task CutAsync()
+```
+
+Cuts the selected cells, as Ctrl+X does in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
+
 <a id="pasteasync"></a>
 ### PasteAsync()
 
@@ -167,7 +176,7 @@ Puts the selected cells on the clipboard as Excel pastes them: as text with tabs
 public Task PasteAsync()
 ```
 
-Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V does: text copied from Excel goes in cell by cell, each read as typed. The pasted cells are selected.
+Pastes the text on the clipboard at the selection's top-left cell, as Ctrl+V does: text copied from Excel goes in cell by cell, each read as typed. After [SpreadsheetView.CutAsync](SharpCell.Grid.Avalonia.SpreadsheetView.md#cutasync), the cut cells move there instead, formulas and formats with them. The pasted cells are selected.
 
 <a id="redo"></a>
 ### Redo()

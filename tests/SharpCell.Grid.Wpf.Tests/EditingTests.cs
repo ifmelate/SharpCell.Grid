@@ -168,4 +168,20 @@ public class EditingTests
         view.PressKey(Key.Home, ModifierKeys.None);
         Assert.Equal(Cell("A5"), view.ActiveCell);
     });
+
+    [Fact]
+    public void Cut_and_paste_move_the_cells() => Sta.Run(() =>
+    {
+        var sheet = Sheet();
+        var view = Show(sheet);
+        view.Selection = GridSelection.Cell(Cell("A1"), sheet).ExtendTo(Cell("B1"), sheet);
+
+        ApplicationCommands.Cut.Execute(null, view);
+        Assert.Equal(2.0, sheet["A1"].Value.AsNumber());
+        view.ActiveCell = Cell("C3");
+        ApplicationCommands.Paste.Execute(null, view);
+
+        Assert.Equal(CellValue.Empty, sheet["A1"].Value);
+        Assert.Equal("=A1*10", sheet["D3"].Formula);
+    });
 }

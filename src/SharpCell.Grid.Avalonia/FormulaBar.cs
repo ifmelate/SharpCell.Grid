@@ -109,6 +109,12 @@ public class FormulaBar : UserControl
 
     private void OnTextKeyDown(object? sender, KeyEventArgs e)
     {
+        if (CommandKeys.TextBoxKey(_text, e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (View is not { IsEditing: true } view)
             return;
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
@@ -136,6 +142,12 @@ public class FormulaBar : UserControl
     // An address such as B3 or a range such as B3:D7 selects it.
     private void OnNameKeyDown(object? sender, KeyEventArgs e)
     {
+        if (CommandKeys.TextBoxKey(_name, e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (View is not { } view || view.Worksheet is not { } sheet)
             return;
         if (e.Key == Key.Escape)

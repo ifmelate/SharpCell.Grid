@@ -59,6 +59,7 @@ public partial class SpreadsheetView : FrameworkElement
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Copy, (_, e) => { Copy(); e.Handled = true; }, (_, e) => e.CanExecute = Worksheet is not null && Selection is not null));
         CommandBindings.Add(new CommandBinding(ApplicationCommands.SelectAll, (_, e) => { SelectAll(); e.Handled = true; }));
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, (_, e) => { Paste(); e.Handled = true; }, CanChange));
+        CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut, (_, e) => { Cut(); e.Handled = true; }, CanChange));
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Undo, (_, e) => { Undo(); e.Handled = true; }, (_, e) => e.CanExecute = !IsReadOnly && Editor?.CanUndo == true));
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Redo, (_, e) => { Redo(); e.Handled = true; }, (_, e) => e.CanExecute = !IsReadOnly && Editor?.CanRedo == true));
     }

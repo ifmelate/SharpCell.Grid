@@ -1,1 +1,2 @@
 #nullable enable
+SharpCell.Grid.Wpf.SpreadsheetView.Cut() -> void

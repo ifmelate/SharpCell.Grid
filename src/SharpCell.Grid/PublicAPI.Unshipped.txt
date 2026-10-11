@@ -1,1 +1,2 @@
 #nullable enable
+SharpCell.Grid.GridEditor.Move(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea from, SharpCell.Grid.CellPosition to) -> SharpCell.Grid.GridEdit!

@@ -88,6 +88,19 @@ Types the same text into every cell of an area, as Enter does for one cell and C
 - `FormulaParseException`: The text starts with `=` but is not a formula; no cell changes.
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
 
+<a id="move-worksheet-cellarea-cellposition"></a>
+### Move(Worksheet, CellArea, CellPosition)
+
+```csharp
+public GridEdit Move(Worksheet sheet, CellArea from, CellPosition to)
+```
+
+Moves cells, as cutting and pasting them in Excel does: their values or formulas and number formats go to the area with its top-left cell at `to`, and the cells left behind are cleared. Formulas move as they are written; what lies beyond the sheet's edge is left out. Styles stay where they were.
+
+**Exceptions**
+
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
+
 <a id="paste-worksheet-cellposition-string"></a>
 ### Paste(Worksheet, CellPosition, string)
 

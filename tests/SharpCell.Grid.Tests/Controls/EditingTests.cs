@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using SharpCell.Grid.Avalonia;
 
 namespace SharpCell.Grid.Tests.Controls;
@@ -328,5 +329,91 @@ public class EditingTests(HeadlessSession session)
         Press(window, Key.Home, RawInputModifiers.Control);
         Assert.Equal(Cells.Parse("A1"), view.ActiveCell);
         Assert.Equal(0, view.Offset.Y);
+    });
+
+    [Theory]
+    [InlineData(RawInputModifiers.Meta)]
+    [InlineData(RawInputModifiers.Control)]
+    public Task Cut_and_paste_move_the_cells(RawInputModifiers command) => session.Run(async () =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+        view.Selection = GridSelection.Cell(Cells.Parse("A1"), sheet).ExtendTo(Cells.Parse("B1"), sheet);
+
+        Press(window, Key.X, command);
+        await Task.Delay(50);
+        Assert.Equal(2.0, sheet["A1"].Value.AsNumber());   // cut cells stay until they are pasted
+        view.ActiveCell = Cells.Parse("C3");
+        await view.PasteAsync();
+
+        Assert.Equal(CellValue.Empty, sheet["A1"].Value);
+        Assert.Equal(2.0, sheet["C3"].Value.AsNumber());
+        Assert.Equal("=A1*10", sheet["D3"].Formula);
+        Assert.Equal("C3:D3", view.Selection?.ToString());
+    });
+
+    [Fact]
+    public Task Escape_forgets_a_cut_and_the_paste_copies() => session.Run(async () =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+
+        await view.CutAsync();
+        Press(window, Key.Escape);
+        view.ActiveCell = Cells.Parse("C3");
+        await view.PasteAsync();
+
+        Assert.Equal(2.0, sheet["A1"].Value.AsNumber());
+        Assert.Equal(2.0, sheet["C3"].Value.AsNumber());
+    });
+
+    [Theory]
+    [InlineData(RawInputModifiers.Meta)]
+    [InlineData(RawInputModifiers.Control)]
+    public Task Undo_and_redo_with_ctrl_or_cmd_and_shift(RawInputModifiers command) => session.Run(() =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+        Press(window, Key.Delete);
+
+        Press(window, Key.Z, command);
+        Assert.Equal(2.0, sheet["A1"].Value.AsNumber());
+        Press(window, Key.Z, command | RawInputModifiers.Shift);
+        Assert.Equal(CellValue.Empty, sheet["A1"].Value);
+    });
+
+    [Fact]
+    public Task A_letter_typed_with_cmd_is_a_shortcut_not_text() => session.Run(() =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+
+        window.KeyPress(Key.A, RawInputModifiers.Meta, PhysicalKey.A, "a");
+        window.KeyTextInput("a");
+
+        Assert.False(view.IsEditing);
+        Assert.Equal("1:1048576", view.Selection?.ToString());
+    });
+
+    [Theory]
+    [InlineData(RawInputModifiers.Meta)]
+    [InlineData(RawInputModifiers.Control)]
+    public Task Ctrl_or_cmd_A_selects_the_text_being_edited(RawInputModifiers command) => session.Run(() =>
+    {
+        var sheet = Sheet();
+        var (window, view, bar) = ShowWithBar(sheet);
+        view.ActiveCell = Cells.Parse("B1");
+
+        Press(window, Key.F2);
+        Press(window, Key.A, command);
+        var box = view.GetVisualChildren().OfType<TextBox>().Single();
+        Assert.Equal("=A1*10", box.SelectedText);
+        Press(window, Key.Escape);
+
+        var text = Boxes(bar)[1];
+        text.Focus();
+        Press(window, Key.A, command);
+        Assert.Equal("=A1*10", text.SelectedText);
+        Press(window, Key.Escape);
     });
 }
