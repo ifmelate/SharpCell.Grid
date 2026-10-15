@@ -178,6 +178,19 @@ public void Cut()
 
 Cuts the selected cells, as Ctrl+X and `ApplicationCommands.Cut` do in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecells-deleteshift"></a>
+### DeleteCells(DeleteShift)
+
+```csharp
+public void DeleteCells(DeleteShift shift)
+```
+
+Deletes the selected cells, moving the cells below or on the right into their place, as Excel's Delete dialog does.
+
+**Parameters**
+
+- `shift`: Which cells take the place of the deleted ones.
+
 <a id="deletecolumns"></a>
 ### DeleteColumns()
 
@@ -232,6 +245,19 @@ public void HideRows()
 
 Hides the selection's rows, as Ctrl+9 does.
 
+<a id="insertcells-insertshift"></a>
+### InsertCells(InsertShift)
+
+```csharp
+public void InsertCells(InsertShift shift)
+```
+
+Inserts empty cells in place of the selection, moving the cells beside it down or right, as Excel's Insert dialog does.
+
+**Parameters**
+
+- `shift`: Where the cells beside the selection go.
+
 <a id="insertcolumns"></a>
 ### InsertColumns()
 
@@ -249,6 +275,24 @@ public void InsertRows()
 ```
 
 Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
+<a id="opendeletedialog"></a>
+### OpenDeleteDialog()
+
+```csharp
+public void OpenDeleteDialog()
+```
+
+Opens Excel's Delete dialog for the selection: shift cells left or up, or delete entire rows or columns.
+
+<a id="openinsertdialog"></a>
+### OpenInsertDialog()
+
+```csharp
+public void OpenInsertDialog()
+```
+
+Opens Excel's Insert dialog for the selection: shift cells right or down, or insert entire rows or columns. Ctrl+Plus opens it when the selection is not whole rows or columns.
 
 <a id="paste"></a>
 ### Paste()

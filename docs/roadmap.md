@@ -54,7 +54,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Step | What | Needs from SharpCell |
 |---|---|---|
 | Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
-| Next | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
+| Done | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
 | Next | Changing styles in the grid: bold, fills, borders, number formats | — |
 | Next | More than one sheet in a view, with tabs | — |
 

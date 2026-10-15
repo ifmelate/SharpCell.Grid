@@ -287,10 +287,10 @@ shaded, a border goes round them, and the headers of their rows and columns are 
 | Double-click that edge | Fits the column to its widest text, or the row to its tallest, as Excel's AutoFit |
 | Drag the fill handle, the square on the selection's corner | Fills the cells it is dragged over: numbers and dates continue their step, text ending in a number counts on, day and month names follow each other, formulas are copied with their references following; dragged back, it clears the cells left out |
 | Ctrl+D, Ctrl+R | Copies the selection's top row down or its left column right, formulas following; one row or column takes the one before it |
-| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected |
+| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected. With cells selected, Excel's Insert or Delete dialog asks how: shift cells right or down (left or up), or entire rows or columns |
 | Ctrl+9, Ctrl+Shift+9 | Hides the selected rows, shows the hidden ones among them |
 | Ctrl+0, Ctrl+Shift+0 | Hides the selected columns, shows the hidden ones among them |
-| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents, and on headers Insert, Delete, Hide and Unhide |
+| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents; on cells Insert... and Delete..., which open the dialog; on headers Insert, Delete, Hide and Unhide |
 
 The fill handle reads a column filled down, or a row filled right, as Excel does. One number is
 repeated; two or more continue the straight line through them, as Excel's trend. A date steps a
@@ -302,7 +302,10 @@ validation of the cell it continues, so a drop-down list goes down with it. Fill
 goes backwards.
 
 Inserted rows take the styles and number formats of the row above, and inserted columns those of
-the column on their left, as in Excel. Formulas follow inserted and deleted rows and columns
+the column on their left, as in Excel; inserted cells take those of the cells above, or on the left.
+Cells inserted or deleted with a shift move only the cells beside them, through SharpCell's
+`CellRange.Insert` and `CellRange.Delete`; cells that would split a merged area, a table or an
+array formula are refused, as Excel refuses them. Formulas follow inserted and deleted rows and columns
 through SharpCell's `InsertRows` and `DeleteRows`: references to deleted cells become `#REF!`.
 Undo gives back deleted rows and columns whole: their cells, styles and sizes, and every formula,
 name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
@@ -340,8 +343,7 @@ sheet's last used row or column.
 - Copied and cut cells are outlined with dashes that do not move. Moving cells does not change
   the formulas that refer to them; styles stay where they were.
 - Copying and filling do not copy merged areas.
-- Ctrl+Plus and Ctrl+Minus with cells rather than whole rows or columns selected insert or delete
-  whole rows; there is no dialog to shift cells right or down.
+- The Insert and Delete dialog is a panel over the view, not a window of its own.
 - The fill handle has no options menu, Ctrl does not switch between copying and a series, and lists
   of your own are not known. A row fitted to its text takes 1.32 times the tallest font's size per
   line, close to Excel's line heights.
@@ -471,7 +473,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Step | What | Needs from SharpCell |
 |---|---|---|
 | Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
-| Next | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
+| Done | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
 | Next | Changing styles in the grid: bold, fills, borders, number formats | — |
 | Next | More than one sheet in a view, with tabs | — |
 
@@ -1029,6 +1031,20 @@ Copies cells, as copying and pasting them in Excel does: values, formulas, numbe
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
 - `NotSupportedException`: The cells copied hold part of an array formula, or a formula SharpCell cannot read; no cell changes.
 
+<a id="deletecells-worksheet-cellarea-deleteshift"></a>
+### DeleteCells(Worksheet, CellArea, DeleteShift)
+
+```csharp
+public GridEdit DeleteCells(Worksheet sheet, CellArea area, DeleteShift shift)
+```
+
+Deletes the cells of an area, as Excel's Delete with "Shift cells up" or "Shift cells left" does: the cells below (or on the right) move into their place, and references to the deleted cells become `#REF!` (see `CellRange.Delete`). Undoing gives back the cells and every formula and name as it was. An area of whole rows or columns deletes them.
+
+**Exceptions**
+
+- `InvalidOperationException`: The cells that move would split a merged area, a table or an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
+
 <a id="deletecolumns-worksheet-int-int"></a>
 ### DeleteColumns(Worksheet, int, int)
 
@@ -1150,6 +1166,20 @@ Fits rows to their content, as double-clicking a row header's edge does in Excel
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: A row is outside the sheet.
+
+<a id="insertcells-worksheet-cellarea-insertshift"></a>
+### InsertCells(Worksheet, CellArea, InsertShift)
+
+```csharp
+public GridEdit InsertCells(Worksheet sheet, CellArea area, InsertShift shift)
+```
+
+Inserts empty cells in place of an area, as Excel's Insert with "Shift cells down" or "Shift cells right" does: only the cells beside the area move, and formulas follow them (see `CellRange.Insert`). The new cells take the styles and number formats of the cells above (or on the left), as in Excel. An area of whole rows or columns inserts them.
+
+**Exceptions**
+
+- `InvalidOperationException`: Content would be pushed off the sheet, or the cells that move would split a merged area, a table or an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
 
 <a id="insertcolumns-worksheet-int-int"></a>
 ### InsertColumns(Worksheet, int, int)
@@ -2978,6 +3008,19 @@ public Task CutAsync()
 
 Cuts the selected cells, as Ctrl+X does in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecells-deleteshift"></a>
+### DeleteCells(DeleteShift)
+
+```csharp
+public void DeleteCells(DeleteShift shift)
+```
+
+Deletes the selected cells, moving the cells below or on the right into their place, as Excel's Delete dialog does.
+
+**Parameters**
+
+- `shift`: Which cells take the place of the deleted ones.
+
 <a id="deletecolumns"></a>
 ### DeleteColumns()
 
@@ -3032,6 +3075,19 @@ public void HideRows()
 
 Hides the selection's rows, as Ctrl+9 does.
 
+<a id="insertcells-insertshift"></a>
+### InsertCells(InsertShift)
+
+```csharp
+public void InsertCells(InsertShift shift)
+```
+
+Inserts empty cells in place of the selection, moving the cells beside it down or right, as Excel's Insert dialog does.
+
+**Parameters**
+
+- `shift`: Where the cells beside the selection go.
+
 <a id="insertcolumns"></a>
 ### InsertColumns()
 
@@ -3049,6 +3105,24 @@ public void InsertRows()
 ```
 
 Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
+<a id="opendeletedialog"></a>
+### OpenDeleteDialog()
+
+```csharp
+public void OpenDeleteDialog()
+```
+
+Opens Excel's Delete dialog for the selection: shift cells left or up, or delete entire rows or columns.
+
+<a id="openinsertdialog"></a>
+### OpenInsertDialog()
+
+```csharp
+public void OpenInsertDialog()
+```
+
+Opens Excel's Insert dialog for the selection: shift cells right or down, or insert entire rows or columns. Ctrl+Plus opens it when the selection is not whole rows or columns.
 
 <a id="pasteasync"></a>
 ### PasteAsync()
@@ -3335,6 +3409,19 @@ public void Cut()
 
 Cuts the selected cells, as Ctrl+X and `ApplicationCommands.Cut` do in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecells-deleteshift"></a>
+### DeleteCells(DeleteShift)
+
+```csharp
+public void DeleteCells(DeleteShift shift)
+```
+
+Deletes the selected cells, moving the cells below or on the right into their place, as Excel's Delete dialog does.
+
+**Parameters**
+
+- `shift`: Which cells take the place of the deleted ones.
+
 <a id="deletecolumns"></a>
 ### DeleteColumns()
 
@@ -3389,6 +3476,19 @@ public void HideRows()
 
 Hides the selection's rows, as Ctrl+9 does.
 
+<a id="insertcells-insertshift"></a>
+### InsertCells(InsertShift)
+
+```csharp
+public void InsertCells(InsertShift shift)
+```
+
+Inserts empty cells in place of the selection, moving the cells beside it down or right, as Excel's Insert dialog does.
+
+**Parameters**
+
+- `shift`: Where the cells beside the selection go.
+
 <a id="insertcolumns"></a>
 ### InsertColumns()
 
@@ -3406,6 +3506,24 @@ public void InsertRows()
 ```
 
 Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
+<a id="opendeletedialog"></a>
+### OpenDeleteDialog()
+
+```csharp
+public void OpenDeleteDialog()
+```
+
+Opens Excel's Delete dialog for the selection: shift cells left or up, or delete entire rows or columns.
+
+<a id="openinsertdialog"></a>
+### OpenInsertDialog()
+
+```csharp
+public void OpenInsertDialog()
+```
+
+Opens Excel's Insert dialog for the selection: shift cells right or down, or insert entire rows or columns. Ctrl+Plus opens it when the selection is not whole rows or columns.
 
 <a id="paste"></a>
 ### Paste()

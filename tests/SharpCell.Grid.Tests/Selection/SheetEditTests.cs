@@ -190,4 +190,54 @@ public class SheetEditTests
         Assert.Equal("=B2>0", rule.Formula1);
         Assert.Equal("#Other!A1", sheet["A3"].Hyperlink?.Target);
     }
+    [Fact]
+    public void Cells_inserted_with_a_shift_down_move_their_column_and_take_the_format_above()
+    {
+        var (sheet, editor) = Budget();
+        sheet["B2"].NumberFormat = "0%";
+
+        var edit = editor.InsertCells(sheet, Area("B3"), InsertShift.Down);
+
+        Assert.Equal(Area("B3"), edit.Area);
+        Assert.Equal((CellValue.Empty, "0%"), (sheet["B3"].Value, sheet["B3"].NumberFormat));
+        Assert.Equal(30.0, sheet["B4"].Value.AsNumber());
+        Assert.Equal("Line 3", sheet["A3"].Text);                    // column A stays
+        Assert.Equal("=SUM(B2:B6)", sheet["B7"].Formula);
+        Assert.Equal("=S!B5+S!B4", sheet.Workbook["Other"]["A1"].Formula);
+
+        editor.Undo();
+        Assert.Equal(("=SUM(B2:B5)", 30.0), (sheet["B6"].Formula, sheet["B3"].Value.AsNumber()));
+        editor.Redo();
+        Assert.Equal(CellValue.Empty, sheet["B3"].Value);
+    }
+
+    [Fact]
+    public void Cells_deleted_with_a_shift_left_come_back_whole_on_undo()
+    {
+        var (sheet, editor) = Budget();
+
+        editor.DeleteCells(sheet, Area("B3"), DeleteShift.Left);
+
+        Assert.Equal("=#REF!*2", sheet["B3"].Formula);                  // C3 moved into B3, and B3 is gone
+        Assert.Equal("=S!B4+S!#REF!", sheet.Workbook["Other"]["A1"].Formula);
+        Assert.Equal(40.0, sheet["B4"].Value.AsNumber());
+
+        editor.Undo();
+        Assert.Equal((30.0, "0.00", "=B3*2"), (sheet["B3"].Value.AsNumber(), sheet["B3"].NumberFormat, sheet["C3"].Formula));
+        Assert.Equal("=S!B4+S!B3", sheet.Workbook["Other"]["A1"].Formula);
+        Assert.Equal(60.0, sheet["C3"].Value.AsNumber());
+    }
+
+    [Fact]
+    public void Whole_rows_insert_rows_and_a_merged_area_across_the_cells_refuses()
+    {
+        var (sheet, editor) = Budget();
+
+        var edit = editor.InsertCells(sheet, new CellArea(3, 1, 3, SheetLayout.MaxColumn), InsertShift.Down);
+        Assert.Equal(30.0, sheet.RowHeight(4));                          // the row moved with its height
+        Assert.True(edit.ChangesLayout);
+
+        Assert.Throws<InvalidOperationException>(() => editor.DeleteCells(sheet, Area("D2"), DeleteShift.Up));   // D4:E4 merged
+        Assert.Equal("Line 3", sheet["A4"].Text);
+    }
 }

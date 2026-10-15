@@ -77,6 +77,88 @@ public sealed partial class GridEditor
     }
 
     /// <summary>
+    /// Inserts empty cells in place of an area, as Excel's Insert with "Shift cells down" or "Shift
+    /// cells right" does: only the cells beside the area move, and formulas follow them (see
+    /// <see cref="CellRange.Insert"/>). The new cells take the styles and number formats of the
+    /// cells above (or on the left), as in Excel. An area of whole rows or columns inserts them.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Content would be pushed off the sheet, or the cells that move would
+    /// split a merged area, a table or an array formula; nothing changes.</exception>
+    /// <exception cref="NotSupportedException">A formula SharpCell cannot read would have to follow; nothing changes.</exception>
+    public GridEdit InsertCells(Worksheet sheet, CellArea area, InsertShift shift)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        var down = shift == InsertShift.Down;
+        if (down && IsWholeRows(area))
+            return InsertRows(sheet, area.FirstRow, area.LastRow - area.FirstRow + 1);
+        if (!down && IsWholeColumns(area))
+            return InsertColumns(sheet, area.FirstColumn, area.LastColumn - area.FirstColumn + 1);
+        var range = RangeOf(sheet, area);
+        void Insert()
+        {
+            range.Insert(shift);
+            FormatCellsLike(sheet, area, down);
+        }
+
+        Insert();
+        return Push(new Step(sheet, area, () => range.Delete(down ? DeleteShift.Up : DeleteShift.Left), Insert, Layout: true));
+    }
+
+    /// <summary>
+    /// Deletes the cells of an area, as Excel's Delete with "Shift cells up" or "Shift cells left"
+    /// does: the cells below (or on the right) move into their place, and references to the deleted
+    /// cells become <c>#REF!</c> (see <see cref="CellRange.Delete"/>). Undoing gives back the cells and
+    /// every formula and name as it was. An area of whole rows or columns deletes them.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The cells that move would split a merged area, a table or an array
+    /// formula; nothing changes.</exception>
+    /// <exception cref="NotSupportedException">A formula SharpCell cannot read would have to follow; nothing changes.</exception>
+    public GridEdit DeleteCells(Worksheet sheet, CellArea area, DeleteShift shift)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        var up = shift == DeleteShift.Up;
+        if (up && IsWholeRows(area))
+            return DeleteRows(sheet, area.FirstRow, area.LastRow - area.FirstRow + 1);
+        if (!up && IsWholeColumns(area))
+            return DeleteColumns(sheet, area.FirstColumn, area.LastColumn - area.FirstColumn + 1);
+        var range = RangeOf(sheet, area);
+        void Remove() => range.Delete(shift);
+        var kept = Deleted.Keep(sheet, area, () => range.Insert(up ? InsertShift.Down : InsertShift.Right));
+        Remove();
+        if (kept is null)
+        {
+            ClearHistory();
+            return Done(new Step(sheet, area, () => { }, () => { }, Layout: true));
+        }
+
+        return Push(new Step(sheet, area, kept.Restore, Remove, Layout: true));
+    }
+
+    private static bool IsWholeRows(CellArea area) => area.FirstColumn == 1 && area.LastColumn == SheetLayout.MaxColumn;
+
+    private static bool IsWholeColumns(CellArea area) => area.FirstRow == 1 && area.LastRow == SheetLayout.MaxRow;
+
+    // Inserted cells look like their neighbours above, or on the left: their styles and number formats.
+    private static void FormatCellsLike(Worksheet sheet, CellArea area, bool down)
+    {
+        if (down ? area.FirstRow == 1 : area.FirstColumn == 1)
+            return;
+        var defaultStyle = sheet.Workbook.DefaultStyle;
+        for (var row = area.FirstRow; row <= area.LastRow; row++)
+        {
+            for (var column = area.FirstColumn; column <= area.LastColumn; column++)
+            {
+                var from = down ? sheet[area.FirstRow - 1, column] : sheet[row, area.FirstColumn - 1];
+                var target = sheet[row, column];
+                if (!ReferenceEquals(from.Style, defaultStyle))
+                    target.Style = from.Style;
+                if (from.NumberFormat != "General")
+                    target.NumberFormat = from.NumberFormat;
+            }
+        }
+    }
+
+    /// <summary>
     /// Gives columns a width, as dragging a column header's edge does in Excel: in the units of
     /// <see cref="Worksheet.SetColumnWidth"/>, or null for the sheet's default.
     /// </summary>
@@ -235,7 +317,13 @@ public sealed partial class GridEditor
 
         // What the deleted cells held is kept aside first; a sheet whose cells cannot be kept that
         // way, as with array formulas, is changed without a way back.
-        var kept = Deleted.Keep(sheet, rows, at, count, area);
+        var kept = Deleted.Keep(sheet, area, () =>
+        {
+            if (rows)
+                sheet.InsertRows(at, count);
+            else
+                sheet.InsertColumns(at, count);
+        }, (rows, at, count));
         Remove();
         if (kept is null)
         {
@@ -271,15 +359,14 @@ public sealed partial class GridEditor
         }
     }
 
-    // Everything deleting rows or columns changes, kept to give it back: the deleted cells, their
-    // sizes, every formula, name and data validation rule of the workbook as written before, merged
-    // areas and tables.
+    // Everything deleting rows, columns or cells changes, kept to give it back: the deleted cells,
+    // the sizes of deleted rows or columns, every formula, name and data validation rule of the
+    // workbook as written before, merged areas and tables.
     private sealed class Deleted
     {
         private readonly Worksheet _sheet;
-        private readonly bool _rows;
-        private readonly int _at;
-        private readonly int _count;
+        private readonly Action _reinsert;
+        private readonly (bool Rows, int At, int Count)? _lines;
         private readonly CellRange _cells;
         private readonly CellArea _area;
         private readonly double?[] _sizes;
@@ -290,9 +377,10 @@ public sealed partial class GridEditor
         private readonly List<(string Name, string Range, bool Header, bool Totals)> _tables;
         private readonly List<(Worksheet Sheet, Rules Rules)> _rules;
 
-        private Deleted(Worksheet sheet, bool rows, int at, int count, CellArea area, CellRange cells)
+        private Deleted(Worksheet sheet, CellArea area, CellRange cells, Action reinsert, (bool Rows, int At, int Count)? lines)
         {
-            (_sheet, _rows, _at, _count, _area, _cells) = (sheet, rows, at, count, area, cells);
+            (_sheet, _area, _cells, _reinsert, _lines) = (sheet, area, cells, reinsert, lines);
+            var (rows, at, count) = lines ?? (false, 0, 0);
             _sizes = new double?[count];
             _hidden = new bool[count];
             for (var i = 0; i < count; i++)
@@ -316,7 +404,11 @@ public sealed partial class GridEditor
             _rules = sheet.Workbook.Sheets.Select(s => (s, Rules.Of(s))).ToList();
         }
 
-        public static Deleted? Keep(Worksheet sheet, bool rows, int at, int count, CellArea area)
+        /// <param name="sheet">The sheet.</param>
+        /// <param name="area">The cells deleted.</param>
+        /// <param name="reinsert">Inserts empty cells where they were.</param>
+        /// <param name="lines">For whole rows or columns, which; their sizes are kept too.</param>
+        public static Deleted? Keep(Worksheet sheet, CellArea area, Action reinsert, (bool Rows, int At, int Count)? lines = null)
         {
             // The deleted cells are copied into a workbook of their own, at the same addresses.
             var copy = new Workbook().AddSheet("Deleted");
@@ -324,7 +416,7 @@ public sealed partial class GridEditor
             {
                 var band = RangeOf(sheet, area);
                 band.CopyTo(RangeOf(copy, area));
-                return new Deleted(sheet, rows, at, count, area, RangeOf(copy, area));
+                return new Deleted(sheet, area, RangeOf(copy, area), reinsert, lines);
             }
             catch (NotSupportedException)
             {
@@ -339,22 +431,20 @@ public sealed partial class GridEditor
 
         public void Restore()
         {
-            if (_rows)
-                _sheet.InsertRows(_at, _count);
-            else
-                _sheet.InsertColumns(_at, _count);
+            _reinsert();
             _cells.CopyTo(RangeOf(_sheet, _area));
-            for (var i = 0; i < _count; i++)
+            var (rows, at, _) = _lines ?? (false, 0, 0);
+            for (var i = 0; i < _sizes.Length; i++)
             {
-                if (_rows)
+                if (rows)
                 {
-                    _sheet.SetRowHeight(_at + i, _sizes[i]);
-                    _sheet.SetRowHidden(_at + i, _hidden[i]);
+                    _sheet.SetRowHeight(at + i, _sizes[i]);
+                    _sheet.SetRowHidden(at + i, _hidden[i]);
                 }
                 else
                 {
-                    _sheet.SetColumnWidth(_at + i, _sizes[i]);
-                    _sheet.SetColumnHidden(_at + i, _hidden[i]);
+                    _sheet.SetColumnWidth(at + i, _sizes[i]);
+                    _sheet.SetColumnHidden(at + i, _hidden[i]);
                 }
             }
 

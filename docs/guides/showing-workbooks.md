@@ -110,10 +110,10 @@ shaded, a border goes round them, and the headers of their rows and columns are 
 | Double-click that edge | Fits the column to its widest text, or the row to its tallest, as Excel's AutoFit |
 | Drag the fill handle, the square on the selection's corner | Fills the cells it is dragged over: numbers and dates continue their step, text ending in a number counts on, day and month names follow each other, formulas are copied with their references following; dragged back, it clears the cells left out |
 | Ctrl+D, Ctrl+R | Copies the selection's top row down or its left column right, formulas following; one row or column takes the one before it |
-| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected |
+| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected. With cells selected, Excel's Insert or Delete dialog asks how: shift cells right or down (left or up), or entire rows or columns |
 | Ctrl+9, Ctrl+Shift+9 | Hides the selected rows, shows the hidden ones among them |
 | Ctrl+0, Ctrl+Shift+0 | Hides the selected columns, shows the hidden ones among them |
-| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents, and on headers Insert, Delete, Hide and Unhide |
+| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents; on cells Insert... and Delete..., which open the dialog; on headers Insert, Delete, Hide and Unhide |
 
 The fill handle reads a column filled down, or a row filled right, as Excel does. One number is
 repeated; two or more continue the straight line through them, as Excel's trend. A date steps a
@@ -125,7 +125,10 @@ validation of the cell it continues, so a drop-down list goes down with it. Fill
 goes backwards.
 
 Inserted rows take the styles and number formats of the row above, and inserted columns those of
-the column on their left, as in Excel. Formulas follow inserted and deleted rows and columns
+the column on their left, as in Excel; inserted cells take those of the cells above, or on the left.
+Cells inserted or deleted with a shift move only the cells beside them, through SharpCell's
+`CellRange.Insert` and `CellRange.Delete`; cells that would split a merged area, a table or an
+array formula are refused, as Excel refuses them. Formulas follow inserted and deleted rows and columns
 through SharpCell's `InsertRows` and `DeleteRows`: references to deleted cells become `#REF!`.
 Undo gives back deleted rows and columns whole: their cells, styles and sizes, and every formula,
 name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
@@ -163,8 +166,7 @@ sheet's last used row or column.
 - Copied and cut cells are outlined with dashes that do not move. Moving cells does not change
   the formulas that refer to them; styles stay where they were.
 - Copying and filling do not copy merged areas.
-- Ctrl+Plus and Ctrl+Minus with cells rather than whole rows or columns selected insert or delete
-  whole rows; there is no dialog to shift cells right or down.
+- The Insert and Delete dialog is a panel over the view, not a window of its own.
 - The fill handle has no options menu, Ctrl does not switch between copying and a series, and lists
   of your own are not known. A row fitted to its text takes 1.32 times the tallest font's size per
   line, close to Excel's line heights.

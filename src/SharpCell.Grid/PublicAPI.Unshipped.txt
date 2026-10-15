@@ -8,3 +8,5 @@ SharpCell.Grid.GridPainter.ReferenceArea.get -> SharpCell.Grid.CellArea?
 SharpCell.Grid.GridPainter.ReferenceArea.set -> void
 SharpCell.Grid.GridTheme.ReferenceBorder.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.ReferenceBorder.init -> void
+SharpCell.Grid.GridEditor.DeleteCells(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.DeleteShift shift) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.InsertCells(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.InsertShift shift) -> SharpCell.Grid.GridEdit!

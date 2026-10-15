@@ -1,1 +1,5 @@
 #nullable enable
+SharpCell.Grid.Avalonia.SpreadsheetView.DeleteCells(SharpCell.DeleteShift shift) -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.InsertCells(SharpCell.InsertShift shift) -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.OpenDeleteDialog() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.OpenInsertDialog() -> void

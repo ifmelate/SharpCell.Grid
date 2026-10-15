@@ -88,6 +88,20 @@ Copies cells, as copying and pasting them in Excel does: values, formulas, numbe
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
 - `NotSupportedException`: The cells copied hold part of an array formula, or a formula SharpCell cannot read; no cell changes.
 
+<a id="deletecells-worksheet-cellarea-deleteshift"></a>
+### DeleteCells(Worksheet, CellArea, DeleteShift)
+
+```csharp
+public GridEdit DeleteCells(Worksheet sheet, CellArea area, DeleteShift shift)
+```
+
+Deletes the cells of an area, as Excel's Delete with "Shift cells up" or "Shift cells left" does: the cells below (or on the right) move into their place, and references to the deleted cells become `#REF!` (see `CellRange.Delete`). Undoing gives back the cells and every formula and name as it was. An area of whole rows or columns deletes them.
+
+**Exceptions**
+
+- `InvalidOperationException`: The cells that move would split a merged area, a table or an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
+
 <a id="deletecolumns-worksheet-int-int"></a>
 ### DeleteColumns(Worksheet, int, int)
 
@@ -209,6 +223,20 @@ Fits rows to their content, as double-clicking a row header's edge does in Excel
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: A row is outside the sheet.
+
+<a id="insertcells-worksheet-cellarea-insertshift"></a>
+### InsertCells(Worksheet, CellArea, InsertShift)
+
+```csharp
+public GridEdit InsertCells(Worksheet sheet, CellArea area, InsertShift shift)
+```
+
+Inserts empty cells in place of an area, as Excel's Insert with "Shift cells down" or "Shift cells right" does: only the cells beside the area move, and formulas follow them (see `CellRange.Insert`). The new cells take the styles and number formats of the cells above (or on the left), as in Excel. An area of whole rows or columns inserts them.
+
+**Exceptions**
+
+- `InvalidOperationException`: Content would be pushed off the sheet, or the cells that move would split a merged area, a table or an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
 
 <a id="insertcolumns-worksheet-int-int"></a>
 ### InsertColumns(Worksheet, int, int)

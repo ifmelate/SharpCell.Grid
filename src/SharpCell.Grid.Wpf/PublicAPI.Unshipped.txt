@@ -1,1 +1,5 @@
 #nullable enable
+SharpCell.Grid.Wpf.SpreadsheetView.DeleteCells(SharpCell.DeleteShift shift) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.InsertCells(SharpCell.InsertShift shift) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.OpenDeleteDialog() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.OpenInsertDialog() -> void
