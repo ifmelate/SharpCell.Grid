@@ -22,6 +22,17 @@ override SharpCell.Grid.GridTheme.Equals(object? obj) -> bool
 override SharpCell.Grid.GridTheme.GetHashCode() -> int
 override SharpCell.Grid.GridTheme.ToString() -> string!
 override SharpCell.Grid.GridViewport.GetHashCode() -> int
+SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.All = SharpCell.Grid.BorderEdges.Outside | SharpCell.Grid.BorderEdges.Inside -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Bottom = 8 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Inside = SharpCell.Grid.BorderEdges.InsideVertical | SharpCell.Grid.BorderEdges.InsideHorizontal -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.InsideHorizontal = 32 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.InsideVertical = 16 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Left = 1 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.None = 0 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Outside = SharpCell.Grid.BorderEdges.Left | SharpCell.Grid.BorderEdges.Right | SharpCell.Grid.BorderEdges.Top | SharpCell.Grid.BorderEdges.Bottom -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Right = 2 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Top = 4 -> SharpCell.Grid.BorderEdges
 SharpCell.Grid.CellArea
 SharpCell.Grid.CellArea.CellArea() -> void
 SharpCell.Grid.CellArea.CellArea(int FirstRow, int FirstColumn, int LastRow, int LastColumn) -> void
@@ -42,6 +53,7 @@ SharpCell.Grid.CellPosition.CellPosition(int row, int column) -> void
 SharpCell.Grid.CellPosition.Column.get -> int
 SharpCell.Grid.CellPosition.Equals(SharpCell.Grid.CellPosition other) -> bool
 SharpCell.Grid.CellPosition.Row.get -> int
+SharpCell.Grid.FormulaPointing
 SharpCell.Grid.GridClipboard
 SharpCell.Grid.GridColor
 SharpCell.Grid.GridColor.A.get -> byte
@@ -82,6 +94,7 @@ SharpCell.Grid.GridEditor.CanUndo.get -> bool
 SharpCell.Grid.GridEditor.Clear(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.ClearHistory() -> void
 SharpCell.Grid.GridEditor.Copy(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea from, SharpCell.Grid.CellArea to) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.DeleteCells(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.DeleteShift shift) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.DeleteColumns(SharpCell.Worksheet! sheet, int column, int count) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.DeleteRows(SharpCell.Worksheet! sheet, int row, int count) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
@@ -92,15 +105,19 @@ SharpCell.Grid.GridEditor.FillRight(SharpCell.Worksheet! sheet, SharpCell.Grid.C
 SharpCell.Grid.GridEditor.FitColumnWidth(SharpCell.Worksheet! sheet, int firstColumn, int lastColumn, SharpCell.Grid.GridPainter! painter) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.FitRowHeight(SharpCell.Worksheet! sheet, int firstRow, int lastRow, SharpCell.Grid.GridPainter! painter) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.GridEditor(SharpCell.Workbook! workbook) -> void
+SharpCell.Grid.GridEditor.InsertCells(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.InsertShift shift) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.InsertColumns(SharpCell.Worksheet! sheet, int column, int count) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.InsertRows(SharpCell.Worksheet! sheet, int row, int count) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.Move(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea from, SharpCell.Grid.CellPosition to) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.Paste(SharpCell.Worksheet! sheet, SharpCell.Grid.CellPosition at, string! text) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.Redo() -> SharpCell.Grid.GridEdit?
+SharpCell.Grid.GridEditor.SetBorders(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.Grid.BorderEdges edges, SharpCell.CellBorder? border) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.SetColumnHidden(SharpCell.Worksheet! sheet, int firstColumn, int lastColumn, bool hidden) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.SetColumnWidth(SharpCell.Worksheet! sheet, int firstColumn, int lastColumn, double? width) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetNumberFormat(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, string! format) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.SetRowHeight(SharpCell.Worksheet! sheet, int firstRow, int lastRow, double? height) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.SetRowHidden(SharpCell.Worksheet! sheet, int firstRow, int lastRow, bool hidden) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetStyle(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, System.Func<SharpCell.CellStyle!, SharpCell.CellStyle!>! change) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.Undo() -> SharpCell.Grid.GridEdit?
 SharpCell.Grid.GridEditor.Workbook.get -> SharpCell.Workbook!
 SharpCell.Grid.GridFont
@@ -160,6 +177,8 @@ SharpCell.Grid.GridPainter.MeasureText.get -> System.Func<string!, SharpCell.Gri
 SharpCell.Grid.GridPainter.MeasureText.set -> void
 SharpCell.Grid.GridPainter.Paint(SharpCell.Grid.IGridCanvas! canvas, SharpCell.Worksheet? sheet, SharpCell.Grid.GridViewport viewport, SharpCell.Grid.CellPosition? activeCell = null) -> void
 SharpCell.Grid.GridPainter.Paint(SharpCell.Grid.IGridCanvas! canvas, SharpCell.Worksheet? sheet, SharpCell.Grid.GridViewport viewport, SharpCell.Grid.GridSelection? selection) -> void
+SharpCell.Grid.GridPainter.ReferenceArea.get -> SharpCell.Grid.CellArea?
+SharpCell.Grid.GridPainter.ReferenceArea.set -> void
 SharpCell.Grid.GridPainter.RowEdgeAt(SharpCell.Grid.GridViewport viewport, double x, double y) -> int?
 SharpCell.Grid.GridPainter.RowHeaderWidth.get -> double
 SharpCell.Grid.GridPainter.RowHeaderWidth.set -> void
@@ -211,6 +230,7 @@ SharpCell.Grid.GridSelection.IsSingleCell.get -> bool
 SharpCell.Grid.GridSelection.Move(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
 SharpCell.Grid.GridSelection.MoveToEdge(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
 SharpCell.Grid.GridSelection.MoveWithin(int rows, int columns, SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+SharpCell.Grid.GridSelection.SelectAll(SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
 SharpCell.Grid.GridTextAlignment
 SharpCell.Grid.GridTextAlignment.Center = 1 -> SharpCell.Grid.GridTextAlignment
 SharpCell.Grid.GridTextAlignment.Left = 0 -> SharpCell.Grid.GridTextAlignment
@@ -239,6 +259,8 @@ SharpCell.Grid.GridTheme.HeaderLine.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.HeaderLine.init -> void
 SharpCell.Grid.GridTheme.HeaderText.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.HeaderText.init -> void
+SharpCell.Grid.GridTheme.ReferenceBorder.get -> SharpCell.Grid.GridColor
+SharpCell.Grid.GridTheme.ReferenceBorder.init -> void
 SharpCell.Grid.GridTheme.SelectedHeaderBackground.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.SelectedHeaderBackground.init -> void
 SharpCell.Grid.GridTheme.SelectedHeaderText.get -> SharpCell.Grid.GridColor
@@ -289,6 +311,8 @@ static SharpCell.Grid.CellArea.operator !=(SharpCell.Grid.CellArea left, SharpCe
 static SharpCell.Grid.CellArea.operator ==(SharpCell.Grid.CellArea left, SharpCell.Grid.CellArea right) -> bool
 static SharpCell.Grid.CellPosition.operator !=(SharpCell.Grid.CellPosition left, SharpCell.Grid.CellPosition right) -> bool
 static SharpCell.Grid.CellPosition.operator ==(SharpCell.Grid.CellPosition left, SharpCell.Grid.CellPosition right) -> bool
+static SharpCell.Grid.FormulaPointing.CanPoint(string! text, int caret) -> bool
+static SharpCell.Grid.FormulaPointing.Reference(SharpCell.Grid.CellArea area, SharpCell.Worksheet? sheet, SharpCell.Worksheet? formulaSheet) -> string!
 static SharpCell.Grid.GridClipboard.Html(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> string!
 static SharpCell.Grid.GridClipboard.ReadText(string! text) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>!
 static SharpCell.Grid.GridClipboard.Text(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area) -> string!
@@ -299,10 +323,12 @@ static SharpCell.Grid.GridColor.operator ==(SharpCell.Grid.GridColor left, Sharp
 static SharpCell.Grid.GridEdit.operator !=(SharpCell.Grid.GridEdit? left, SharpCell.Grid.GridEdit? right) -> bool
 static SharpCell.Grid.GridEdit.operator ==(SharpCell.Grid.GridEdit? left, SharpCell.Grid.GridEdit? right) -> bool
 static SharpCell.Grid.GridEditor.FillArea(SharpCell.Grid.CellArea from, SharpCell.Grid.CellPosition cell) -> SharpCell.Grid.CellArea
+static SharpCell.Grid.GridEditor.ShortcutFormat(char symbol, System.Globalization.CultureInfo! culture) -> string?
 static SharpCell.Grid.GridFont.operator !=(SharpCell.Grid.GridFont left, SharpCell.Grid.GridFont right) -> bool
 static SharpCell.Grid.GridFont.operator ==(SharpCell.Grid.GridFont left, SharpCell.Grid.GridFont right) -> bool
 static SharpCell.Grid.GridHit.operator !=(SharpCell.Grid.GridHit left, SharpCell.Grid.GridHit right) -> bool
 static SharpCell.Grid.GridHit.operator ==(SharpCell.Grid.GridHit left, SharpCell.Grid.GridHit right) -> bool
+static SharpCell.Grid.GridNavigation.CurrentRegion(SharpCell.Worksheet? sheet, SharpCell.Grid.CellPosition cell) -> SharpCell.Grid.CellArea
 static SharpCell.Grid.GridNavigation.Move(SharpCell.Worksheet? sheet, SharpCell.Grid.CellPosition from, int rows, int columns) -> SharpCell.Grid.CellPosition
 static SharpCell.Grid.GridNavigation.MoveToEdge(SharpCell.Worksheet? sheet, SharpCell.Grid.CellPosition from, int rows, int columns) -> SharpCell.Grid.CellPosition
 static SharpCell.Grid.GridPainter.FontOf(SharpCell.CellFont! font) -> SharpCell.Grid.GridFont

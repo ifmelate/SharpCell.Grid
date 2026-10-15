@@ -16,6 +16,13 @@ SharpCell.Grid.Wpf.FormulaBar
 SharpCell.Grid.Wpf.FormulaBar.FormulaBar() -> void
 SharpCell.Grid.Wpf.FormulaBar.View.get -> SharpCell.Grid.Wpf.SpreadsheetView?
 SharpCell.Grid.Wpf.FormulaBar.View.set -> void
+SharpCell.Grid.Wpf.SheetTabs
+SharpCell.Grid.Wpf.SheetTabs.AddSheet() -> SharpCell.Worksheet?
+SharpCell.Grid.Wpf.SheetTabs.Refresh() -> void
+SharpCell.Grid.Wpf.SheetTabs.SheetNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
+SharpCell.Grid.Wpf.SheetTabs.SheetTabs() -> void
+SharpCell.Grid.Wpf.SheetTabs.View.get -> SharpCell.Grid.Wpf.SpreadsheetView?
+SharpCell.Grid.Wpf.SheetTabs.View.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView
 SharpCell.Grid.Wpf.SpreadsheetView.ActiveCell.get -> SharpCell.Grid.CellPosition?
 SharpCell.Grid.Wpf.SpreadsheetView.ActiveCell.set -> void
@@ -25,6 +32,7 @@ SharpCell.Grid.Wpf.SpreadsheetView.ClearSelection() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.CommitEdit() -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.Copy() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Cut() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.DeleteCells(SharpCell.DeleteShift shift) -> void
 SharpCell.Grid.Wpf.SpreadsheetView.DeleteColumns() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.DeleteRows() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Edited -> System.EventHandler<SharpCell.Grid.GridEdit!>?
@@ -35,6 +43,7 @@ SharpCell.Grid.Wpf.SpreadsheetView.FillDown() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.FillRight() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.HideColumns() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.HideRows() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.InsertCells(SharpCell.InsertShift shift) -> void
 SharpCell.Grid.Wpf.SpreadsheetView.InsertColumns() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.InsertRows() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.IsEditing.get -> bool
@@ -42,13 +51,25 @@ SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnly.get -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.IsReadOnly.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Offset.get -> System.Windows.Vector
 SharpCell.Grid.Wpf.SpreadsheetView.Offset.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.OpenDeleteDialog() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.OpenInsertDialog() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Painter.get -> SharpCell.Grid.GridPainter!
 SharpCell.Grid.Wpf.SpreadsheetView.Paste() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Redo() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.ReloadLayout() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Restyle(System.Func<SharpCell.CellStyle!, SharpCell.CellStyle!>! change) -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Selection.get -> SharpCell.Grid.GridSelection?
 SharpCell.Grid.Wpf.SpreadsheetView.Selection.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetBorders(SharpCell.Grid.BorderEdges edges, SharpCell.CellBorder? border) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetFill(SharpCell.CellColor? color) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetFontColor(SharpCell.CellColor? color) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetNumberFormat(string! format) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ShowNextSheet(int direction = 1) -> bool
 SharpCell.Grid.Wpf.SpreadsheetView.SpreadsheetView() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleBold() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleItalic() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleStrikethrough() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleUnderline() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Undo() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.UnhideColumns() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.UnhideRows() -> void
@@ -58,6 +79,7 @@ SharpCell.Grid.Wpf.SpreadsheetView.Worksheet.set -> void
 SharpCell.Grid.Wpf.SpreadsheetView.Zoom.get -> double
 SharpCell.Grid.Wpf.SpreadsheetView.Zoom.set -> void
 static readonly SharpCell.Grid.Wpf.FormulaBar.ViewProperty -> System.Windows.DependencyProperty!
+static readonly SharpCell.Grid.Wpf.SheetTabs.ViewProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.ActiveCellProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.EditTextProperty -> System.Windows.DependencyProperty!
 static readonly SharpCell.Grid.Wpf.SpreadsheetView.IsEditingProperty -> System.Windows.DependencyProperty!
