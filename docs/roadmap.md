@@ -38,7 +38,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | The formula bar as a control of its own, with the name box | — |
 | Done | Ctrl with the arrows, Home, Ctrl+Home, Ctrl+End, Page Up and Page Down | — |
 
-## Now: 0.4 — working like Excel
+## Released: 0.4 — working like Excel
 
 | Step | What | Needs from SharpCell |
 |---|---|---|
@@ -49,12 +49,14 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Zoom from 10% to 400%, Ctrl or Cmd with the wheel | — |
 | Done | Widths, heights and hidden rows and columns set in the grid are the worksheet's own, so `XlsxWriter` saves them | `XlsxWriter` (0.7.0) |
 
-## Later
+## Now: 0.5 — formatting and sheets
 
-- Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula.
-- Inserting and deleting cells that shift the others right or down, with Excel's dialog.
-- Changing styles in the grid: bold, fills, borders, number formats.
-- More than one sheet in a view, with tabs.
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
+| Next | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
+| Next | Changing styles in the grid: bold, fills, borders, number formats | — |
+| Next | More than one sheet in a view, with tabs | — |
 
 ## Quality, all along
 

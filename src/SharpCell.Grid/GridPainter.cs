@@ -204,8 +204,9 @@ public sealed partial class GridPainter
                 OutlineSelection(canvas, frame, outline.Area, theme.ActiveCellBorder, GridDash.Solid);
         }
 
-        // What was copied has a dashed border, and so do the cells a fill handle is dragged over.
-        foreach (var (area, color) in new[] { (CopiedArea, theme.ActiveCellBorder), (FillArea, theme.FillOutline) })
+        // What was copied has a dashed border, and so do the cells a fill handle is dragged over and
+        // those picked for a formula.
+        foreach (var (area, color) in new[] { (CopiedArea, theme.ActiveCellBorder), (FillArea, theme.FillOutline), (ReferenceArea, theme.ReferenceBorder) })
         {
             if (area is not { } marked)
                 continue;

@@ -50,7 +50,8 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Drag | Selects from where the drag started; past an edge of the view it scrolls after the mouse |
 | Shift+click | Extends the selection from the active cell |
 | Click or drag on column or row headers | Whole columns or rows; the active cell is the first on screen |
-| Click on the corner above the row headers, Ctrl+A or Cmd+A | The whole sheet |
+| Click on the corner above the row headers | The whole sheet |
+| Ctrl+A or Cmd+A, Ctrl+Shift+Space | The data around the active cell, as far as empty rows and columns; pressed again, the whole sheet |
 | Arrow keys | Move the active cell one cell, over a merged area as one cell, and select it alone |
 | Shift+arrow keys | Extend or shrink the selection at its far corner |
 | Ctrl+arrow keys (Cmd on macOS), with Shift to extend | To the edge of the content: the end of a block of filled cells, the next filled cell, or the sheet's edge |
@@ -77,6 +78,7 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Ctrl+Enter | Enters the text into every selected cell |
 | Alt+Enter | A line break inside the cell |
 | Escape | Leaves the cell as it was |
+| Click on a cell, or drag over cells, while typing a formula | Puts their reference in where an operand goes: after `=`, an operator, `(` or a comma. Another click replaces the reference just picked, Shift+click extends it; typing goes on after it |
 | Click on another cell | Enters the text and selects that cell |
 | Delete | Clears the selected cells' content; formats and styles stay |
 | Backspace | Starts editing the active cell empty |
@@ -151,11 +153,11 @@ sheet's last used row or column.
   definitions; they are not yet compared with Excel.
 - A merged area across the line of frozen panes is drawn whole from the frozen part.
 - The colours of the selection, its shade and its headers are close to Excel's, not measured from it.
-- Ctrl+A selects the whole sheet at once, not first the cells around the active one, and only one
-  rectangle can be selected (no Ctrl+click).
-- While a formula is typed, clicking or arrowing to a cell does not put its reference in the
-  formula; references are typed. Formulas get no number format from what they calculate (Excel
-  gives `=TODAY()` a date format).
+- Only one rectangle can be selected (no Ctrl+click). Ctrl+A in a table selects the data around the
+  active cell, not first the table's data and then the table with its headers.
+- While a formula is typed, clicked cells give their references, but the arrows do not point at
+  cells, references to other sheets are typed, and the references in a formula are not coloured.
+  Formulas get no number format from what they calculate (Excel gives `=TODAY()` a date format).
 - Pasting cells copied in Excel takes the text of the clipboard: values, not their formats or
   formulas. Cells copied in the grid paste whole.
 - Copied and cut cells are outlined with dashes that do not move. Moving cells does not change

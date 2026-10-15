@@ -342,6 +342,8 @@ public class SpreadsheetViewTests(HeadlessSession session)
 
         view.ActiveCell = Cells.Parse("C3");
         window.KeyPress(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+        Assert.NotEqual("1:1048576", view.Selection?.ToString());   // the data around C3 first
+        window.KeyPress(Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
         Assert.Equal("1:1048576", view.Selection?.ToString());
         Assert.Equal(Cells.Parse("C3"), view.ActiveCell);
     });
@@ -387,10 +389,12 @@ public class SpreadsheetViewTests(HeadlessSession session)
     [Theory]
     [InlineData(RawInputModifiers.Control)]
     [InlineData(RawInputModifiers.Meta)]
-    public Task Ctrl_a_and_cmd_a_select_the_whole_sheet(RawInputModifiers modifier) => session.Run(() =>
+    public Task Ctrl_a_and_cmd_a_select_the_data_then_the_whole_sheet(RawInputModifiers modifier) => session.Run(() =>
     {
         var (window, view) = Show(Budget());
 
+        window.KeyPress(Key.A, modifier, PhysicalKey.A, "a");
+        Assert.NotEqual("1:1048576", view.Selection?.ToString());
         window.KeyPress(Key.A, modifier, PhysicalKey.A, "a");
 
         Assert.Equal("1:1048576", view.Selection?.ToString());

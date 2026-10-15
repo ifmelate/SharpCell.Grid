@@ -68,6 +68,22 @@ public sealed record GridSelection
         new(activeCell, new CellPosition(1, 1), new CellPosition(SheetLayout.MaxRow, SheetLayout.MaxColumn), null);
 
     /// <summary>
+    /// What Ctrl+A selects, as in Excel: first the current region around the active cell (see
+    /// <see cref="GridNavigation.CurrentRegion"/>), then, pressed again, the whole sheet. An empty
+    /// cell with nothing around it, or a lone cell, goes straight to the whole sheet. The active
+    /// cell stays.
+    /// </summary>
+    /// <param name="sheet">The sheet whose content makes the region.</param>
+    public GridSelection SelectAll(Worksheet? sheet)
+    {
+        var region = GridNavigation.CurrentRegion(sheet, ActiveCell);
+        var lone = region.FirstRow == region.LastRow && region.FirstColumn == region.LastColumn;
+        if (lone || Area == Cover(region, sheet?.MergedAreas ?? []))
+            return All(ActiveCell);
+        return new GridSelection(ActiveCell, new CellPosition(region.FirstRow, region.FirstColumn), new CellPosition(region.LastRow, region.LastColumn), sheet);
+    }
+
+    /// <summary>
     /// What a click selects: a cell, whole columns from a column header, whole rows from a row
     /// header, the whole sheet from the corner above the row headers.
     /// </summary>

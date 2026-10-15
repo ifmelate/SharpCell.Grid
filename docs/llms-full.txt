@@ -227,7 +227,8 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Drag | Selects from where the drag started; past an edge of the view it scrolls after the mouse |
 | Shift+click | Extends the selection from the active cell |
 | Click or drag on column or row headers | Whole columns or rows; the active cell is the first on screen |
-| Click on the corner above the row headers, Ctrl+A or Cmd+A | The whole sheet |
+| Click on the corner above the row headers | The whole sheet |
+| Ctrl+A or Cmd+A, Ctrl+Shift+Space | The data around the active cell, as far as empty rows and columns; pressed again, the whole sheet |
 | Arrow keys | Move the active cell one cell, over a merged area as one cell, and select it alone |
 | Shift+arrow keys | Extend or shrink the selection at its far corner |
 | Ctrl+arrow keys (Cmd on macOS), with Shift to extend | To the edge of the content: the end of a block of filled cells, the next filled cell, or the sheet's edge |
@@ -254,6 +255,7 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Ctrl+Enter | Enters the text into every selected cell |
 | Alt+Enter | A line break inside the cell |
 | Escape | Leaves the cell as it was |
+| Click on a cell, or drag over cells, while typing a formula | Puts their reference in where an operand goes: after `=`, an operator, `(` or a comma. Another click replaces the reference just picked, Shift+click extends it; typing goes on after it |
 | Click on another cell | Enters the text and selects that cell |
 | Delete | Clears the selected cells' content; formats and styles stay |
 | Backspace | Starts editing the active cell empty |
@@ -328,11 +330,11 @@ sheet's last used row or column.
   definitions; they are not yet compared with Excel.
 - A merged area across the line of frozen panes is drawn whole from the frozen part.
 - The colours of the selection, its shade and its headers are close to Excel's, not measured from it.
-- Ctrl+A selects the whole sheet at once, not first the cells around the active one, and only one
-  rectangle can be selected (no Ctrl+click).
-- While a formula is typed, clicking or arrowing to a cell does not put its reference in the
-  formula; references are typed. Formulas get no number format from what they calculate (Excel
-  gives `=TODAY()` a date format).
+- Only one rectangle can be selected (no Ctrl+click). Ctrl+A in a table selects the data around the
+  active cell, not first the table's data and then the table with its headers.
+- While a formula is typed, clicked cells give their references, but the arrows do not point at
+  cells, references to other sheets are typed, and the references in a formula are not coloured.
+  Formulas get no number format from what they calculate (Excel gives `=TODAY()` a date format).
 - Pasting cells copied in Excel takes the text of the clipboard: values, not their formats or
   formulas. Cells copied in the grid paste whole.
 - Copied and cut cells are outlined with dashes that do not move. Moving cells does not change
@@ -453,7 +455,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | The formula bar as a control of its own, with the name box | — |
 | Done | Ctrl with the arrows, Home, Ctrl+Home, Ctrl+End, Page Up and Page Down | — |
 
-## Now: 0.4 — working like Excel
+## Released: 0.4 — working like Excel
 
 | Step | What | Needs from SharpCell |
 |---|---|---|
@@ -464,12 +466,14 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Zoom from 10% to 400%, Ctrl or Cmd with the wheel | — |
 | Done | Widths, heights and hidden rows and columns set in the grid are the worksheet's own, so `XlsxWriter` saves them | `XlsxWriter` (0.7.0) |
 
-## Later
+## Now: 0.5 — formatting and sheets
 
-- Ctrl+A on the cells around the active one first; references picked with the mouse while typing a formula.
-- Inserting and deleting cells that shift the others right or down, with Excel's dialog.
-- Changing styles in the grid: bold, fills, borders, number formats.
-- More than one sheet in a view, with tabs.
+| Step | What | Needs from SharpCell |
+|---|---|---|
+| Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
+| Next | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
+| Next | Changing styles in the grid: bold, fills, borders, number formats | — |
+| Next | More than one sheet in a view, with tabs | — |
 
 ## Quality, all along
 
@@ -656,6 +660,51 @@ public override string ToString()
 ```
 
 The A1 address, such as `B3`.
+
+---
+
+<!-- page: api/SharpCell.Grid.FormulaPointing.md -->
+
+# FormulaPointing
+
+```csharp
+public static class FormulaPointing
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+Picking references with the mouse while a formula is typed, as in Excel: where the caret takes one, and how a picked cell or range is written.
+
+## Methods
+
+<a id="canpoint-string-int"></a>
+### CanPoint(string, int)
+
+```csharp
+public static bool CanPoint(string text, int caret)
+```
+
+Whether a click on a cell puts a reference at the caret rather than entering the text: the text is a formula and the caret, past any spaces, follows `=`, an opening bracket, a comma or an operator, outside quoted text.
+
+**Parameters**
+
+- `text`: The text being typed.
+- `caret`: Where the caret is, from 0.
+
+<a id="reference-cellarea-worksheet-worksheet"></a>
+### Reference(CellArea, Worksheet, Worksheet)
+
+```csharp
+public static string Reference(CellArea area, Worksheet? sheet, Worksheet? formulaSheet)
+```
+
+The reference a formula takes for cells picked on a sheet: `B3`, `B3:C5`, whole columns `C:D` or rows `2:2`, with the sheet's name in front when they are on another sheet than the formula's.
+
+**Parameters**
+
+- `area`: The cells picked.
+- `sheet`: The sheet they are on.
+- `formulaSheet`: The sheet of the cell being edited.
 
 ---
 
@@ -1384,6 +1433,20 @@ How the active cell moves on a sheet, as in Excel: a merged area counts as one c
 
 ## Methods
 
+<a id="currentregion-worksheet-cellposition"></a>
+### CurrentRegion(Worksheet, CellPosition)
+
+```csharp
+public static CellArea CurrentRegion(Worksheet? sheet, CellPosition cell)
+```
+
+The current region of a cell, as Excel's Ctrl+A and Ctrl+* select it: the cell grown, row by row and column by column, while a cell with content touches it, also diagonally. A cell with nothing around it is its own region.
+
+**Parameters**
+
+- `sheet`: The sheet whose content is looked at; without one, the cell.
+- `cell`: The cell to start from.
+
 <a id="move-worksheet-cellposition-int-int"></a>
 ### Move(Worksheet, CellPosition, int, int)
 
@@ -1515,6 +1578,15 @@ public Func<string, GridFont, double>? MeasureText { get; set; }
 ```
 
 The width in pixels of a line of text in a font. Without it, text is never fitted to its cell, row headers keep [GridPainter.RowHeaderWidth](SharpCell.Grid.GridPainter.md#rowheaderwidth), and Calibri 11's digit width is assumed.
+
+<a id="referencearea"></a>
+### ReferenceArea
+
+```csharp
+public CellArea? ReferenceArea { get; set; }
+```
+
+The cells picked with the mouse while a formula is typed, painted with a dashed blue border; null for none.
 
 <a id="rowheaderwidth"></a>
 ### RowHeaderWidth
@@ -2070,6 +2142,19 @@ Whole rows, from the first to the last, with the active cell in the first row.
 - `activeColumn`: The column of the active cell: in Excel, the leftmost column on screen.
 - `sheet`: The sheet, whose merged areas the selection covers whole.
 
+<a id="selectall-worksheet"></a>
+### SelectAll(Worksheet)
+
+```csharp
+public GridSelection SelectAll(Worksheet? sheet)
+```
+
+What Ctrl+A selects, as in Excel: first the current region around the active cell (see [GridNavigation.CurrentRegion](SharpCell.Grid.GridNavigation.md#currentregion-worksheet-cellposition)), then, pressed again, the whole sheet. An empty cell with nothing around it, or a lone cell, goes straight to the whole sheet. The active cell stays.
+
+**Parameters**
+
+- `sheet`: The sheet whose content makes the region.
+
 <a id="tostring"></a>
 ### ToString()
 
@@ -2226,6 +2311,15 @@ public GridColor HeaderText { get; init; }
 ```
 
 Header text: column letters and row numbers.
+
+<a id="referenceborder"></a>
+### ReferenceBorder
+
+```csharp
+public GridColor ReferenceBorder { get; init; }
+```
+
+The dashed border around the cells picked with the mouse while a formula is typed.
 
 <a id="selectedheaderbackground"></a>
 ### SelectedHeaderBackground

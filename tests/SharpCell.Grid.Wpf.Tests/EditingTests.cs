@@ -184,4 +184,42 @@ public class EditingTests
         Assert.Equal(CellValue.Empty, sheet["A1"].Value);
         Assert.Equal("=A1*10", sheet["D3"].Formula);
     });
+    private static Point CenterOf(SpreadsheetView view, string address)
+    {
+        var bounds = view.Painter.CellBounds(view.Viewport, Cell(address));
+        return new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+    }
+
+    [Fact]
+    public void Clicking_cells_while_typing_a_formula_puts_their_references_in() => Sta.Run(() =>
+    {
+        var sheet = Sheet();
+        var view = Show(sheet);
+        view.ActiveCell = Cell("C1");
+
+        Assert.True(view.Type("="));
+        Assert.True(view.LeftDown(CenterOf(view, "A1"), shift: false));
+        view.Release();
+        Assert.Equal("=A1", view.EditText);
+
+        Assert.True(view.LeftDown(CenterOf(view, "B1"), shift: false));
+        view.DragTo(CenterOf(view, "B2"));
+        view.Release();
+        Assert.Equal("=B1:B2", view.EditText);
+        Assert.Equal(new CellArea(1, 2, 2, 2), view.Painter.ReferenceArea);
+        view.BoxKey(Key.Enter, ModifierKeys.None);
+
+        Assert.Equal("=B1:B2", sheet["C1"].Formula);
+    });
+
+    [Fact]
+    public void Ctrl_A_selects_the_data_around_the_active_cell_then_the_sheet() => Sta.Run(() =>
+    {
+        var view = Show(Sheet());
+
+        ApplicationCommands.SelectAll.Execute(null, view);
+        Assert.Equal("A1:B1", view.Selection!.ToString());
+        ApplicationCommands.SelectAll.Execute(null, view);
+        Assert.True(view.Selection!.IsEntireRows && view.Selection.IsEntireColumns);
+    });
 }

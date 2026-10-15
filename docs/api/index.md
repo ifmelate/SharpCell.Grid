@@ -10,6 +10,7 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 |---|---|
 | [CellArea](SharpCell.Grid.CellArea.md) | A rectangle of cells, from its top-left to its bottom-right cell; rows and columns from 1. |
 | [CellPosition](SharpCell.Grid.CellPosition.md) | A cell of the sheet by 1-based row and column, such as the active cell. |
+| [FormulaPointing](SharpCell.Grid.FormulaPointing.md) | Picking references with the mouse while a formula is typed, as in Excel: where the caret takes one, and how a picked cell or range is written. |
 | [GridClipboard](SharpCell.Grid.GridClipboard.md) | What copying cells puts on the clipboard, in the forms Excel reads when it pastes, and the cells of text pasted from it. |
 | [GridColor](SharpCell.Grid.GridColor.md) | An opaque or translucent sRGB colour. |
 | [GridDash](SharpCell.Grid.GridDash.md) | The dash pattern of a line, after Excel's border styles. |

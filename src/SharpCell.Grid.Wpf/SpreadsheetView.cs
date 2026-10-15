@@ -228,7 +228,7 @@ public partial class SpreadsheetView : FrameworkElement
     private void SelectAll()
     {
         if (Selection is { } selection)
-            Selection = GridSelection.All(selection.ActiveCell);
+            Selection = selection.SelectAll(Worksheet);
     }
 
     private static (int Rows, int Columns)? Step(Key key) => key switch

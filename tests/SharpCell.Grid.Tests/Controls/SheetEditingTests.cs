@@ -237,6 +237,7 @@ public class SheetEditingTests(HeadlessSession session)
         await view.CopyAsync();
 
         Press(window, Key.A, RawInputModifiers.Control);
+        Press(window, Key.A, RawInputModifiers.Control);   // the data around B1, then the sheet
         await view.PasteAsync();
 
         Assert.Equal("=A1*10", sheet["B1"].Formula);

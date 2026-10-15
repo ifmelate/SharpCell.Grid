@@ -1,1 +1,10 @@
 #nullable enable
+SharpCell.Grid.FormulaPointing
+SharpCell.Grid.GridSelection.SelectAll(SharpCell.Worksheet? sheet) -> SharpCell.Grid.GridSelection!
+static SharpCell.Grid.FormulaPointing.CanPoint(string! text, int caret) -> bool
+static SharpCell.Grid.FormulaPointing.Reference(SharpCell.Grid.CellArea area, SharpCell.Worksheet? sheet, SharpCell.Worksheet? formulaSheet) -> string!
+static SharpCell.Grid.GridNavigation.CurrentRegion(SharpCell.Worksheet? sheet, SharpCell.Grid.CellPosition cell) -> SharpCell.Grid.CellArea
+SharpCell.Grid.GridPainter.ReferenceArea.get -> SharpCell.Grid.CellArea?
+SharpCell.Grid.GridPainter.ReferenceArea.set -> void
+SharpCell.Grid.GridTheme.ReferenceBorder.get -> SharpCell.Grid.GridColor
+SharpCell.Grid.GridTheme.ReferenceBorder.init -> void

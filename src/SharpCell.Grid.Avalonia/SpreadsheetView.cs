@@ -207,7 +207,7 @@ public partial class SpreadsheetView : Control
         var jump = command;
         GridSelection? next = null;
         if (hotkeys?.SelectAll.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.A) || (command && shift && e.Key == Key.Space))
-            next = GridSelection.All(selection.ActiveCell);
+            next = selection.SelectAll(sheet);
         else if (e.Key == Key.Space && command)
             next = selection.EntireColumns(sheet);
         else if (e.Key == Key.Space && shift)

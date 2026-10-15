@@ -47,6 +47,9 @@ public sealed record GridTheme
     /// <summary>Text of the headers of whole selected columns or rows.</summary>
     public GridColor SelectedHeaderText { get; init; } = GridColor.FromRgb(0x107C41);
 
+    /// <summary>The dashed border around the cells picked with the mouse while a formula is typed.</summary>
+    public GridColor ReferenceBorder { get; init; } = GridColor.FromRgb(0x4472C4);
+
     /// <summary>The dashed border around the cells a fill handle is dragged over.</summary>
     public GridColor FillOutline { get; init; } = GridColor.FromRgb(0x7F7F7F);
 }
