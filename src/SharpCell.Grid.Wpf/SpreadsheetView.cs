@@ -42,6 +42,9 @@ public partial class SpreadsheetView : FrameworkElement
         nameof(Selection), typeof(GridSelection), typeof(SpreadsheetView),
         new FrameworkPropertyMetadata(GridSelection.Cell(new CellPosition(1, 1), null), FrameworkPropertyMetadataOptions.AffectsRender, (d, _) => ((SpreadsheetView)d).OnSelectionChanged()));
 
+    // The selection and scrolling of sheets shown before, for when they are shown again.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Worksheet, SheetState> _sheetStates = [];
+
     // Rows one notch of the wheel scrolls, as in Excel; a notch is 120 in WPF's wheel deltas.
     private const int WheelRows = 3;
     private const double WheelNotch = 120;
@@ -164,6 +167,12 @@ public partial class SpreadsheetView : FrameworkElement
         var control = modifiers.HasFlag(ModifierKeys.Control);
         var step = Step(key);
         var paging = key is Key.Home or Key.End or Key.PageUp or Key.PageDown;
+        if (key is Key.PageUp or Key.PageDown && control && !shift)
+        {
+            ShowNextSheet(key == Key.PageDown ? 1 : -1);
+            return true;
+        }
+
         GridSelection? next = null;
         if (key == Key.Space && control)
             next = selection.EntireColumns(sheet);
@@ -228,7 +237,7 @@ public partial class SpreadsheetView : FrameworkElement
     private void SelectAll()
     {
         if (Selection is { } selection)
-            Selection = GridSelection.All(selection.ActiveCell);
+            Selection = selection.SelectAll(Worksheet);
     }
 
     private static (int Rows, int Columns)? Step(Key key) => key switch
@@ -244,9 +253,53 @@ public partial class SpreadsheetView : FrameworkElement
     {
         OnEditedSheetChanged(old);
         ReloadLayout();
-        if (ActiveCell is { } cell)
+
+        // Each sheet of a workbook keeps its selection and scrolling, as Excel's tabs do; a sheet
+        // of the same workbook not shown before starts at A1.
+        if (old is not null && Selection is { } leaving)
+            _sheetStates.AddOrUpdate(old, new SheetState(leaving, Offset));
+        if (Worksheet is { } shown && _sheetStates.TryGetValue(shown, out var state))
+        {
+            SetCurrentValue(SelectionProperty, state.Selection);
+            SetCurrentValue(OffsetProperty, state.Offset);
+        }
+        else if (Worksheet is not null && old is not null && old.Workbook == Worksheet.Workbook)
+        {
+            SetCurrentValue(SelectionProperty, GridSelection.Cell(new CellPosition(1, 1), Worksheet));
+            SetCurrentValue(OffsetProperty, default(Vector));
+        }
+        else if (ActiveCell is { } cell)
+        {
             SetCurrentValue(SelectionProperty, GridSelection.Cell(cell, Worksheet));
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>
+    /// Shows the next sheet of the workbook, or with -1 the one before, as Ctrl+Page Down and
+    /// Ctrl+Page Up do; false when there is none that way.
+    /// </summary>
+    public bool ShowNextSheet(int direction = 1)
+    {
+        if (Worksheet is not { } sheet)
+            return false;
+        var sheets = sheet.Workbook.Sheets;
+        var index = -1;
+        for (var i = 0; i < sheets.Count; i++)
+        {
+            if (sheets[i] == sheet)
+                index = i;
+        }
+
+        var next = index + Math.Sign(direction);
+        if (index < 0 || next < 0 || next >= sheets.Count)
+            return false;
+        Worksheet = sheets[next];
+        return true;
+    }
+
+    private sealed record SheetState(GridSelection Selection, Vector Offset);
 
     private void OnSelectionChanged()
     {

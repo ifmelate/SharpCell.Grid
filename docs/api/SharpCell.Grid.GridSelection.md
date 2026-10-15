@@ -244,6 +244,19 @@ Whole rows, from the first to the last, with the active cell in the first row.
 - `activeColumn`: The column of the active cell: in Excel, the leftmost column on screen.
 - `sheet`: The sheet, whose merged areas the selection covers whole.
 
+<a id="selectall-worksheet"></a>
+### SelectAll(Worksheet)
+
+```csharp
+public GridSelection SelectAll(Worksheet? sheet)
+```
+
+What Ctrl+A selects, as in Excel: first the current region around the active cell (see [GridNavigation.CurrentRegion](SharpCell.Grid.GridNavigation.md#currentregion-worksheet-cellposition)), then, pressed again, the whole sheet. An empty cell with nothing around it, or a lone cell, goes straight to the whole sheet. The active cell stays.
+
+**Parameters**
+
+- `sheet`: The sheet whose content makes the region.
+
 <a id="tostring"></a>
 ### ToString()
 

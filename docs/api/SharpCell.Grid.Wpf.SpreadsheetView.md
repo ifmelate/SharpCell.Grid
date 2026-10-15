@@ -178,6 +178,19 @@ public void Cut()
 
 Cuts the selected cells, as Ctrl+X and `ApplicationCommands.Cut` do in Excel: they are copied, and the next paste moves them, formulas and formats with them; until then they stay. Escape or another change forgets the cut.
 
+<a id="deletecells-deleteshift"></a>
+### DeleteCells(DeleteShift)
+
+```csharp
+public void DeleteCells(DeleteShift shift)
+```
+
+Deletes the selected cells, moving the cells below or on the right into their place, as Excel's Delete dialog does.
+
+**Parameters**
+
+- `shift`: Which cells take the place of the deleted ones.
+
 <a id="deletecolumns"></a>
 ### DeleteColumns()
 
@@ -232,6 +245,19 @@ public void HideRows()
 
 Hides the selection's rows, as Ctrl+9 does.
 
+<a id="insertcells-insertshift"></a>
+### InsertCells(InsertShift)
+
+```csharp
+public void InsertCells(InsertShift shift)
+```
+
+Inserts empty cells in place of the selection, moving the cells beside it down or right, as Excel's Insert dialog does.
+
+**Parameters**
+
+- `shift`: Where the cells beside the selection go.
+
 <a id="insertcolumns"></a>
 ### InsertColumns()
 
@@ -249,6 +275,24 @@ public void InsertRows()
 ```
 
 Inserts as many rows as are selected before the selection's first row, as Ctrl+Plus does with rows selected.
+
+<a id="opendeletedialog"></a>
+### OpenDeleteDialog()
+
+```csharp
+public void OpenDeleteDialog()
+```
+
+Opens Excel's Delete dialog for the selection: shift cells left or up, or delete entire rows or columns.
+
+<a id="openinsertdialog"></a>
+### OpenInsertDialog()
+
+```csharp
+public void OpenInsertDialog()
+```
+
+Opens Excel's Insert dialog for the selection: shift cells right or down, or insert entire rows or columns. Ctrl+Plus opens it when the selection is not whole rows or columns.
 
 <a id="paste"></a>
 ### Paste()
@@ -276,6 +320,96 @@ public void ReloadLayout()
 ```
 
 Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.
+
+<a id="restyle-func-cellstyle-cellstyle"></a>
+### Restyle(Func<CellStyle, CellStyle>)
+
+```csharp
+public void Restyle(Func<CellStyle, CellStyle> change)
+```
+
+Changes the style of the selected cells: the function gets each cell's style and gives the new one.
+
+<a id="setborders-borderedges-cellborder"></a>
+### SetBorders(BorderEdges, CellBorder)
+
+```csharp
+public void SetBorders(BorderEdges edges, CellBorder? border)
+```
+
+Puts a border on edges of the selection, or takes it off with null, as Excel's Borders menu does; see [GridEditor.SetBorders](SharpCell.Grid.GridEditor.md#setborders-worksheet-cellarea-borderedges-cellborder).
+
+<a id="setfill-cellcolor"></a>
+### SetFill(CellColor?)
+
+```csharp
+public void SetFill(CellColor? color)
+```
+
+Fills the selected cells with a colour, or takes their fill off with null, as Excel's Fill Color does.
+
+<a id="setfontcolor-cellcolor"></a>
+### SetFontColor(CellColor?)
+
+```csharp
+public void SetFontColor(CellColor? color)
+```
+
+Gives the selected cells' text a colour, or the automatic colour with null, as Excel's Font Color does.
+
+<a id="setnumberformat-string"></a>
+### SetNumberFormat(string)
+
+```csharp
+public void SetNumberFormat(string format)
+```
+
+Gives the selected cells a number format, as Excel's Number Format box does.
+
+<a id="shownextsheet-int"></a>
+### ShowNextSheet(int)
+
+```csharp
+public bool ShowNextSheet(int direction = 1)
+```
+
+Shows the next sheet of the workbook, or with -1 the one before, as Ctrl+Page Down and Ctrl+Page Up do; false when there is none that way.
+
+<a id="togglebold"></a>
+### ToggleBold()
+
+```csharp
+public void ToggleBold()
+```
+
+Makes the selected cells bold, or not bold when the active cell is, as Ctrl+B does.
+
+<a id="toggleitalic"></a>
+### ToggleItalic()
+
+```csharp
+public void ToggleItalic()
+```
+
+Makes the selected cells italic, or not italic when the active cell is, as Ctrl+I does.
+
+<a id="togglestrikethrough"></a>
+### ToggleStrikethrough()
+
+```csharp
+public void ToggleStrikethrough()
+```
+
+Strikes the selected cells through, or not when the active cell is, as Ctrl+5 does.
+
+<a id="toggleunderline"></a>
+### ToggleUnderline()
+
+```csharp
+public void ToggleUnderline()
+```
+
+Underlines the selected cells, or takes the underline off when the active cell has one, as Ctrl+U does.
 
 <a id="undo"></a>
 ### Undo()

@@ -122,6 +122,15 @@ public GridColor HeaderText { get; init; }
 
 Header text: column letters and row numbers.
 
+<a id="referenceborder"></a>
+### ReferenceBorder
+
+```csharp
+public GridColor ReferenceBorder { get; init; }
+```
+
+The dashed border around the cells picked with the mouse while a formula is typed.
+
 <a id="selectedheaderbackground"></a>
 ### SelectedHeaderBackground
 

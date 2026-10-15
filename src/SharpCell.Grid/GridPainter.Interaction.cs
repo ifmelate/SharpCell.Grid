@@ -29,6 +29,9 @@ public sealed partial class GridPainter
     /// <summary>The cells copied or cut, painted with a dashed border as Excel shows them until they are pasted; null for none.</summary>
     public CellArea? CopiedArea { get; set; }
 
+    /// <summary>The cells picked with the mouse while a formula is typed, painted with a dashed blue border; null for none.</summary>
+    public CellArea? ReferenceArea { get; set; }
+
     /// <summary>The cells a fill handle is being dragged over, painted with a dashed grey border; null for none.</summary>
     public CellArea? FillArea { get; set; }
 

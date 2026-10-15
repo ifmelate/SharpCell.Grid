@@ -12,6 +12,20 @@ How the active cell moves on a sheet, as in Excel: a merged area counts as one c
 
 ## Methods
 
+<a id="currentregion-worksheet-cellposition"></a>
+### CurrentRegion(Worksheet, CellPosition)
+
+```csharp
+public static CellArea CurrentRegion(Worksheet? sheet, CellPosition cell)
+```
+
+The current region of a cell, as Excel's Ctrl+A and Ctrl+* select it: the cell grown, row by row and column by column, while a cell with content touches it, also diagonally. A cell with nothing around it is its own region.
+
+**Parameters**
+
+- `sheet`: The sheet whose content is looked at; without one, the cell.
+- `cell`: The cell to start from.
+
 <a id="move-worksheet-cellposition-int-int"></a>
 ### Move(Worksheet, CellPosition, int, int)
 

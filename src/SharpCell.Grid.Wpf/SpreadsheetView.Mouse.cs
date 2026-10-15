@@ -15,6 +15,7 @@ public partial class SpreadsheetView
         ColumnEdge,
         RowEdge,
         Fill,
+        Point,
     }
 
     private Drag _drag;
@@ -39,14 +40,29 @@ public partial class SpreadsheetView
         base.OnMouseLeftButtonDown(e);
         if (IsInEditor(e.OriginalSource))
             return;
-
-        // A click elsewhere enters what is being typed first; a formula that does not parse stays open.
-        if (IsEditing && !CommitEdit())
+        if (LeftDown(e.GetPosition(this), Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), e.ClickCount) is not { } drags)
             return;
-        Focus();
         e.Handled = true;
-        if (Press(e.GetPosition(this), Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), e.ClickCount))
+        if (drags)
             CaptureMouse();
+    }
+
+    // The left button goes down on the view: whether a drag began, or null when the press was left
+    // to an editor that stays open.
+    internal bool? LeftDown(Point point, bool shift, int clicks = 1)
+    {
+        // While a formula is typed, a click where it takes an operand picks a reference; a click
+        // elsewhere enters what is being typed first, and a formula that does not parse stays open.
+        if (IsEditing && StartPointing(point, shift))
+        {
+            _drag = Drag.Point;
+            return true;
+        }
+
+        if (IsEditing && !CommitEdit())
+            return null;
+        Focus();
+        return Press(point, shift, clicks);
     }
 
     /// <inheritdoc />
@@ -177,6 +193,14 @@ public partial class SpreadsheetView
                 _resizeMoved = true;
                 InvalidateVisual();
                 break;
+            case Drag.Point:
+            {
+                var cell = Painter.CellNearest(Viewport, point.X, point.Y);
+                PointTo(cell);
+                ScrollTo(Painter.ScrollIntoView(Viewport, cell));
+                break;
+            }
+
             case Drag.Fill:
             {
                 var cell = Painter.CellNearest(Viewport, point.X, point.Y);
@@ -194,6 +218,12 @@ public partial class SpreadsheetView
     {
         var drag = _drag;
         _drag = Drag.None;
+        if (drag == Drag.Point)
+        {
+            _box?.Focus();
+            return;
+        }
+
         if (Worksheet is not { } sheet || Editor is not { } editor)
             return;
         switch (drag)

@@ -33,6 +33,56 @@ public static class GridNavigation
     }
 
     /// <summary>
+    /// The current region of a cell, as Excel's Ctrl+A and Ctrl+* select it: the cell grown, row by
+    /// row and column by column, while a cell with content touches it, also diagonally. A cell with
+    /// nothing around it is its own region.
+    /// </summary>
+    /// <param name="sheet">The sheet whose content is looked at; without one, the cell.</param>
+    /// <param name="cell">The cell to start from.</param>
+    public static CellArea CurrentRegion(Worksheet? sheet, CellPosition cell)
+    {
+        var area = new CellArea(cell.Row, cell.Column, cell.Row, cell.Column);
+        if (sheet is null)
+            return area;
+        while (true)
+        {
+            var ring = new CellArea(Math.Max(1, area.FirstRow - 1), Math.Max(1, area.FirstColumn - 1),
+                Math.Min(SheetLayout.MaxRow, area.LastRow + 1), Math.Min(SheetLayout.MaxColumn, area.LastColumn + 1));
+            var grown = area;
+            foreach (var strip in Strips(ring, area))
+            {
+                foreach (var found in sheet.Range(strip).Cells)
+                {
+                    if (found.Formula is null && found.Value.Kind == CellValueKind.Empty)
+                        continue;
+                    grown = new CellArea(Math.Min(grown.FirstRow, found.Row), Math.Min(grown.FirstColumn, found.Column),
+                        Math.Max(grown.LastRow, found.Row), Math.Max(grown.LastColumn, found.Column));
+                }
+            }
+
+            if (grown == area)
+                return area;
+            area = grown;
+        }
+
+        // The ring around an area as up to four ranges: the rows above and below, the columns beside.
+        static IEnumerable<string> Strips(CellArea ring, CellArea area)
+        {
+            if (ring.FirstRow < area.FirstRow)
+                yield return Address(new CellArea(ring.FirstRow, ring.FirstColumn, ring.FirstRow, ring.LastColumn));
+            if (ring.LastRow > area.LastRow)
+                yield return Address(new CellArea(ring.LastRow, ring.FirstColumn, ring.LastRow, ring.LastColumn));
+            if (ring.FirstColumn < area.FirstColumn)
+                yield return Address(new CellArea(area.FirstRow, ring.FirstColumn, area.LastRow, ring.FirstColumn));
+            if (ring.LastColumn > area.LastColumn)
+                yield return Address(new CellArea(area.FirstRow, ring.LastColumn, area.LastRow, ring.LastColumn));
+        }
+
+        static string Address(CellArea area) =>
+            $"{ColumnNames.Of(area.FirstColumn)}{area.FirstRow}:{ColumnNames.Of(area.LastColumn)}{area.LastRow}";
+    }
+
+    /// <summary>
     /// The cell Ctrl with an arrow lands on, as in Excel: from a cell with content whose neighbour
     /// has content too, the last cell with content before an empty one; otherwise the next cell
     /// with content that way; with none, the sheet's edge. A cell has content when it holds a

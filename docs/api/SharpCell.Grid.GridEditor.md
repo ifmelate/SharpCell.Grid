@@ -88,6 +88,20 @@ Copies cells, as copying and pasting them in Excel does: values, formulas, numbe
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell; no cell changes.
 - `NotSupportedException`: The cells copied hold part of an array formula, or a formula SharpCell cannot read; no cell changes.
 
+<a id="deletecells-worksheet-cellarea-deleteshift"></a>
+### DeleteCells(Worksheet, CellArea, DeleteShift)
+
+```csharp
+public GridEdit DeleteCells(Worksheet sheet, CellArea area, DeleteShift shift)
+```
+
+Deletes the cells of an area, as Excel's Delete with "Shift cells up" or "Shift cells left" does: the cells below (or on the right) move into their place, and references to the deleted cells become `#REF!` (see `CellRange.Delete`). Undoing gives back the cells and every formula and name as it was. An area of whole rows or columns deletes them.
+
+**Exceptions**
+
+- `InvalidOperationException`: The cells that move would split a merged area, a table or an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
+
 <a id="deletecolumns-worksheet-int-int"></a>
 ### DeleteColumns(Worksheet, int, int)
 
@@ -210,6 +224,20 @@ Fits rows to their content, as double-clicking a row header's edge does in Excel
 
 - `ArgumentOutOfRangeException`: A row is outside the sheet.
 
+<a id="insertcells-worksheet-cellarea-insertshift"></a>
+### InsertCells(Worksheet, CellArea, InsertShift)
+
+```csharp
+public GridEdit InsertCells(Worksheet sheet, CellArea area, InsertShift shift)
+```
+
+Inserts empty cells in place of an area, as Excel's Insert with "Shift cells down" or "Shift cells right" does: only the cells beside the area move, and formulas follow them (see `CellRange.Insert`). The new cells take the styles and number formats of the cells above (or on the left), as in Excel. An area of whole rows or columns inserts them.
+
+**Exceptions**
+
+- `InvalidOperationException`: Content would be pushed off the sheet, or the cells that move would split a merged area, a table or an array formula; nothing changes.
+- `NotSupportedException`: A formula SharpCell cannot read would have to follow; nothing changes.
+
 <a id="insertcolumns-worksheet-int-int"></a>
 ### InsertColumns(Worksheet, int, int)
 
@@ -275,6 +303,22 @@ public GridEdit? Redo()
 
 Redoes the last undone change; null when there is none.
 
+<a id="setborders-worksheet-cellarea-borderedges-cellborder"></a>
+### SetBorders(Worksheet, CellArea, BorderEdges, CellBorder)
+
+```csharp
+public GridEdit SetBorders(Worksheet sheet, CellArea area, BorderEdges edges, CellBorder? border)
+```
+
+Puts a border on edges of an area, or takes it off with null, as Excel's Borders menu does: [BorderEdges.Outside](SharpCell.Grid.BorderEdges.md#outside) for Outside Borders, [BorderEdges.All](SharpCell.Grid.BorderEdges.md#all) for All Borders, [BorderEdges.All](SharpCell.Grid.BorderEdges.md#all) with null for No Border. The neighbouring cell's edge on the other side of a line goes, so the line looks as chosen.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `area`: The cells.
+- `edges`: Which edges.
+- `border`: The line, such as `new CellBorder(CellBorderStyle.Thin)`; null for none.
+
 <a id="setcolumnhidden-worksheet-int-int-bool"></a>
 ### SetColumnHidden(Worksheet, int, int, bool)
 
@@ -301,6 +345,19 @@ Gives columns a width, as dragging a column header's edge does in Excel: in the 
 
 - `ArgumentOutOfRangeException`: A column is outside the sheet, or the width is outside 0 to 255.
 
+<a id="setnumberformat-worksheet-cellarea-string"></a>
+### SetNumberFormat(Worksheet, CellArea, string)
+
+```csharp
+public GridEdit SetNumberFormat(Worksheet sheet, CellArea area, string format)
+```
+
+Gives every cell of an area a number format, as Excel's Number Format box does; see `Cell.NumberFormat`. Whole rows or columns change their cells up to the sheet's used range.
+
+**Exceptions**
+
+- `ArgumentException`: The format is not a number format Excel reads.
+
 <a id="setrowheight-worksheet-int-int-double"></a>
 ### SetRowHeight(Worksheet, int, int, double?)
 
@@ -326,6 +383,37 @@ Hides or shows rows; see [GridEditor.SetColumnHidden](SharpCell.Grid.GridEditor.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: A row is outside the sheet.
+
+<a id="setstyle-worksheet-cellarea-func-cellstyle-cellstyle"></a>
+### SetStyle(Worksheet, CellArea, Func<CellStyle, CellStyle>)
+
+```csharp
+public GridEdit SetStyle(Worksheet sheet, CellArea area, Func<CellStyle, CellStyle> change)
+```
+
+Changes the style of every cell of an area, as a button of Excel's Home tab does: the function gets each cell's style and gives the new one, such as `style => style with { Fill = color }`. Whole rows or columns change their cells up to the sheet's used range.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `area`: The cells.
+- `change`: The new style of a cell from its old one.
+
+<a id="shortcutformat-char-cultureinfo"></a>
+### ShortcutFormat(char, CultureInfo)
+
+```csharp
+public static string? ShortcutFormat(char symbol, CultureInfo culture)
+```
+
+The number formats of Excel's Ctrl+Shift shortcuts, for a workbook's culture: `~` General, `!` two decimals with thousands separators, `$` currency, `%` percent, `^` scientific, `#` a date with day, month and year, `@` a time with hours and minutes.
+
+**Parameters**
+
+- `symbol`: The shortcut's character.
+- `culture`: The workbook's culture, for the currency symbol.
+
+**Returns:** The format code; null for another character.
 
 <a id="undo"></a>
 ### Undo()

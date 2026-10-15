@@ -50,7 +50,8 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Drag | Selects from where the drag started; past an edge of the view it scrolls after the mouse |
 | Shift+click | Extends the selection from the active cell |
 | Click or drag on column or row headers | Whole columns or rows; the active cell is the first on screen |
-| Click on the corner above the row headers, Ctrl+A or Cmd+A | The whole sheet |
+| Click on the corner above the row headers | The whole sheet |
+| Ctrl+A or Cmd+A, Ctrl+Shift+Space | The data around the active cell, as far as empty rows and columns; pressed again, the whole sheet |
 | Arrow keys | Move the active cell one cell, over a merged area as one cell, and select it alone |
 | Shift+arrow keys | Extend or shrink the selection at its far corner |
 | Ctrl+arrow keys (Cmd on macOS), with Shift to extend | To the edge of the content: the end of a block of filled cells, the next filled cell, or the sheet's edge |
@@ -77,6 +78,7 @@ as Excel's Freeze Panes. A sheet with gridlines turned off shows none.
 | Ctrl+Enter | Enters the text into every selected cell |
 | Alt+Enter | A line break inside the cell |
 | Escape | Leaves the cell as it was |
+| Click on a cell, or drag over cells, while typing a formula | Puts their reference in where an operand goes: after `=`, an operator, `(` or a comma. Another click replaces the reference just picked, Shift+click extends it; typing goes on after it |
 | Click on another cell | Enters the text and selects that cell |
 | Delete | Clears the selected cells' content; formats and styles stay |
 | Backspace | Starts editing the active cell empty |
@@ -108,10 +110,10 @@ shaded, a border goes round them, and the headers of their rows and columns are 
 | Double-click that edge | Fits the column to its widest text, or the row to its tallest, as Excel's AutoFit |
 | Drag the fill handle, the square on the selection's corner | Fills the cells it is dragged over: numbers and dates continue their step, text ending in a number counts on, day and month names follow each other, formulas are copied with their references following; dragged back, it clears the cells left out |
 | Ctrl+D, Ctrl+R | Copies the selection's top row down or its left column right, formulas following; one row or column takes the one before it |
-| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected |
+| Ctrl+Plus, Ctrl+Minus | Inserts as many rows as are selected, or deletes them; columns when whole columns are selected. With cells selected, Excel's Insert or Delete dialog asks how: shift cells right or down (left or up), or entire rows or columns |
 | Ctrl+9, Ctrl+Shift+9 | Hides the selected rows, shows the hidden ones among them |
 | Ctrl+0, Ctrl+Shift+0 | Hides the selected columns, shows the hidden ones among them |
-| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents, and on headers Insert, Delete, Hide and Unhide |
+| Right-click | Excel's menu: Cut, Copy, Paste and Clear Contents; on cells Insert... and Delete..., which open the dialog; on headers Insert, Delete, Hide and Unhide |
 
 The fill handle reads a column filled down, or a row filled right, as Excel does. One number is
 repeated; two or more continue the straight line through them, as Excel's trend. A date steps a
@@ -123,11 +125,41 @@ validation of the cell it continues, so a drop-down list goes down with it. Fill
 goes backwards.
 
 Inserted rows take the styles and number formats of the row above, and inserted columns those of
-the column on their left, as in Excel. Formulas follow inserted and deleted rows and columns
+the column on their left, as in Excel; inserted cells take those of the cells above, or on the left.
+Cells inserted or deleted with a shift move only the cells beside them, through SharpCell's
+`CellRange.Insert` and `CellRange.Delete`; cells that would split a merged area, a table or an
+array formula are refused, as Excel refuses them. Formulas follow inserted and deleted rows and columns
 through SharpCell's `InsertRows` and `DeleteRows`: references to deleted cells become `#REF!`.
 Undo gives back deleted rows and columns whole: their cells, styles and sizes, and every formula,
 name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
 to undo.
+
+## Sheets
+
+`SheetTabs` shows a tab for each sheet of the view's workbook, the shown sheet highlighted, as at
+the bottom of Excel's window. Clicking a tab shows its sheet, and + adds a sheet named as Excel names
+one (`Sheet2`, `Sheet3`...). Ctrl+Page Down and Ctrl+Page Up (Cmd on a Mac) show the next and the
+previous sheet, and `ShowNextSheet` does it in code. Each sheet keeps its selection and scrolling
+while another is shown; a sheet not shown before starts at A1. Sheets cannot yet be renamed,
+deleted or moved from the tabs: SharpCell does not rename or remove sheets.
+
+## Formatting cells
+
+| Input | Result |
+|---|---|
+| Ctrl+B or Ctrl+2, Ctrl+I or Ctrl+3, Ctrl+U or Ctrl+4, Ctrl+5 | Bold, italic, underline, strikethrough; off for every selected cell when the active cell has it, on otherwise |
+| Ctrl+Shift+& (7) | A thin border round the selection |
+| Ctrl+Shift+_ (minus) | Takes every border of the selection off |
+| Ctrl+Shift+~ ! $ % ^ # @ | General, two decimals with separators, currency, percent, scientific, date, time |
+
+The view's methods do what Excel's Home tab does: `ToggleBold`, `ToggleItalic`, `ToggleUnderline`,
+`ToggleStrikethrough`, `SetFill` and `SetFontColor` with a colour (null takes it off), `SetBorders`
+with the edges (`BorderEdges.Outside`, `All`, `Bottom`...) and a `CellBorder` (null for No Border),
+`SetNumberFormat` with a format code, and `Restyle` with any change of `CellStyle`. An application
+puts them on its own toolbar. Each is one step to undo. A border on one side of a line takes the
+neighbouring cell's edge on the other side off, so the line looks as chosen. Whole rows or columns
+change their cells up to the sheet's used range: SharpCell keeps no styles for rows or columns.
+`XlsxWriter` saves the new styles and formats.
 
 ## Copying to Excel
 
@@ -151,18 +183,17 @@ sheet's last used row or column.
   definitions; they are not yet compared with Excel.
 - A merged area across the line of frozen panes is drawn whole from the frozen part.
 - The colours of the selection, its shade and its headers are close to Excel's, not measured from it.
-- Ctrl+A selects the whole sheet at once, not first the cells around the active one, and only one
-  rectangle can be selected (no Ctrl+click).
-- While a formula is typed, clicking or arrowing to a cell does not put its reference in the
-  formula; references are typed. Formulas get no number format from what they calculate (Excel
-  gives `=TODAY()` a date format).
+- Only one rectangle can be selected (no Ctrl+click). Ctrl+A in a table selects the data around the
+  active cell, not first the table's data and then the table with its headers.
+- While a formula is typed, clicked cells give their references, but the arrows do not point at
+  cells, references to other sheets are typed, and the references in a formula are not coloured.
+  Formulas get no number format from what they calculate (Excel gives `=TODAY()` a date format).
 - Pasting cells copied in Excel takes the text of the clipboard: values, not their formats or
   formulas. Cells copied in the grid paste whole.
 - Copied and cut cells are outlined with dashes that do not move. Moving cells does not change
   the formulas that refer to them; styles stay where they were.
 - Copying and filling do not copy merged areas.
-- Ctrl+Plus and Ctrl+Minus with cells rather than whole rows or columns selected insert or delete
-  whole rows; there is no dialog to shift cells right or down.
+- The Insert and Delete dialog is a panel over the view, not a window of its own.
 - The fill handle has no options menu, Ctrl does not switch between copying and a series, and lists
   of your own are not known. A row fitted to its text takes 1.32 times the tallest font's size per
   line, close to Excel's line heights.

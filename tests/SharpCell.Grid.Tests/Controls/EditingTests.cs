@@ -392,7 +392,7 @@ public class EditingTests(HeadlessSession session)
         window.KeyTextInput("a");
 
         Assert.False(view.IsEditing);
-        Assert.Equal("1:1048576", view.Selection?.ToString());
+        Assert.Equal("A1:B1", view.Selection?.ToString());   // the data around A1, as Ctrl+A selects first
     });
 
     [Theory]
@@ -415,5 +415,63 @@ public class EditingTests(HeadlessSession session)
         Press(window, Key.A, command);
         Assert.Equal("=A1*10", text.SelectedText);
         Press(window, Key.Escape);
+    });
+    [Fact]
+    public Task Clicking_cells_while_typing_a_formula_puts_their_references_in() => session.Run(() =>
+    {
+        var sheet = Sheet();
+        sheet["A2"].Value = 3;
+        var (window, view) = Show(sheet);
+        view.ActiveCell = Cells.Parse("C1");
+
+        window.KeyTextInput("=");
+        window.MouseDown(CenterOf(view, "A1"), MouseButton.Left);
+        window.MouseUp(CenterOf(view, "A1"), MouseButton.Left);
+        Assert.Equal("=A1", view.EditText);
+        Assert.Equal(new CellArea(1, 1, 1, 1), view.Painter.ReferenceArea);
+
+        // Another click replaces the reference just picked; a drag picks a range.
+        window.MouseDown(CenterOf(view, "B1"), MouseButton.Left);
+        window.MouseMove(CenterOf(view, "B2"), RawInputModifiers.LeftMouseButton);
+        window.MouseUp(CenterOf(view, "B2"), MouseButton.Left);
+        Assert.Equal("=B1:B2", view.EditText);
+
+        window.KeyTextInput("+");
+        Assert.Null(view.Painter.ReferenceArea);
+        window.MouseDown(CenterOf(view, "A2"), MouseButton.Left);
+        window.MouseUp(CenterOf(view, "A2"), MouseButton.Left);
+        Press(window, Key.Enter);
+
+        Assert.Equal("=B1:B2+A2", sheet["C1"].Formula);
+        Assert.False(view.IsEditing);
+    });
+
+    [Fact]
+    public Task A_click_after_a_complete_formula_enters_it() => session.Run(() =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+        view.ActiveCell = Cells.Parse("C1");
+
+        window.KeyTextInput("=A1");
+        window.MouseDown(CenterOf(view, "B2"), MouseButton.Left);
+        window.MouseUp(CenterOf(view, "B2"), MouseButton.Left);
+
+        Assert.False(view.IsEditing);
+        Assert.Equal("=A1", sheet["C1"].Formula);
+        Assert.Equal(Cells.Parse("B2"), view.ActiveCell);
+    });
+
+    [Fact]
+    public Task Ctrl_A_selects_the_data_around_the_active_cell_then_the_sheet() => session.Run(() =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+        var command = OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
+
+        Press(window, Key.A, command);
+        Assert.Equal("A1:B1", view.Selection!.ToString());
+        Press(window, Key.A, command);
+        Assert.True(view.Selection!.IsEntireRows && view.Selection.IsEntireColumns);
     });
 }

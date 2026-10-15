@@ -77,6 +77,9 @@ public partial class SpreadsheetView
             return false;
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         var columns = Selection?.IsEntireColumns == true;
+        var rows = Selection?.IsEntireRows == true;
+        if (FormatKey(e.Key, shift))
+            return true;
         switch (e.Key)
         {
             case Key.D:
@@ -85,17 +88,22 @@ public partial class SpreadsheetView
             case Key.R:
                 FillRight();
                 break;
+            // With cells rather than whole rows or columns selected, Excel asks how.
             case Key.OemPlus or Key.Add:
                 if (columns)
                     InsertColumns();
-                else
+                else if (rows)
                     InsertRows();
+                else
+                    OpenInsertDialog();
                 break;
             case Key.OemMinus or Key.Subtract:
                 if (columns)
                     DeleteColumns();
-                else
+                else if (rows)
                     DeleteRows();
+                else
+                    OpenDeleteDialog();
                 break;
             case Key.D9:
                 if (shift)
@@ -181,6 +189,10 @@ public partial class SpreadsheetView
                 case GridPart.RowHeader:
                     Add("Insert", InsertRows);
                     Add("Delete", DeleteRows);
+                    break;
+                case GridPart.Cell:
+                    Add("Insert...", OpenInsertDialog);
+                    Add("Delete...", OpenDeleteDialog);
                     break;
             }
 

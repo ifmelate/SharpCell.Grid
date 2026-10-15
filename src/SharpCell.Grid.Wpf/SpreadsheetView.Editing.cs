@@ -34,6 +34,10 @@ public partial class SpreadsheetView
     // double-click or the formula bar, they move the caret.
     private bool _enterMode;
 
+    // The reference last picked with the mouse: where it is in the text, and the cell the pick
+    // started from. A further click replaces it; typing anything ends it.
+    private (int Start, int End, CellPosition Anchor)? _point;
+
     /// <summary>Whether cells cannot be changed: no typing, Delete, pasting, undo or redo.</summary>
     public bool IsReadOnly
     {
@@ -314,6 +318,7 @@ public partial class SpreadsheetView
 
         SetValue(IsEditingKey, false);
         SetCurrentValue(EditTextProperty, null);
+        StopPointing();
         InvalidateArrange();
         InvalidateVisual();
         Focus();
@@ -465,12 +470,69 @@ public partial class SpreadsheetView
         };
         _box.TextChanged += (_, _) =>
         {
-            if (!_syncing && IsEditing)
-                SetCurrentValue(EditTextProperty, _box.Text);
+            if (_syncing || !IsEditing)
+                return;
+            StopPointing();
+            SetCurrentValue(EditTextProperty, _box.Text);
         };
         AddVisualChild(_box);
         AddLogicalChild(_box);
         return _box;
+    }
+
+    // A click on a cell, or on headers, while a formula is typed: when the caret is where an operand
+    // goes, or right after the reference picked last, the cells' reference goes into the text there.
+    internal bool StartPointing(Point point, bool extend)
+    {
+        if (_box is null || Painter.Hit(Viewport, point.X, point.Y, Worksheet) is not { } hit || hit.Part == GridPart.Corner)
+            return false;
+        var text = _box.Text ?? "";
+        var caret = _box.CaretIndex;
+        var continuing = _point is { } last && caret == last.End && _box.SelectionLength == 0 && last.End <= text.Length;
+        if (!continuing && !FormulaPointing.CanPoint(text, caret))
+            return false;
+        var picked = GridSelection.At(hit, Worksheet);
+        var anchor = extend && continuing ? _point!.Value.Anchor : picked.Anchor;
+        var start = continuing ? _point!.Value.Start : _box.SelectionStart;
+        var end = continuing ? _point!.Value.End : _box.SelectionStart + _box.SelectionLength;
+        _point = (start, end, anchor);
+        PointTo(!(extend && continuing) ? picked.Extent : hit.Part switch
+        {
+            GridPart.ColumnHeader => new CellPosition(SheetLayout.MaxRow, hit.Cell.Column),
+            GridPart.RowHeader => new CellPosition(hit.Cell.Row, SheetLayout.MaxColumn),
+            _ => hit.Cell,
+        });
+        return true;
+    }
+
+    // Puts the reference to the cells from the pick's anchor to a cell in place of the last one.
+    private void PointTo(CellPosition cell)
+    {
+        if (_box is null || _point is not { } point)
+            return;
+        var area = GridSelection.Cell(point.Anchor, Worksheet).ExtendTo(cell, Worksheet).Area;
+        var reference = FormulaPointing.Reference(area, Worksheet, Worksheet);
+        var text = _box.Text ?? "";
+        var updated = text[..point.Start] + reference + text[point.End..];
+        _syncing = true;
+        _box.Text = updated;
+        _box.CaretIndex = point.Start + reference.Length;
+        SetCurrentValue(EditTextProperty, updated);
+        _syncing = false;
+        _point = (point.Start, point.Start + reference.Length, point.Anchor);
+        Painter.ReferenceArea = area;
+        InvalidateMeasure();
+        InvalidateArrange();
+        InvalidateVisual();
+    }
+
+    private void StopPointing()
+    {
+        _point = null;
+        if (Painter.ReferenceArea is null)
+            return;
+        Painter.ReferenceArea = null;
+        InvalidateVisual();
     }
 
     // The cell's font at the zoom, colour and fill, at its alignment.

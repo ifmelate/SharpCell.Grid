@@ -103,6 +103,15 @@ public Func<string, GridFont, double>? MeasureText { get; set; }
 
 The width in pixels of a line of text in a font. Without it, text is never fitted to its cell, row headers keep [GridPainter.RowHeaderWidth](SharpCell.Grid.GridPainter.md#rowheaderwidth), and Calibri 11's digit width is assumed.
 
+<a id="referencearea"></a>
+### ReferenceArea
+
+```csharp
+public CellArea? ReferenceArea { get; set; }
+```
+
+The cells picked with the mouse while a formula is typed, painted with a dashed blue border; null for none.
+
 <a id="rowheaderwidth"></a>
 ### RowHeaderWidth
 

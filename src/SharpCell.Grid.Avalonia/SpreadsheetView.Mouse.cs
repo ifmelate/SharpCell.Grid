@@ -15,6 +15,7 @@ public partial class SpreadsheetView
         ColumnEdge,
         RowEdge,
         Fill,
+        Point,
     }
 
     // Made when first shown: a cursor needs the platform, which a view's type does not.
@@ -57,7 +58,16 @@ public partial class SpreadsheetView
         if (!properties.IsLeftButtonPressed)
             return;
 
-        // A click elsewhere enters what is being typed first; a formula that does not parse stays open.
+        // While a formula is typed, a click where it takes an operand picks a reference; a click
+        // elsewhere enters what is being typed first, and a formula that does not parse stays open.
+        if (IsEditing && StartPointing(e.GetPosition(this), e.KeyModifiers.HasFlag(KeyModifiers.Shift)))
+        {
+            _drag = Drag.Point;
+            e.Pointer.Capture(this);
+            e.Handled = true;
+            return;
+        }
+
         if (IsEditing && !CommitEdit())
             return;
         Focus();
@@ -156,6 +166,14 @@ public partial class SpreadsheetView
                 _resizeMoved = true;
                 InvalidateVisual();
                 break;
+            case Drag.Point:
+            {
+                var cell = Painter.CellNearest(Viewport, point.X, point.Y);
+                PointTo(cell);
+                ScrollTo(Painter.ScrollIntoView(Viewport, cell));
+                break;
+            }
+
             case Drag.Fill:
             {
                 var cell = Painter.CellNearest(Viewport, point.X, point.Y);
@@ -180,6 +198,12 @@ public partial class SpreadsheetView
         _drag = Drag.None;
         e.Pointer.Capture(null);
         e.Handled = true;
+        if (drag == Drag.Point)
+        {
+            _box?.Focus();
+            return;
+        }
+
         if (Worksheet is not { } sheet || Editor is not { } editor)
             return;
         switch (drag)

@@ -41,6 +41,9 @@ public partial class SpreadsheetView : Control
     // Rows one turn of the wheel scrolls, as in Excel.
     private const int WheelRows = 3;
 
+    // The selection and scrolling of sheets shown before, for when they are shown again.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Worksheet, SheetState> _sheetStates = [];
+
     static SpreadsheetView()
     {
         AffectsRender<SpreadsheetView>(WorksheetProperty, OffsetProperty, ActiveCellProperty, SelectionProperty);
@@ -85,6 +88,29 @@ public partial class SpreadsheetView : Control
         Painter = new GridPainter { MeasureText = Measure, ShowsFillHandle = true };
     }
 
+    /// <summary>
+    /// Shows the next sheet of the workbook, or with -1 the one before, as Ctrl+Page Down and
+    /// Ctrl+Page Up do; false when there is none that way.
+    /// </summary>
+    public bool ShowNextSheet(int direction = 1)
+    {
+        if (Worksheet is not { } sheet)
+            return false;
+        var sheets = sheet.Workbook.Sheets;
+        var index = -1;
+        for (var i = 0; i < sheets.Count; i++)
+        {
+            if (sheets[i] == sheet)
+                index = i;
+        }
+
+        var next = index + Math.Sign(direction);
+        if (index < 0 || next < 0 || next >= sheets.Count)
+            return false;
+        Worksheet = sheets[next];
+        return true;
+    }
+
     /// <summary>Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.</summary>
     public void ReloadLayout()
     {
@@ -104,10 +130,28 @@ public partial class SpreadsheetView : Control
         base.OnPropertyChanged(change);
         if (change.Property == WorksheetProperty)
         {
-            OnWorksheetChanged(change.GetOldValue<Worksheet?>());
+            var old = change.GetOldValue<Worksheet?>();
+            OnWorksheetChanged(old);
             ReloadLayout();
-            if (ActiveCell is { } cell)
+
+            // Each sheet of a workbook keeps its selection and scrolling, as Excel's tabs do; a sheet
+            // of the same workbook not shown before starts at A1.
+            if (old is not null && Selection is { } leaving)
+                _sheetStates.AddOrUpdate(old, new SheetState(leaving, Offset));
+            if (Worksheet is { } shown && _sheetStates.TryGetValue(shown, out var state))
+            {
+                SetCurrentValue(SelectionProperty, state.Selection);
+                SetCurrentValue(OffsetProperty, state.Offset);
+            }
+            else if (Worksheet is not null && old is not null && old.Workbook == Worksheet.Workbook)
+            {
+                SetCurrentValue(SelectionProperty, GridSelection.Cell(new CellPosition(1, 1), Worksheet));
+                SetCurrentValue(OffsetProperty, default(Vector));
+            }
+            else if (ActiveCell is { } cell)
+            {
                 SetCurrentValue(SelectionProperty, GridSelection.Cell(cell, Worksheet));
+            }
         }
         else if (change.Property == OffsetProperty || change.Property == BoundsProperty)
         {
@@ -207,7 +251,7 @@ public partial class SpreadsheetView : Control
         var jump = command;
         GridSelection? next = null;
         if (hotkeys?.SelectAll.Exists(g => g.Matches(e)) == true || (command && e.Key == Key.A) || (command && shift && e.Key == Key.Space))
-            next = GridSelection.All(selection.ActiveCell);
+            next = selection.SelectAll(sheet);
         else if (e.Key == Key.Space && command)
             next = selection.EntireColumns(sheet);
         else if (e.Key == Key.Space && shift)
@@ -220,6 +264,12 @@ public partial class SpreadsheetView : Control
                 (false, true) => selection.Extend(rows, columns, sheet),
                 _ => selection.Move(rows, columns, sheet),
             };
+        else if (e.Key is Key.PageUp or Key.PageDown && jump && !shift)
+        {
+            ShowNextSheet(e.Key == Key.PageDown ? 1 : -1);
+            e.Handled = true;
+            return;
+        }
         else if (e.Key is Key.Home or Key.End or Key.PageUp or Key.PageDown)
             next = Paging(e.Key, selection, jump, shift);
         else if (e.Key == Key.Enter)
@@ -276,6 +326,8 @@ public partial class SpreadsheetView : Control
         Key.Down => (1, 0),
         _ => null,
     };
+
+    private sealed record SheetState(GridSelection Selection, Vector Offset);
 
     private static double Measure(string text, GridFont font) => AvaloniaGridCanvas.Format(text, font, null).Width;
 

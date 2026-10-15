@@ -108,6 +108,41 @@ public class SheetEditingTests
     });
 
     [Fact]
+    public void Ctrl_Plus_with_cells_selected_asks_how_as_Excel_does() => Sta.Run(() =>
+    {
+        var sheet = Sheet();
+        var view = Show(sheet);
+        view.ActiveCell = Cell("A1");
+
+        Assert.True(view.PressKey(Key.OemPlus, ModifierKeys.Control | ModifierKeys.Shift));
+        var dialog = Assert.IsType<SpreadsheetView.CellsDialog>(view.OpenDialog);
+        dialog.Choose(1);
+
+        Assert.Null(view.OpenDialog);
+        Assert.Equal(CellValue.Empty, sheet["A1"].Value);
+        Assert.Equal("=A2*10", sheet["B1"].Formula);
+        view.Undo();
+        Assert.Equal("=A1*10", sheet["B1"].Formula);
+    });
+
+    [Fact]
+    public void Formatting_shortcuts_change_the_selected_cells_as_in_Excel() => Sta.Run(() =>
+    {
+        var sheet = Sheet();
+        var view = Show(sheet);
+        view.Selection = GridSelection.Cell(Cell("A1"), sheet).ExtendTo(Cell("A2"), sheet);
+
+        Assert.True(view.PressKey(Key.B, ModifierKeys.Control));
+        Assert.True(sheet["A2"].Style.Font.Bold);
+        Assert.True(view.PressKey(Key.D5, ModifierKeys.Control | ModifierKeys.Shift));
+        Assert.Equal("100%", sheet["A1"].Text);
+        view.SetBorders(BorderEdges.Outside, new CellBorder(CellBorderStyle.Thin));
+        Assert.NotNull(sheet["A2"].Style.BottomBorder);
+        view.Undo();
+        Assert.Null(sheet["A2"].Style.BottomBorder);
+    });
+
+    [Fact]
     public void Ctrl_with_the_wheel_zooms_by_ten_percent() => Sta.Run(() =>
     {
         var sheet = Sheet();

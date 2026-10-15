@@ -41,7 +41,9 @@ internal sealed class SampleApp : Application
     private static DockPanel WithFormulaBar(SpreadsheetView view)
     {
         var bar = new FormulaBar { View = view, Margin = new Thickness(6) };
+        var tabs = new SheetTabs { View = view };
         DockPanel.SetDock(bar, Dock.Top);
-        return new DockPanel { Children = { bar, view } };
+        DockPanel.SetDock(tabs, Dock.Bottom);
+        return new DockPanel { Children = { bar, tabs, view } };
     }
 }

@@ -87,6 +87,23 @@ workbook's culture, and the workbook is recalculated after each change. `view.Ed
 `FormulaBar` shows and edits the active cell's formula above the grid. See
 [What the grid shows](guides/showing-workbooks.md#editing) for every key.
 
+## Sheets and formatting
+
+```csharp snippet=sheets-and-formatting
+var tabs = new SheetTabs { View = view };   // Excel's sheet tabs, under the view
+view.ToggleBold();                          // as Ctrl+B
+view.SetFill(CellColor.FromRgb(0xFFF2CC));  // as Fill Color
+view.SetNumberFormat("0.0%");               // as the Number Format box
+view.ShowNextSheet();                       // as Ctrl+Page Down: the next sheet
+```
+
+`SheetTabs` is Excel's row of sheet tabs as a control of its own: clicking a tab shows its sheet,
+and + adds one; Ctrl+Page Down and Ctrl+Page Up go through the sheets too, and each sheet keeps its
+selection. The view's formatting methods (`ToggleBold`, `SetFill`, `SetBorders`, `SetNumberFormat`
+and the others) do what Excel's Home tab does to the selected cells, for an application's toolbar,
+and Excel's shortcuts such as Ctrl+B and Ctrl+Shift+% do the same. See
+[What the grid shows](guides/showing-workbooks.md#formatting-cells) for every key.
+
 ## Rows, columns, filling and zoom
 
 ```csharp snippet=sheet-commands

@@ -452,12 +452,14 @@ public sealed partial class GridEditor
         }
     }
 
-    // A sheet's data validation rules, to give back: each rule with its ranges as Excel writes them.
+    // A sheet's data validation rules and conditional formats, to give back: each with its ranges as Excel writes them.
     private sealed class Rules
     {
         private readonly List<(string Ranges, DataValidation Validation)> _rules;
+        private readonly List<(string Ranges, ConditionalFormat Format)> _formats;
 
-        private Rules(List<(string Ranges, DataValidation Validation)> rules) => _rules = rules;
+        private Rules(List<(string Ranges, DataValidation Validation)> rules, List<(string Ranges, ConditionalFormat Format)> formats) =>
+            (_rules, _formats) = (rules, formats);
 
         // Ranges of one rule come one after another, with the same validation.
         public static Rules Of(Worksheet sheet)
@@ -471,12 +473,36 @@ public sealed partial class GridEditor
                     rules.Add((range.Address, validation));
             }
 
-            return new Rules(rules);
+            var formats = sheet.ConditionalFormats.Select(f => (string.Join(" ", f.Ranges.Select(r => r.Address)), f.Format)).ToList();
+            return new Rules(rules, formats);
         }
 
         public void Restore(Worksheet sheet)
         {
-            var now = Of(sheet)._rules;
+            var now = Of(sheet);
+            RestoreValidation(sheet, now._rules);
+
+            // Conditional formats as they were, when each can be added again: colour scales, data
+            // bars and icon sets are only read from files.
+            if (now._formats.SequenceEqual(_formats)
+                || _formats.Any(f => f.Format.Type is ConditionalFormatType.ColorScale or ConditionalFormatType.DataBar or ConditionalFormatType.IconSet))
+                return;
+            sheet.ClearConditionalFormats();
+            foreach (var (ranges, format) in _formats)
+            {
+                try
+                {
+                    sheet.AddConditionalFormat(ranges, format);
+                }
+                catch (FormulaParseException)
+                {
+                    // A rule read from a file with a formula SharpCell cannot read cannot be added again.
+                }
+            }
+        }
+
+        private void RestoreValidation(Worksheet sheet, List<(string Ranges, DataValidation Validation)> now)
+        {
             if (now.Count == _rules.Count && now.Zip(_rules).All(p => p.First.Ranges == p.Second.Ranges && ReferenceEquals(p.First.Validation, p.Second.Validation)))
                 return;
             sheet.ClearValidation("A1:XFD1048576");
