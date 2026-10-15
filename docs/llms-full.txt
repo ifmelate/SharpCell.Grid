@@ -311,6 +311,24 @@ Undo gives back deleted rows and columns whole: their cells, styles and sizes, a
 name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
 to undo.
 
+## Formatting cells
+
+| Input | Result |
+|---|---|
+| Ctrl+B or Ctrl+2, Ctrl+I or Ctrl+3, Ctrl+U or Ctrl+4, Ctrl+5 | Bold, italic, underline, strikethrough; off for every selected cell when the active cell has it, on otherwise |
+| Ctrl+Shift+& (7) | A thin border round the selection |
+| Ctrl+Shift+_ (minus) | Takes every border of the selection off |
+| Ctrl+Shift+~ ! $ % ^ # @ | General, two decimals with separators, currency, percent, scientific, date, time |
+
+The view's methods do what Excel's Home tab does: `ToggleBold`, `ToggleItalic`, `ToggleUnderline`,
+`ToggleStrikethrough`, `SetFill` and `SetFontColor` with a colour (null takes it off), `SetBorders`
+with the edges (`BorderEdges.Outside`, `All`, `Bottom`...) and a `CellBorder` (null for No Border),
+`SetNumberFormat` with a format code, and `Restyle` with any change of `CellStyle`. An application
+puts them on its own toolbar. Each is one step to undo. A border on one side of a line takes the
+neighbouring cell's edge on the other side off, so the line looks as chosen. Whole rows or columns
+change their cells up to the sheet's used range: SharpCell keeps no styles for rows or columns.
+`XlsxWriter` saves the new styles and formats.
+
 ## Copying to Excel
 
 Copying puts the selected cells on the clipboard in two forms, both read by Excel when it pastes:
@@ -474,7 +492,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 |---|---|---|
 | Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
 | Done | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
-| Next | Changing styles in the grid: bold, fills, borders, number formats | — |
+| Done | Changing styles in the grid: bold, italic, underline, fills, font colours, borders and number formats, with Excel's shortcuts | — |
 | Next | More than one sheet in a view, with tabs | — |
 
 ## Quality, all along
@@ -521,6 +539,35 @@ People edit cells in the view as in Excel; set view.IsReadOnly = true to only sh
 To change cells from code as typing does, set SharpCell's cell.Input, or use view.Editor (GridEditor) so the change can be undone.
 For another UI framework, implement IGridCanvas and call GridPainter.Paint, Hit, CellNearest and ScrollIntoView, with GridSelection for the input.
 ```
+
+---
+
+<!-- page: api/SharpCell.Grid.BorderEdges.md -->
+
+# BorderEdges
+
+```csharp
+public enum BorderEdges
+```
+
+Namespace `SharpCell.Grid` · package `SharpCell.Grid`
+
+Which edges of an area's cells a border goes on, as in Excel's Borders menu.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="none"></a>`None` | 0 | No edge. |
+| <a id="left"></a>`Left` | 1 | The left edge of the area. |
+| <a id="right"></a>`Right` | 2 | The right edge of the area. |
+| <a id="top"></a>`Top` | 4 | The top edge of the area. |
+| <a id="bottom"></a>`Bottom` | 8 | The bottom edge of the area. |
+| <a id="outside"></a>`Outside` | 15 | Round the area: Excel's Outside Borders. |
+| <a id="insidevertical"></a>`InsideVertical` | 16 | The edges between the area's columns. |
+| <a id="insidehorizontal"></a>`InsideHorizontal` | 32 | The edges between the area's rows. |
+| <a id="inside"></a>`Inside` | 48 | Between the cells inside the area. |
+| <a id="all"></a>`All` | 63 | Every edge of every cell: Excel's All Borders. |
 
 ---
 
@@ -1246,6 +1293,22 @@ public GridEdit? Redo()
 
 Redoes the last undone change; null when there is none.
 
+<a id="setborders-worksheet-cellarea-borderedges-cellborder"></a>
+### SetBorders(Worksheet, CellArea, BorderEdges, CellBorder)
+
+```csharp
+public GridEdit SetBorders(Worksheet sheet, CellArea area, BorderEdges edges, CellBorder? border)
+```
+
+Puts a border on edges of an area, or takes it off with null, as Excel's Borders menu does: [BorderEdges.Outside](SharpCell.Grid.BorderEdges.md#outside) for Outside Borders, [BorderEdges.All](SharpCell.Grid.BorderEdges.md#all) for All Borders, [BorderEdges.All](SharpCell.Grid.BorderEdges.md#all) with null for No Border. The neighbouring cell's edge on the other side of a line goes, so the line looks as chosen.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `area`: The cells.
+- `edges`: Which edges.
+- `border`: The line, such as `new CellBorder(CellBorderStyle.Thin)`; null for none.
+
 <a id="setcolumnhidden-worksheet-int-int-bool"></a>
 ### SetColumnHidden(Worksheet, int, int, bool)
 
@@ -1272,6 +1335,19 @@ Gives columns a width, as dragging a column header's edge does in Excel: in the 
 
 - `ArgumentOutOfRangeException`: A column is outside the sheet, or the width is outside 0 to 255.
 
+<a id="setnumberformat-worksheet-cellarea-string"></a>
+### SetNumberFormat(Worksheet, CellArea, string)
+
+```csharp
+public GridEdit SetNumberFormat(Worksheet sheet, CellArea area, string format)
+```
+
+Gives every cell of an area a number format, as Excel's Number Format box does; see `Cell.NumberFormat`. Whole rows or columns change their cells up to the sheet's used range.
+
+**Exceptions**
+
+- `ArgumentException`: The format is not a number format Excel reads.
+
 <a id="setrowheight-worksheet-int-int-double"></a>
 ### SetRowHeight(Worksheet, int, int, double?)
 
@@ -1297,6 +1373,37 @@ Hides or shows rows; see [GridEditor.SetColumnHidden](SharpCell.Grid.GridEditor.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: A row is outside the sheet.
+
+<a id="setstyle-worksheet-cellarea-func-cellstyle-cellstyle"></a>
+### SetStyle(Worksheet, CellArea, Func<CellStyle, CellStyle>)
+
+```csharp
+public GridEdit SetStyle(Worksheet sheet, CellArea area, Func<CellStyle, CellStyle> change)
+```
+
+Changes the style of every cell of an area, as a button of Excel's Home tab does: the function gets each cell's style and gives the new one, such as `style => style with { Fill = color }`. Whole rows or columns change their cells up to the sheet's used range.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `area`: The cells.
+- `change`: The new style of a cell from its old one.
+
+<a id="shortcutformat-char-cultureinfo"></a>
+### ShortcutFormat(char, CultureInfo)
+
+```csharp
+public static string? ShortcutFormat(char symbol, CultureInfo culture)
+```
+
+The number formats of Excel's Ctrl+Shift shortcuts, for a workbook's culture: `~` General, `!` two decimals with thousands separators, `$` currency, `%` percent, `^` scientific, `#` a date with day, month and year, `@` a time with hours and minutes.
+
+**Parameters**
+
+- `symbol`: The shortcut's character.
+- `culture`: The workbook's culture, for the currency symbol.
+
+**Returns:** The format code; null for another character.
 
 <a id="undo"></a>
 ### Undo()
@@ -3164,6 +3271,87 @@ Paints the visible part of the sheet through [SpreadsheetView.Painter](SharpCell
 
 - `context`: The drawing context Avalonia renders with.
 
+<a id="restyle-func-cellstyle-cellstyle"></a>
+### Restyle(Func<CellStyle, CellStyle>)
+
+```csharp
+public void Restyle(Func<CellStyle, CellStyle> change)
+```
+
+Changes the style of the selected cells: the function gets each cell's style and gives the new one.
+
+<a id="setborders-borderedges-cellborder"></a>
+### SetBorders(BorderEdges, CellBorder)
+
+```csharp
+public void SetBorders(BorderEdges edges, CellBorder? border)
+```
+
+Puts a border on edges of the selection, or takes it off with null, as Excel's Borders menu does; see [GridEditor.SetBorders](SharpCell.Grid.GridEditor.md#setborders-worksheet-cellarea-borderedges-cellborder).
+
+<a id="setfill-cellcolor"></a>
+### SetFill(CellColor?)
+
+```csharp
+public void SetFill(CellColor? color)
+```
+
+Fills the selected cells with a colour, or takes their fill off with null, as Excel's Fill Color does.
+
+<a id="setfontcolor-cellcolor"></a>
+### SetFontColor(CellColor?)
+
+```csharp
+public void SetFontColor(CellColor? color)
+```
+
+Gives the selected cells' text a colour, or the automatic colour with null, as Excel's Font Color does.
+
+<a id="setnumberformat-string"></a>
+### SetNumberFormat(string)
+
+```csharp
+public void SetNumberFormat(string format)
+```
+
+Gives the selected cells a number format, as Excel's Number Format box does.
+
+<a id="togglebold"></a>
+### ToggleBold()
+
+```csharp
+public void ToggleBold()
+```
+
+Makes the selected cells bold, or not bold when the active cell is, as Ctrl+B does.
+
+<a id="toggleitalic"></a>
+### ToggleItalic()
+
+```csharp
+public void ToggleItalic()
+```
+
+Makes the selected cells italic, or not italic when the active cell is, as Ctrl+I does.
+
+<a id="togglestrikethrough"></a>
+### ToggleStrikethrough()
+
+```csharp
+public void ToggleStrikethrough()
+```
+
+Strikes the selected cells through, or not when the active cell is, as Ctrl+5 does.
+
+<a id="toggleunderline"></a>
+### ToggleUnderline()
+
+```csharp
+public void ToggleUnderline()
+```
+
+Underlines the selected cells, or takes the underline off when the active cell has one, as Ctrl+U does.
+
 <a id="undo"></a>
 ### Undo()
 
@@ -3551,6 +3739,87 @@ public void ReloadLayout()
 ```
 
 Takes the sheet's column widths, row heights, hidden rows and columns and frozen panes again.
+
+<a id="restyle-func-cellstyle-cellstyle"></a>
+### Restyle(Func<CellStyle, CellStyle>)
+
+```csharp
+public void Restyle(Func<CellStyle, CellStyle> change)
+```
+
+Changes the style of the selected cells: the function gets each cell's style and gives the new one.
+
+<a id="setborders-borderedges-cellborder"></a>
+### SetBorders(BorderEdges, CellBorder)
+
+```csharp
+public void SetBorders(BorderEdges edges, CellBorder? border)
+```
+
+Puts a border on edges of the selection, or takes it off with null, as Excel's Borders menu does; see [GridEditor.SetBorders](SharpCell.Grid.GridEditor.md#setborders-worksheet-cellarea-borderedges-cellborder).
+
+<a id="setfill-cellcolor"></a>
+### SetFill(CellColor?)
+
+```csharp
+public void SetFill(CellColor? color)
+```
+
+Fills the selected cells with a colour, or takes their fill off with null, as Excel's Fill Color does.
+
+<a id="setfontcolor-cellcolor"></a>
+### SetFontColor(CellColor?)
+
+```csharp
+public void SetFontColor(CellColor? color)
+```
+
+Gives the selected cells' text a colour, or the automatic colour with null, as Excel's Font Color does.
+
+<a id="setnumberformat-string"></a>
+### SetNumberFormat(string)
+
+```csharp
+public void SetNumberFormat(string format)
+```
+
+Gives the selected cells a number format, as Excel's Number Format box does.
+
+<a id="togglebold"></a>
+### ToggleBold()
+
+```csharp
+public void ToggleBold()
+```
+
+Makes the selected cells bold, or not bold when the active cell is, as Ctrl+B does.
+
+<a id="toggleitalic"></a>
+### ToggleItalic()
+
+```csharp
+public void ToggleItalic()
+```
+
+Makes the selected cells italic, or not italic when the active cell is, as Ctrl+I does.
+
+<a id="togglestrikethrough"></a>
+### ToggleStrikethrough()
+
+```csharp
+public void ToggleStrikethrough()
+```
+
+Strikes the selected cells through, or not when the active cell is, as Ctrl+5 does.
+
+<a id="toggleunderline"></a>
+### ToggleUnderline()
+
+```csharp
+public void ToggleUnderline()
+```
+
+Underlines the selected cells, or takes the underline off when the active cell has one, as Ctrl+U does.
 
 <a id="undo"></a>
 ### Undo()

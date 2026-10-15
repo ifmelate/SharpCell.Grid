@@ -55,7 +55,7 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 |---|---|---|
 | Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
 | Done | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
-| Next | Changing styles in the grid: bold, fills, borders, number formats | — |
+| Done | Changing styles in the grid: bold, italic, underline, fills, font colours, borders and number formats, with Excel's shortcuts | — |
 | Next | More than one sheet in a view, with tabs | — |
 
 ## Quality, all along

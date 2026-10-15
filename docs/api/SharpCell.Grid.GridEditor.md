@@ -303,6 +303,22 @@ public GridEdit? Redo()
 
 Redoes the last undone change; null when there is none.
 
+<a id="setborders-worksheet-cellarea-borderedges-cellborder"></a>
+### SetBorders(Worksheet, CellArea, BorderEdges, CellBorder)
+
+```csharp
+public GridEdit SetBorders(Worksheet sheet, CellArea area, BorderEdges edges, CellBorder? border)
+```
+
+Puts a border on edges of an area, or takes it off with null, as Excel's Borders menu does: [BorderEdges.Outside](SharpCell.Grid.BorderEdges.md#outside) for Outside Borders, [BorderEdges.All](SharpCell.Grid.BorderEdges.md#all) for All Borders, [BorderEdges.All](SharpCell.Grid.BorderEdges.md#all) with null for No Border. The neighbouring cell's edge on the other side of a line goes, so the line looks as chosen.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `area`: The cells.
+- `edges`: Which edges.
+- `border`: The line, such as `new CellBorder(CellBorderStyle.Thin)`; null for none.
+
 <a id="setcolumnhidden-worksheet-int-int-bool"></a>
 ### SetColumnHidden(Worksheet, int, int, bool)
 
@@ -329,6 +345,19 @@ Gives columns a width, as dragging a column header's edge does in Excel: in the 
 
 - `ArgumentOutOfRangeException`: A column is outside the sheet, or the width is outside 0 to 255.
 
+<a id="setnumberformat-worksheet-cellarea-string"></a>
+### SetNumberFormat(Worksheet, CellArea, string)
+
+```csharp
+public GridEdit SetNumberFormat(Worksheet sheet, CellArea area, string format)
+```
+
+Gives every cell of an area a number format, as Excel's Number Format box does; see `Cell.NumberFormat`. Whole rows or columns change their cells up to the sheet's used range.
+
+**Exceptions**
+
+- `ArgumentException`: The format is not a number format Excel reads.
+
 <a id="setrowheight-worksheet-int-int-double"></a>
 ### SetRowHeight(Worksheet, int, int, double?)
 
@@ -354,6 +383,37 @@ Hides or shows rows; see [GridEditor.SetColumnHidden](SharpCell.Grid.GridEditor.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: A row is outside the sheet.
+
+<a id="setstyle-worksheet-cellarea-func-cellstyle-cellstyle"></a>
+### SetStyle(Worksheet, CellArea, Func<CellStyle, CellStyle>)
+
+```csharp
+public GridEdit SetStyle(Worksheet sheet, CellArea area, Func<CellStyle, CellStyle> change)
+```
+
+Changes the style of every cell of an area, as a button of Excel's Home tab does: the function gets each cell's style and gives the new one, such as `style => style with { Fill = color }`. Whole rows or columns change their cells up to the sheet's used range.
+
+**Parameters**
+
+- `sheet`: The sheet.
+- `area`: The cells.
+- `change`: The new style of a cell from its old one.
+
+<a id="shortcutformat-char-cultureinfo"></a>
+### ShortcutFormat(char, CultureInfo)
+
+```csharp
+public static string? ShortcutFormat(char symbol, CultureInfo culture)
+```
+
+The number formats of Excel's Ctrl+Shift shortcuts, for a workbook's culture: `~` General, `!` two decimals with thousands separators, `$` currency, `%` percent, `^` scientific, `#` a date with day, month and year, `@` a time with hours and minutes.
+
+**Parameters**
+
+- `symbol`: The shortcut's character.
+- `culture`: The workbook's culture, for the currency symbol.
+
+**Returns:** The format code; null for another character.
 
 <a id="undo"></a>
 ### Undo()

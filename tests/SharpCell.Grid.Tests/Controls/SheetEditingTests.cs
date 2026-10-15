@@ -179,6 +179,30 @@ public class SheetEditingTests(HeadlessSession session)
     });
 
     [Fact]
+    public Task Formatting_shortcuts_change_the_selected_cells_as_in_Excel() => session.Run(() =>
+    {
+        var sheet = Sheet();
+        var (window, view) = Show(sheet);
+        view.Selection = GridSelection.Cell(Cells.Parse("A1"), sheet).ExtendTo(Cells.Parse("A2"), sheet);
+
+        Press(window, Key.B, RawInputModifiers.Control);
+        Assert.True(sheet["A1"].Style.Font.Bold && sheet["A2"].Style.Font.Bold);
+        Press(window, Key.B, RawInputModifiers.Meta);
+        Assert.False(sheet["A2"].Style.Font.Bold);                       // the active cell was bold: off
+
+        Press(window, Key.D5, RawInputModifiers.Control | RawInputModifiers.Shift);
+        Assert.Equal("100%", sheet["A1"].Text);
+        Press(window, Key.D7, RawInputModifiers.Control | RawInputModifiers.Shift);
+        Assert.NotNull(sheet["A1"].Style.TopBorder);
+        Assert.NotNull(sheet["A2"].Style.BottomBorder);
+
+        view.SetFill(CellColor.FromRgb(0xFFC000));
+        Assert.Equal(CellColor.FromRgb(0xFFC000), sheet["A2"].Style.Fill);
+        view.Undo();
+        Assert.Null(sheet["A2"].Style.Fill);
+    });
+
+    [Fact]
     public Task Ctrl_with_the_wheel_zooms_by_ten_percent() => session.Run(() =>
     {
         var sheet = Sheet();

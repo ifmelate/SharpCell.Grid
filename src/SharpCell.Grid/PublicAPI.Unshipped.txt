@@ -10,3 +10,18 @@ SharpCell.Grid.GridTheme.ReferenceBorder.get -> SharpCell.Grid.GridColor
 SharpCell.Grid.GridTheme.ReferenceBorder.init -> void
 SharpCell.Grid.GridEditor.DeleteCells(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.DeleteShift shift) -> SharpCell.Grid.GridEdit!
 SharpCell.Grid.GridEditor.InsertCells(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.InsertShift shift) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.All = SharpCell.Grid.BorderEdges.Outside | SharpCell.Grid.BorderEdges.Inside -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Bottom = 8 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Inside = SharpCell.Grid.BorderEdges.InsideVertical | SharpCell.Grid.BorderEdges.InsideHorizontal -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.InsideHorizontal = 32 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.InsideVertical = 16 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Left = 1 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.None = 0 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Outside = SharpCell.Grid.BorderEdges.Left | SharpCell.Grid.BorderEdges.Right | SharpCell.Grid.BorderEdges.Top | SharpCell.Grid.BorderEdges.Bottom -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Right = 2 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.BorderEdges.Top = 4 -> SharpCell.Grid.BorderEdges
+SharpCell.Grid.GridEditor.SetBorders(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, SharpCell.Grid.BorderEdges edges, SharpCell.CellBorder? border) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetNumberFormat(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, string! format) -> SharpCell.Grid.GridEdit!
+SharpCell.Grid.GridEditor.SetStyle(SharpCell.Worksheet! sheet, SharpCell.Grid.CellArea area, System.Func<SharpCell.CellStyle!, SharpCell.CellStyle!>! change) -> SharpCell.Grid.GridEdit!
+static SharpCell.Grid.GridEditor.ShortcutFormat(char symbol, System.Globalization.CultureInfo! culture) -> string?

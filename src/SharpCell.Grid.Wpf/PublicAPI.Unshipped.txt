@@ -3,3 +3,12 @@ SharpCell.Grid.Wpf.SpreadsheetView.DeleteCells(SharpCell.DeleteShift shift) -> v
 SharpCell.Grid.Wpf.SpreadsheetView.InsertCells(SharpCell.InsertShift shift) -> void
 SharpCell.Grid.Wpf.SpreadsheetView.OpenDeleteDialog() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.OpenInsertDialog() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.Restyle(System.Func<SharpCell.CellStyle!, SharpCell.CellStyle!>! change) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetBorders(SharpCell.Grid.BorderEdges edges, SharpCell.CellBorder? border) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetFill(SharpCell.CellColor? color) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetFontColor(SharpCell.CellColor? color) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.SetNumberFormat(string! format) -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleBold() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleItalic() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleStrikethrough() -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ToggleUnderline() -> void

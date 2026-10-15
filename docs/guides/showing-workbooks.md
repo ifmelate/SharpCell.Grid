@@ -134,6 +134,24 @@ Undo gives back deleted rows and columns whole: their cells, styles and sizes, a
 name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
 to undo.
 
+## Formatting cells
+
+| Input | Result |
+|---|---|
+| Ctrl+B or Ctrl+2, Ctrl+I or Ctrl+3, Ctrl+U or Ctrl+4, Ctrl+5 | Bold, italic, underline, strikethrough; off for every selected cell when the active cell has it, on otherwise |
+| Ctrl+Shift+& (7) | A thin border round the selection |
+| Ctrl+Shift+_ (minus) | Takes every border of the selection off |
+| Ctrl+Shift+~ ! $ % ^ # @ | General, two decimals with separators, currency, percent, scientific, date, time |
+
+The view's methods do what Excel's Home tab does: `ToggleBold`, `ToggleItalic`, `ToggleUnderline`,
+`ToggleStrikethrough`, `SetFill` and `SetFontColor` with a colour (null takes it off), `SetBorders`
+with the edges (`BorderEdges.Outside`, `All`, `Bottom`...) and a `CellBorder` (null for No Border),
+`SetNumberFormat` with a format code, and `Restyle` with any change of `CellStyle`. An application
+puts them on its own toolbar. Each is one step to undo. A border on one side of a line takes the
+neighbouring cell's edge on the other side off, so the line looks as chosen. Whole rows or columns
+change their cells up to the sheet's used range: SharpCell keeps no styles for rows or columns.
+`XlsxWriter` saves the new styles and formats.
+
 ## Copying to Excel
 
 Copying puts the selected cells on the clipboard in two forms, both read by Excel when it pastes:

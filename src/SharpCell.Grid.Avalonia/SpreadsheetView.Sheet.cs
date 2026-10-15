@@ -78,6 +78,8 @@ public partial class SpreadsheetView
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         var columns = Selection?.IsEntireColumns == true;
         var rows = Selection?.IsEntireRows == true;
+        if (FormatKey(e.Key, shift))
+            return true;
         switch (e.Key)
         {
             case Key.D:

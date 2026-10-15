@@ -334,6 +334,87 @@ Paints the visible part of the sheet through [SpreadsheetView.Painter](SharpCell
 
 - `context`: The drawing context Avalonia renders with.
 
+<a id="restyle-func-cellstyle-cellstyle"></a>
+### Restyle(Func<CellStyle, CellStyle>)
+
+```csharp
+public void Restyle(Func<CellStyle, CellStyle> change)
+```
+
+Changes the style of the selected cells: the function gets each cell's style and gives the new one.
+
+<a id="setborders-borderedges-cellborder"></a>
+### SetBorders(BorderEdges, CellBorder)
+
+```csharp
+public void SetBorders(BorderEdges edges, CellBorder? border)
+```
+
+Puts a border on edges of the selection, or takes it off with null, as Excel's Borders menu does; see [GridEditor.SetBorders](SharpCell.Grid.GridEditor.md#setborders-worksheet-cellarea-borderedges-cellborder).
+
+<a id="setfill-cellcolor"></a>
+### SetFill(CellColor?)
+
+```csharp
+public void SetFill(CellColor? color)
+```
+
+Fills the selected cells with a colour, or takes their fill off with null, as Excel's Fill Color does.
+
+<a id="setfontcolor-cellcolor"></a>
+### SetFontColor(CellColor?)
+
+```csharp
+public void SetFontColor(CellColor? color)
+```
+
+Gives the selected cells' text a colour, or the automatic colour with null, as Excel's Font Color does.
+
+<a id="setnumberformat-string"></a>
+### SetNumberFormat(string)
+
+```csharp
+public void SetNumberFormat(string format)
+```
+
+Gives the selected cells a number format, as Excel's Number Format box does.
+
+<a id="togglebold"></a>
+### ToggleBold()
+
+```csharp
+public void ToggleBold()
+```
+
+Makes the selected cells bold, or not bold when the active cell is, as Ctrl+B does.
+
+<a id="toggleitalic"></a>
+### ToggleItalic()
+
+```csharp
+public void ToggleItalic()
+```
+
+Makes the selected cells italic, or not italic when the active cell is, as Ctrl+I does.
+
+<a id="togglestrikethrough"></a>
+### ToggleStrikethrough()
+
+```csharp
+public void ToggleStrikethrough()
+```
+
+Strikes the selected cells through, or not when the active cell is, as Ctrl+5 does.
+
+<a id="toggleunderline"></a>
+### ToggleUnderline()
+
+```csharp
+public void ToggleUnderline()
+```
+
+Underlines the selected cells, or takes the underline off when the active cell has one, as Ctrl+U does.
+
 <a id="undo"></a>
 ### Undo()
 
