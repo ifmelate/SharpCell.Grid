@@ -38,8 +38,10 @@ Packages: `SharpCell.Grid` (geometry, hit testing and painting, no UI framework)
 - [IGridCanvas](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.IGridCanvas.md): What GridPainter paints on.
 - [SheetLayout](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.SheetLayout.md): Where the cells of a sheet are, in device-independent pixels from the top-left corner of cell A1: column widths, row heights, their offsets, the cell under a point and the cells inside a viewport.
 - [FormulaBar](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Avalonia.FormulaBar.md): Excel's formula bar for a SpreadsheetView: the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit.
+- [SheetTabs](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Avalonia.SheetTabs.md): Excel's sheet tabs for a SpreadsheetView: a tab for each sheet of the view's workbook, the shown one highlighted.
 - [SpreadsheetView](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Avalonia.SpreadsheetView.md): Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines.
 - [FormulaBar](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Wpf.FormulaBar.md): Excel's formula bar for a SpreadsheetView: the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit.
+- [SheetTabs](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Wpf.SheetTabs.md): Excel's sheet tabs for a SpreadsheetView: a tab for each sheet of the view's workbook, the shown one highlighted.
 - [SpreadsheetView](https://ifmelate.github.io/SharpCell.Grid/api/SharpCell.Grid.Wpf.SpreadsheetView.md): Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines.
 
 ## Optional

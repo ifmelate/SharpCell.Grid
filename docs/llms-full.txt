@@ -141,6 +141,23 @@ workbook's culture, and the workbook is recalculated after each change. `view.Ed
 `FormulaBar` shows and edits the active cell's formula above the grid. See
 [What the grid shows](guides/showing-workbooks.md#editing) for every key.
 
+## Sheets and formatting
+
+```csharp snippet=sheets-and-formatting
+var tabs = new SheetTabs { View = view };   // Excel's sheet tabs, under the view
+view.ToggleBold();                          // as Ctrl+B
+view.SetFill(CellColor.FromRgb(0xFFF2CC));  // as Fill Color
+view.SetNumberFormat("0.0%");               // as the Number Format box
+view.ShowNextSheet();                       // as Ctrl+Page Down: the next sheet
+```
+
+`SheetTabs` is Excel's row of sheet tabs as a control of its own: clicking a tab shows its sheet,
+and + adds one; Ctrl+Page Down and Ctrl+Page Up go through the sheets too, and each sheet keeps its
+selection. The view's formatting methods (`ToggleBold`, `SetFill`, `SetBorders`, `SetNumberFormat`
+and the others) do what Excel's Home tab does to the selected cells, for an application's toolbar,
+and Excel's shortcuts such as Ctrl+B and Ctrl+Shift+% do the same. See
+[What the grid shows](guides/showing-workbooks.md#formatting-cells) for every key.
+
 ## Rows, columns, filling and zoom
 
 ```csharp snippet=sheet-commands
@@ -310,6 +327,15 @@ through SharpCell's `InsertRows` and `DeleteRows`: references to deleted cells b
 Undo gives back deleted rows and columns whole: their cells, styles and sizes, and every formula,
 name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
 to undo.
+
+## Sheets
+
+`SheetTabs` shows a tab for each sheet of the view's workbook, the shown sheet highlighted, as at
+the bottom of Excel's window. Clicking a tab shows its sheet, and + adds a sheet named as Excel names
+one (`Sheet2`, `Sheet3`...). Ctrl+Page Down and Ctrl+Page Up (Cmd on a Mac) show the next and the
+previous sheet, and `ShowNextSheet` does it in code. Each sheet keeps its selection and scrolling
+while another is shown; a sheet not shown before starts at A1. Sheets cannot yet be renamed,
+deleted or moved from the tabs: SharpCell does not rename or remove sheets.
 
 ## Formatting cells
 
@@ -493,7 +519,13 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
 | Done | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
 | Done | Changing styles in the grid: bold, italic, underline, fills, font colours, borders and number formats, with Excel's shortcuts | — |
-| Next | More than one sheet in a view, with tabs | — |
+| Done | More than one sheet in a view, with tabs: switching, adding, Ctrl+Page Up and Ctrl+Page Down; each sheet keeps its selection | — |
+
+## Later
+
+- Renaming, deleting and moving sheets from the tabs: SharpCell does not yet rename or remove sheets.
+- While typing a formula: the arrows pointing at cells, references to other sheets picked from the
+  tabs, and each reference in a colour of its own.
 
 ## Quality, all along
 
@@ -2935,6 +2967,71 @@ The view whose active cell the bar shows and edits.
 
 ---
 
+<!-- page: api/SharpCell.Grid.Avalonia.SheetTabs.md -->
+
+# SheetTabs
+
+```csharp
+public class SheetTabs : UserControl
+```
+
+Namespace `SharpCell.Grid.Avalonia` · package `SharpCell.Grid.Avalonia`
+
+Excel's sheet tabs for a [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md): a tab for each sheet of the view's workbook, the shown one highlighted. Clicking a tab shows its sheet, and the + button adds a sheet, as in Excel. Put it under the view, as Excel does.
+
+## Constructors
+
+<a id="ctor"></a>
+### SheetTabs()
+
+```csharp
+public SheetTabs()
+```
+
+Tabs for no view; set [SheetTabs.View](SharpCell.Grid.Avalonia.SheetTabs.md#view) to connect them.
+
+## Properties
+
+<a id="sheetnames"></a>
+### SheetNames
+
+```csharp
+public IReadOnlyList<string> SheetNames { get; }
+```
+
+The names on the tabs, in the workbook's order.
+
+<a id="view"></a>
+### View
+
+```csharp
+public SpreadsheetView? View { get; set; }
+```
+
+The view whose workbook's sheets the tabs show and switch.
+
+## Methods
+
+<a id="addsheet"></a>
+### AddSheet()
+
+```csharp
+public Worksheet? AddSheet()
+```
+
+Adds a sheet after the others, named as Excel names a new sheet (`Sheet2`, `Sheet3`, the first number free), and shows it. Null when the view is read-only or has no sheet.
+
+<a id="refresh"></a>
+### Refresh()
+
+```csharp
+public void Refresh()
+```
+
+Shows the tabs again from the workbook's sheets, after sheets were added in code.
+
+---
+
 <!-- page: api/SharpCell.Grid.Avalonia.SpreadsheetView.md -->
 
 # SpreadsheetView
@@ -3316,6 +3413,15 @@ public void SetNumberFormat(string format)
 
 Gives the selected cells a number format, as Excel's Number Format box does.
 
+<a id="shownextsheet-int"></a>
+### ShowNextSheet(int)
+
+```csharp
+public bool ShowNextSheet(int direction = 1)
+```
+
+Shows the next sheet of the workbook, or with -1 the one before, as Ctrl+Page Down and Ctrl+Page Up do; false when there is none that way.
+
 <a id="togglebold"></a>
 ### ToggleBold()
 
@@ -3414,6 +3520,71 @@ public SpreadsheetView? View { get; set; }
 ```
 
 The view whose active cell the bar shows and edits.
+
+---
+
+<!-- page: api/SharpCell.Grid.Wpf.SheetTabs.md -->
+
+# SheetTabs
+
+```csharp
+public class SheetTabs : UserControl
+```
+
+Namespace `SharpCell.Grid.Wpf` · package `SharpCell.Grid.Wpf`
+
+Excel's sheet tabs for a [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md): a tab for each sheet of the view's workbook, the shown one highlighted. Clicking a tab shows its sheet, and the + button adds a sheet, as in Excel. Put it under the view, as Excel does.
+
+## Constructors
+
+<a id="ctor"></a>
+### SheetTabs()
+
+```csharp
+public SheetTabs()
+```
+
+Tabs for no view; set [SheetTabs.View](SharpCell.Grid.Wpf.SheetTabs.md#view) to connect them.
+
+## Properties
+
+<a id="sheetnames"></a>
+### SheetNames
+
+```csharp
+public IReadOnlyList<string> SheetNames { get; }
+```
+
+The names on the tabs, in the workbook's order.
+
+<a id="view"></a>
+### View
+
+```csharp
+public SpreadsheetView? View { get; set; }
+```
+
+The view whose workbook's sheets the tabs show and switch.
+
+## Methods
+
+<a id="addsheet"></a>
+### AddSheet()
+
+```csharp
+public Worksheet? AddSheet()
+```
+
+Adds a sheet after the others, named as Excel names a new sheet (`Sheet2`, `Sheet3`, the first number free), and shows it. Null when the view is read-only or has no sheet.
+
+<a id="refresh"></a>
+### Refresh()
+
+```csharp
+public void Refresh()
+```
+
+Shows the tabs again from the workbook's sheets, after sheets were added in code.
 
 ---
 
@@ -3784,6 +3955,15 @@ public void SetNumberFormat(string format)
 ```
 
 Gives the selected cells a number format, as Excel's Number Format box does.
+
+<a id="shownextsheet-int"></a>
+### ShowNextSheet(int)
+
+```csharp
+public bool ShowNextSheet(int direction = 1)
+```
+
+Shows the next sheet of the workbook, or with -1 the one before, as Ctrl+Page Down and Ctrl+Page Up do; false when there is none that way.
 
 <a id="togglebold"></a>
 ### ToggleBold()

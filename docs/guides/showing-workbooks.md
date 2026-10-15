@@ -134,6 +134,15 @@ Undo gives back deleted rows and columns whole: their cells, styles and sizes, a
 name and merged area as it was. Each resize, fit, fill, insert, delete, hide and unhide is one step
 to undo.
 
+## Sheets
+
+`SheetTabs` shows a tab for each sheet of the view's workbook, the shown sheet highlighted, as at
+the bottom of Excel's window. Clicking a tab shows its sheet, and + adds a sheet named as Excel names
+one (`Sheet2`, `Sheet3`...). Ctrl+Page Down and Ctrl+Page Up (Cmd on a Mac) show the next and the
+previous sheet, and `ShowNextSheet` does it in code. Each sheet keeps its selection and scrolling
+while another is shown; a sheet not shown before starts at A1. Sheets cannot yet be renamed,
+deleted or moved from the tabs: SharpCell does not rename or remove sheets.
+
 ## Formatting cells
 
 | Input | Result |

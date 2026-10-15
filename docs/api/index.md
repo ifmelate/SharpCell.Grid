@@ -36,6 +36,7 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 | Type | Summary |
 |---|---|
 | [FormulaBar](SharpCell.Grid.Avalonia.FormulaBar.md) | Excel's formula bar for a [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md): the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit. |
+| [SheetTabs](SharpCell.Grid.Avalonia.SheetTabs.md) | Excel's sheet tabs for a [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md): a tab for each sheet of the view's workbook, the shown one highlighted. |
 | [SpreadsheetView](SharpCell.Grid.Avalonia.SpreadsheetView.md) | Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. |
 
 ## SharpCell.Grid.Wpf
@@ -43,4 +44,5 @@ Every public type of the SharpCell.Grid packages. Each page lists the type's mem
 | Type | Summary |
 |---|---|
 | [FormulaBar](SharpCell.Grid.Wpf.FormulaBar.md) | Excel's formula bar for a [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md): the name box with the active cell's address, and the active cell's formula or value as Excel shows it to edit. |
+| [SheetTabs](SharpCell.Grid.Wpf.SheetTabs.md) | Excel's sheet tabs for a [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md): a tab for each sheet of the view's workbook, the shown one highlighted. |
 | [SpreadsheetView](SharpCell.Grid.Wpf.SpreadsheetView.md) | Shows a SharpCell worksheet as Excel does: headers, gridlines, each cell's text as Excel formats it in the cell's style, the sheet's column widths, row heights, merged cells, frozen panes and gridlines. |

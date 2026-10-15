@@ -103,6 +103,31 @@ public class GuideExamples(HeadlessSession session)
     });
 
     [Fact]
+    public Task Sheets_and_formatting() => session.Run(() =>
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sales");
+        workbook.AddSheet("Costs");
+        sheet["A1"].Value = 0.25;
+        var view = new SpreadsheetView { Worksheet = sheet };
+        var window = new Window { Content = view };
+        window.Show();
+
+        // snippet: sheets-and-formatting
+        var tabs = new SheetTabs { View = view };   // Excel's sheet tabs, under the view
+        view.ToggleBold();                          // as Ctrl+B
+        view.SetFill(CellColor.FromRgb(0xFFF2CC));  // as Fill Color
+        view.SetNumberFormat("0.0%");               // as the Number Format box
+        view.ShowNextSheet();                       // as Ctrl+Page Down: the next sheet
+        // end-snippet
+
+        Assert.True(sheet["A1"].Style.Font.Bold);
+        Assert.Equal("25.0%", sheet["A1"].Text);
+        Assert.Equal(["Sales", "Costs"], tabs.SheetNames);
+        Assert.Same(workbook["Costs"], view.Worksheet);
+    });
+
+    [Fact]
     public Task Selection_copying_and_scrolling() => session.Run(async () =>
     {
         var sheet = new Workbook().AddSheet("Sheet1");

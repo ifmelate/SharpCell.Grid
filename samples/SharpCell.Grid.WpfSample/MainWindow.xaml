@@ -5,6 +5,7 @@
         Title="SharpCell.Grid" Width="960" Height="600">
     <DockPanel>
         <grid:FormulaBar DockPanel.Dock="Top" Margin="6" View="{Binding ElementName=View}" />
+        <grid:SheetTabs DockPanel.Dock="Bottom" View="{Binding ElementName=View}" />
         <grid:SpreadsheetView x:Name="View" />
     </DockPanel>
 </Window>

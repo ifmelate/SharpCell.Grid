@@ -56,7 +56,13 @@ A workbook from Excel looks the same in the grid as in Excel at 100% zoom.
 | Done | Ctrl+A on the data around the active cell first, then the sheet; references picked with the mouse while typing a formula | — |
 | Done | Inserting and deleting cells that shift the others right or down, with Excel's dialog | `CellRange.Insert`, `CellRange.Delete` (0.11.0) |
 | Done | Changing styles in the grid: bold, italic, underline, fills, font colours, borders and number formats, with Excel's shortcuts | — |
-| Next | More than one sheet in a view, with tabs | — |
+| Done | More than one sheet in a view, with tabs: switching, adding, Ctrl+Page Up and Ctrl+Page Down; each sheet keeps its selection | — |
+
+## Later
+
+- Renaming, deleting and moving sheets from the tabs: SharpCell does not yet rename or remove sheets.
+- While typing a formula: the arrows pointing at cells, references to other sheets picked from the
+  tabs, and each reference in a colour of its own.
 
 ## Quality, all along
 

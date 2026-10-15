@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -13,7 +12,7 @@ using SharpCell.Xlsx;
 
 namespace SharpCell.Grid.Demo;
 
-/// <summary>A toolbar to open a file and pick a sheet, and the grid below it.</summary>
+/// <summary>A toolbar to open a file, the grid below it, and the sheet tabs at the bottom.</summary>
 internal sealed class MainView : DockPanel
 {
     private static readonly FilePickerFileType Xlsx = new("Excel workbook")
@@ -23,15 +22,13 @@ internal sealed class MainView : DockPanel
     };
 
     private readonly SpreadsheetView _view = new();
-    private readonly ComboBox _sheets = new() { MinWidth = 160, VerticalAlignment = VerticalAlignment.Center };
+    private readonly SheetTabs _tabs = new();
     private readonly TextBlock _status = new() { VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
-    private Workbook? _workbook;
 
     public MainView()
     {
         var open = new Button { Content = "Open an .xlsx file…", VerticalAlignment = VerticalAlignment.Center };
         open.Click += async (_, _) => await OpenAsync();
-        _sheets.SelectionChanged += (_, _) => ShowSheet();
         var docs = new HyperlinkButton
         {
             Content = "Documentation",
@@ -40,7 +37,7 @@ internal sealed class MainView : DockPanel
         };
 
         var bar = new DockPanel { Margin = new Thickness(8, 6), LastChildFill = true };
-        var left = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { open, _sheets } };
+        var left = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { open } };
         DockPanel.SetDock(left, Dock.Left);
         DockPanel.SetDock(docs, Dock.Right);
         _status.Margin = new Thickness(12, 0);
@@ -53,6 +50,9 @@ internal sealed class MainView : DockPanel
         var formulas = new FormulaBar { View = _view, Margin = new Thickness(8, 0, 8, 6) };
         DockPanel.SetDock(formulas, Dock.Top);
         Children.Add(formulas);
+        _tabs.View = _view;
+        DockPanel.SetDock(_tabs, Dock.Bottom);
+        Children.Add(_tabs);
         Children.Add(_view);
 
         Show(Showcase.Build(), "An example built in code: type into the cells, the totals follow. Open your own file: it is read in your browser and never uploaded.");
@@ -94,19 +94,10 @@ internal sealed class MainView : DockPanel
 
     private void Show(Workbook workbook, string message)
     {
-        _workbook = workbook;
-        _sheets.ItemsSource = workbook.Sheets.Select(s => s.Name).ToList();
-        _sheets.SelectedIndex = 0;
-        _status.Text = message;
-    }
-
-    private void ShowSheet()
-    {
-        if (_workbook is null || _sheets.SelectedIndex < 0 || _sheets.SelectedIndex >= _workbook.Sheets.Count)
-            return;
-        _view.Worksheet = _workbook.Sheets[_sheets.SelectedIndex];
+        _view.Worksheet = workbook.Sheets[0];
         _view.ActiveCell = new CellPosition(1, 1);
         _view.Offset = default;
         _view.Focus();
+        _status.Text = message;
     }
 }

@@ -379,6 +379,15 @@ public void SetNumberFormat(string format)
 
 Gives the selected cells a number format, as Excel's Number Format box does.
 
+<a id="shownextsheet-int"></a>
+### ShowNextSheet(int)
+
+```csharp
+public bool ShowNextSheet(int direction = 1)
+```
+
+Shows the next sheet of the workbook, or with -1 the one before, as Ctrl+Page Down and Ctrl+Page Up do; false when there is none that way.
+
 <a id="togglebold"></a>
 ### ToggleBold()
 

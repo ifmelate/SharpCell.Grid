@@ -12,3 +12,13 @@ SharpCell.Grid.Avalonia.SpreadsheetView.ToggleBold() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.ToggleItalic() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.ToggleStrikethrough() -> void
 SharpCell.Grid.Avalonia.SpreadsheetView.ToggleUnderline() -> void
+SharpCell.Grid.Avalonia.SpreadsheetView.ShowNextSheet(int direction = 1) -> bool
+SharpCell.Grid.Avalonia.SheetTabs
+SharpCell.Grid.Avalonia.SheetTabs.AddSheet() -> SharpCell.Worksheet?
+SharpCell.Grid.Avalonia.SheetTabs.Refresh() -> void
+SharpCell.Grid.Avalonia.SheetTabs.SheetNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
+SharpCell.Grid.Avalonia.SheetTabs.SheetTabs() -> void
+SharpCell.Grid.Avalonia.SheetTabs.View.get -> SharpCell.Grid.Avalonia.SpreadsheetView?
+SharpCell.Grid.Avalonia.SheetTabs.View.set -> void
+override SharpCell.Grid.Avalonia.SheetTabs.OnPropertyChanged(Avalonia.AvaloniaPropertyChangedEventArgs! change) -> void
+static readonly SharpCell.Grid.Avalonia.SheetTabs.ViewProperty -> Avalonia.StyledProperty<SharpCell.Grid.Avalonia.SpreadsheetView?>!

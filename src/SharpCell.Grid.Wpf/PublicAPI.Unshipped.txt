@@ -12,3 +12,12 @@ SharpCell.Grid.Wpf.SpreadsheetView.ToggleBold() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.ToggleItalic() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.ToggleStrikethrough() -> void
 SharpCell.Grid.Wpf.SpreadsheetView.ToggleUnderline() -> void
+SharpCell.Grid.Wpf.SheetTabs
+SharpCell.Grid.Wpf.SheetTabs.AddSheet() -> SharpCell.Worksheet?
+SharpCell.Grid.Wpf.SheetTabs.Refresh() -> void
+SharpCell.Grid.Wpf.SheetTabs.SheetNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
+SharpCell.Grid.Wpf.SheetTabs.SheetTabs() -> void
+SharpCell.Grid.Wpf.SheetTabs.View.get -> SharpCell.Grid.Wpf.SpreadsheetView?
+SharpCell.Grid.Wpf.SheetTabs.View.set -> void
+SharpCell.Grid.Wpf.SpreadsheetView.ShowNextSheet(int direction = 1) -> bool
+static readonly SharpCell.Grid.Wpf.SheetTabs.ViewProperty -> System.Windows.DependencyProperty!
