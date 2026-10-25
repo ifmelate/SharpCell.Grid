@@ -27,4 +27,9 @@ public class DemoTests(HeadlessSession session)
 
         Assert.Equal(workbook.Sheets[^1], view.Worksheet);
     });
+
+    // A workbook's culture is invariant unless set, and Ctrl+Shift+$ then gave "900.00 ¤".
+    [Fact]
+    public void The_demo_formats_currency_in_dollars() =>
+        Assert.Equal("$#,##0.00_);($#,##0.00)", GridEditor.ShortcutFormat('$', Showcase.Build().Culture));
 }

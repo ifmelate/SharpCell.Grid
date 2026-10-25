@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace SharpCell.Grid.Demo;
 
 /// <summary>The workbook the demo opens with: styles, a merged title, frozen panes and formulas SharpCell calculates.</summary>
@@ -6,9 +8,15 @@ internal static class Showcase
     private static readonly string[] Months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     private static readonly string[] Regions = ["North", "South", "East", "West"];
 
+    /// <summary>
+    /// The culture of the demo's workbooks: US English, as Excel in English. A workbook's own default
+    /// is the invariant culture, whose currency sign is ¤.
+    /// </summary>
+    public static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
     public static Workbook Build()
     {
-        var workbook = new Workbook();
+        var workbook = new Workbook { Culture = Culture };
         Sales(workbook.AddSheet("Sales"));
         About(workbook.AddSheet("About"));
         workbook.Recalculate();
