@@ -83,6 +83,7 @@ internal sealed class MainView : DockPanel
 
             var watch = Stopwatch.StartNew();
             var workbook = XlsxReader.Load(memory);
+            workbook.Culture = Showcase.Culture;
             workbook.Recalculate();
             Show(workbook, $"{file.Name}: read and calculated by SharpCell in {watch.ElapsedMilliseconds} ms, in your browser.");
         }
